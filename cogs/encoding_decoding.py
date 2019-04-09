@@ -6,7 +6,7 @@ import urllib.parse
 import discord
 from discord.ext import commands
 
-class EncodingDecoding():
+class EncodingDecoding(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot

@@ -22,7 +22,7 @@ from colorthief import ColorThief
 import discord
 from discord.ext import commands
 
-class Ctfs():
+class Ctfs(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -86,7 +86,7 @@ class Ctfs():
         gid = ctx.guild.id 
 
         if ctx.invoked_subcommand is None:
-            await ctx.send('Invalid command passed.  Use >help.')
+            await ctx.send('Invalid command passed.  Use !help.')
 
     @commands.has_permissions(manage_channels=True)
     @ctf.command()
@@ -117,7 +117,7 @@ class Ctfs():
             await user.add_roles(role)
             await ctx.send(f"{user} has joined the {str(ctx.message.channel)} team!")
         else:
-            await ctx.send('You must be in a channel created using >ctf create to use this command!')
+            await ctx.send('You must be in a channel created using !ctf create to use this command!')
 
     @ctf.command()
     async def leave(self, ctx):
@@ -127,7 +127,7 @@ class Ctfs():
             await user.remove_roles(role)
             await ctx.send(f"{user} has left the {str(ctx.message.channel)} team.")
         else:
-            await ctx.send('You must be in a channel created using >ctf create to use this command!')
+            await ctx.send('You must be in a channel created using !ctf create to use this command!')
     
     @commands.has_permissions(manage_channels=True)
     @ctf.command()
@@ -140,18 +140,20 @@ class Ctfs():
             teamdb[str(gid)].remove({'name': str(ctx.message.channel)})
             await ctx.send(f"`{str(ctx.message.channel)}` deleted from db")
         else:
-            await ctx.send('You must be in a channel created using >ctf create to use this command!')
+            await ctx.send('You must be in a channel created using !ctf create to use this command!')
     
     @ctf.command()
     async def challenge(self, ctx, params, verbose=None):       
+        # TODO: differenitiation might not work?
         # Testing if the command was sent in a ctf channel
         # This is how I will differenciate between different ctfs in the same server.
         server = teamdb[str(gid)]
+        verbose = str(verbose)
         if teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
             correct_channel = True
             
             def updatechallenge(status):
-                challenge = {str(verbose): status}
+                challenge = {verbose: status}
                 ctf = server.find_one({'name': str(ctx.message.channel)})
                 try: # If there are existing challenges already...
                     challenges = ctf['challenges']
@@ -167,25 +169,28 @@ class Ctfs():
             await ctx.send('You must be in a created ctf channel to use this command!')
             correct_channel = False
 
+        if len(verbose) > 20:
+            await ctx.send('Challenge length cannot be greater than 20 bytes')
+
+        # TODO: sanitize
+
         if correct_channel == True:
 
             if params == 'add': # Usage: ctf challenge add "challenge name"
                 updatechallenge('Unsolved')
                 await ctx.send(f"'{verbose}' has been added to the challenge list for {str(ctx.message.channel)}")
 
-            
-            if params == 'solved': # Usage: ctf challenge solved "challenge name"
+            elif params == 'solved': # Usage: ctf challenge solved "challenge name"
                 solve = f"Solved - {str(ctx.message.author)}"
                 updatechallenge(solve)
                 await ctx.send(f":triangular_flag_on_post: {verbose} has been solved by {str(ctx.message.author)}")
-                           
 
-            if params == 'working': # Usage: ctf challenge working "challenge name"
+            elif params == 'working': # Usage: ctf challenge working "challenge name"
                 working = f"Working - {str(ctx.message.author)}"
                 updatechallenge(working)
                 await ctx.send(f"{str(ctx.message.author)} is working on {verbose}!")
 
-            if params == 'list': # Usage: ctf challenge list
+            elif params == 'list': # Usage: ctf challenge list
                 ctf = server.find_one({'name': str(ctx.message.channel)})
                 challenges = str(ctf['challenges']).replace('"', '').replace("'", "").replace('{', '').replace('}', '').split(',')
                 formatted_chals = ""
@@ -199,6 +204,9 @@ class Ctfs():
                     formatted_chals += formatted_c
                 
                 await ctx.send(f"```ini\n{formatted_chals}```")
+
+            else: 
+                await ctx.send('Invalid command passed.  Use !help.')
                        
 
 
@@ -313,7 +321,7 @@ class Ctfs():
                     await ctx.channel.send(embed=embed)
             
             if running == False: # No ctfs were found to be running
-                await ctx.send("No CTFs currently running! Check out >ctftime countdown, and >ctftime upcoming to see when ctfs will start!")
+                await ctx.send("No CTFs currently running! Check out !ctftime countdown, and !ctftime upcoming to see when ctfs will start!")
 
         if status == 'timeleft': # Return the timeleft in the ctf in days, hours, minutes, seconds
             Ctfs.updatedb()
@@ -334,7 +342,7 @@ class Ctfs():
                   await ctx.send(f"```ini\n{ctf['name']} ends in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{ctf['url']}")
             
             if running == False:
-                await ctx.send('No ctfs are running! Use >ctftime upcoming or >ctftime countdown to see upcoming ctfs')
+                await ctx.send('No ctfs are running! Use !ctftime upcoming or !ctftime countdown to see upcoming ctfs')
 
         if status == 'countdown':
             Ctfs.updatedb()
@@ -350,7 +358,7 @@ class Ctfs():
                 for i, c in enumerate(self.upcoming_l):
                    index += f"\n[{i + 1}] {c['name']}\n"
                 
-                await ctx.send(f"Type >ctftime countdown <number> to select.\n```ini\n{index}```")
+                await ctx.send(f"Type !ctftime countdown <number> to select.\n```ini\n{index}```")
             
             else:
                 if self.upcoming_l != []:

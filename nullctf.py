@@ -25,19 +25,22 @@ from colorthief import ColorThief
 from help_info import *
 from auth import *
 
+creator_id = [412077060207542284, 491610275993223170]
+
 client = discord.Client()
-bot = commands.Bot(command_prefix='>')
+bot = commands.Bot(command_prefix='!')
 extensions = ['encoding_decoding', 'cipher', 'ctfs', 'utility', 'settings']
 bot.remove_command('help')
 blacklisted = []
-cool_names = ['nullpxl', 'Test_Monkey', 'Yiggles', 'JohnHammond', 'voidUpdate', 'Michel Ney'] # This is intended to be able to be circumvented.
+cool_names = ['nullpxl', 'Test_Monkey', 'Yiggles', 'JohnHammond', 'voidUpdate',
+        'Michel Ney', 'theKidOfArcrania', 'knapstack'] # This is intended to be able to be circumvented.
 # If you do something like report a bug with the report command (OR GITHUB), e.g, >report "a bug", you might be added to the list!
 
 @bot.event
 async def on_ready():
     print(('<' + bot.user.name) + ' Online>')
     print(discord.__version__)
-    await bot.change_presence(activity=discord.Game(name='>help / >report "issue"'))
+    await bot.change_presence(activity=discord.Game(name='!help / !report "issue"'))
 
 @bot.event
 async def on_message(message):
@@ -62,28 +65,30 @@ async def help(ctx, page=None):
     if (not page) or (page == '1'):
         page_num = '1'
         emb = discord.Embed(description=help_page, colour=4387968)
-        emb.set_author(name='>request "x" - request a feature')
+        emb.set_author(name='!request "x" - request a feature')
     
     if page == '2':
         emb = discord.Embed(description=help_page_2, colour=4387968)
-        emb.set_author(name='>request "x" - request a feature')
+        emb.set_author(name='!request "x" - request a feature')
     
     await ctx.channel.send(embed=emb)
 
 # Bot sends a dm to creator with the name of the user and their request.
 @bot.command()
 async def request(ctx, feature):
-    creator = await bot.get_user_info(230827776637272064)
-    authors_name = str(ctx.author)
-    await creator.send(f''':pencil: {authors_name}: {feature}''')
+    for cid in creator_id:
+        creator = bot.get_user(cid)
+        authors_name = str(ctx.author)
+        await creator.send(f''':pencil: {authors_name}: {feature}''')
     await ctx.send(f''':pencil: Thanks, "{feature}" has been requested!''')
 
 # Bot sends a dm to creator with the name of the user and their report.
 @bot.command()
 async def report(ctx, error_report):
-    creator = await bot.get_user_info(230827776637272064)
-    authors_name = str(ctx.author)
-    await creator.send(f''':triangular_flag_on_post: {authors_name}: {error_report}''')
+    for cid in creator_id:
+        creator = bot.get_user(cid)
+        authors_name = str(ctx.author)
+        await creator.send(f''':triangular_flag_on_post: {authors_name}: {error_report}''')
     await ctx.send(f''':triangular_flag_on_post: Thanks for the help, "{error_report}" has been reported!''')
 
 # @bot.command()
