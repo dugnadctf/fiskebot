@@ -1,4 +1,4 @@
-#TODO List
+# TODO List
 
 * [ ] Implement private channels for each CTF and problem
   * [ ] Archive channels after end of CTF
