@@ -2,7 +2,7 @@
 
 * [ ] Implement private channels for each CTF and problem
   * [ ] Archive channels after end of CTF
-* [ ] Set challenge length up to 20 characters
+* [x] Set challenge length up to 20 characters
 * [ ] Better state information per challenge in the mongodb
   * [ ] Implement solves from multiple people
   * [ ] Do not allow tampering with solves after it is solved. (maybe allow unsolve
