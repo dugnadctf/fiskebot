@@ -1,7 +1,8 @@
 from pymongo import MongoClient
-from mongo import *
 import discord
 from discord.ext import commands
+
+from .mongo import *
 
 class Settings(commands.Cog):
     

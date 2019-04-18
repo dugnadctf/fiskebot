@@ -1,10 +1,13 @@
 from pymongo import MongoClient
 from auth import *
 
-client = MongoClient(conn)
-ctfdb = client['ctftime'] # Create ctftime database
-ctfs = ctfdb['ctfs'] # Create ctfs collection
+mclient = MongoClient(conn)
 
-teamdb = client['ctfteams'] # Create ctf teams database
+# Create databases
+ctfdb = mclient['ctftime'] 
+teamdb = mclient['ctfteams'] 
+serverdb = mclient['serverinfo']
+chaldb = mclient['chals']
 
-serverdb = client['serverinfo']
+# Create collections
+ctfs = ctfdb['ctfs']

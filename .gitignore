@@ -5,3 +5,4 @@ __pycache__/
 cogs/__pycache__/
 auth.py
 .venv
+**/*.sw?

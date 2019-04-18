@@ -19,11 +19,17 @@ import datetime
 from datetime import timezone
 from datetime import datetime
 import discord
-from discord.ext.commands import Bot
+from discord.ext.commands import *
 from discord.ext import commands
 from colorthief import ColorThief
 from help_info import *
 from auth import *
+
+import traceback
+import logging as log
+
+from trim import trim_nl
+from cogs.ctfmodel import TaskFailed
 
 creator_id = [412077060207542284, 491610275993223170]
 
@@ -54,6 +60,37 @@ async def on_message(message):
             await message.channel.send('https://www.youtube.com/user/RootOfTheNull')
     
     await bot.process_commands(message)
+
+@bot.event
+async def on_error(evt_type, ctx):
+    if evt_type == 'on_message':
+        await ctx.channel.send('An error has occurred... :disappointed:')
+    log.error(f'Ignoring exception at {evt_type}')
+    log.error(traceback.format_exc())
+
+
+@bot.event
+async def on_command_error(ctx, err):
+    if isinstance(err, MissingPermissions):
+        await ctx.send('You do not have permission to do that! ¯\_(ツ)_/¯')
+    elif isinstance(err, BotMissingPermissions):
+        await ctx.send(trim_nl(f''':cry: I can\'t do that. Please ask server ops
+        to add all the permission for me!
+        
+        ```{str(err)}```'''))
+    elif isinstance(err, DisabledCommand):
+        await ctx.send(':skull: Command has been disabled!')
+    elif isinstance(err, CommandNotFound):
+        await ctx.send('Invalid command passed. Use !help.')
+    elif isinstance(err, TaskFailed):
+        await ctx.send(f':bangbang: {str(err)}')
+    elif isinstance(err, NoPrivateMessage):
+        await ctx.send(':bangbang: This command cannot be used in PMs.')
+    else:
+        await ctx.send('An error has occurred... :disappointed:')
+        log.error(f'Ignoring exception in command {ctx.command}')
+        log.error(''.join(traceback.format_exception(type(err), err,
+                err.__traceback__)))
 
 # Sends the github link.
 @bot.command()
@@ -106,7 +143,7 @@ async def amicool(ctx):
         await ctx.send('Psst, kid.  Want to be cool?  Find an issue and report it or request a feature you think would be cool.')
 
 if __name__ == '__main__':
-    sys.path.insert(1, os.getcwd() + '/cogs/')
+    #sys.path.insert(1, os.getcwd() + '/cogs/')
     for extension in extensions:
-        bot.load_extension(extension)
+        bot.load_extension('cogs.' + extension)
     bot.run(auth_token)

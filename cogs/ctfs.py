@@ -16,30 +16,40 @@ from pprint import pprint
 from random import randint
 from datetime import *
 from dateutil.parser import parse
-from mongo import *
 
 from colorthief import ColorThief
 import discord
 from discord.ext import commands
 
-class Ctfs(commands.Cog):
+from trim import trim_nl
+from help_info import ctf_help_text, chal_help_text
+
+from . import ctfmodel
+from .mongo import *
+
+
+class Ctftime(commands.Cog):
 
     def __init__(self, bot):
-        self.bot = bot
-        self.challenges = {}
-        self.ctfname = ""
         self.upcoming_l = []
+        self.bot = bot
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:61.0) Gecko/20100101 Firefox/61.0',
+        }
+    upcoming_url = 'https://ctftime.org/api/v1/events/'
+    default_image = 'https://pbs.twimg.com/profile_images/2189766987/ctftime-logo-avatar_400x400.png'
+    @staticmethod
+    def rgb2hex(r, g, b):
+        tohex = '#{:02x}{:02x}{:02x}'.format(r, g, b)
+        return tohex
 
     @staticmethod
     def updatedb():
         now = datetime.utcnow()
         unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
-        headers = {
-                'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:61.0) Gecko/20100101 Firefox/61.0',
-                }
-        upcoming = 'https://ctftime.org/api/v1/events/'
         limit = '5' # Max amount I can grab the json data for
-        response = requests.get(upcoming, headers=headers, params=limit)
+        response = requests.get(Ctftime.upcoming_url, headers=Ctftime.headers, params=limit)
         jdata = response.json()
         
         info = []
@@ -79,325 +89,360 @@ class Ctfs(commands.Cog):
                 ctfs.remove({'name': ctf['name']})
 
     @commands.group()
-    async def ctf(self, ctx):
-        global guild
-        global gid
-        guild = ctx.guild
-        gid = ctx.guild.id 
-
+    async def ctftime(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send('Invalid command passed.  Use !help.')
 
-    @commands.has_permissions(manage_channels=True)
-    @ctf.command()
-    async def create(self, ctx, params):
-        try:
-            sconf = serverdb[str(gid) + 'CONF']
-            scat = sconf.find_one({'name': "category_name"})['ctfcategory'] # scat means server category
-        except:
-            scat = "CTF"
-            
-        category = discord.utils.get(ctx.guild.categories, name=scat)
-        if category == None: # Checks if category exists, if it doesn't it will create it.
-            await guild.create_category(name=scat)
-            category = discord.utils.get(ctx.guild.categories, name=scat)
-
-        await guild.create_text_channel(name=params, category=category)        
-        server = teamdb[str(gid)]
-        name = params.replace(' ', '-').replace("'", "").lower() # Discord does this when creating text channels. 
-        await guild.create_role(name=name, mentionable=True)         
-        ctf_info = {'name': name, "text_channel": name}
-        server.update({'name': name}, {"$set": ctf_info}, upsert=True)
-
-    @ctf.command()
-    async def join(self, ctx):
-        if teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
-            role = discord.utils.get(ctx.guild.roles, name=str(ctx.message.channel))
-            user = ctx.message.author
-            await user.add_roles(role)
-            await ctx.send(f"{user} has joined the {str(ctx.message.channel)} team!")
+    @ctftime.command()
+    async def upcoming(self, ctx, params=None):
+        if params == None:
+            params = '3'
         else:
-            await ctx.send('You must be in a channel created using !ctf create to use this command!')
-
-    @ctf.command()
-    async def leave(self, ctx):
-        if teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
-            role = discord.utils.get(ctx.guild.roles, name=str(ctx.message.channel))
-            user = ctx.message.author
-            await user.remove_roles(role)
-            await ctx.send(f"{user} has left the {str(ctx.message.channel)} team.")
-        else:
-            await ctx.send('You must be in a channel created using !ctf create to use this command!')
-    
-    @commands.has_permissions(manage_channels=True)
-    @ctf.command()
-    async def end(self, ctx):
-        if teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
-            #delete role from server, delete entry from db
-            role = discord.utils.get(ctx.guild.roles, name=str(ctx.message.channel))
-            await role.delete()
-            await ctx.send(f"`{role.name}` role deleted")
-            teamdb[str(gid)].remove({'name': str(ctx.message.channel)})
-            await ctx.send(f"`{str(ctx.message.channel)}` deleted from db")
-        else:
-            await ctx.send('You must be in a channel created using !ctf create to use this command!')
-    
-    @ctf.command()
-    async def challenge(self, ctx, params, verbose=None):       
-        # TODO: differenitiation might not work?
-        # Testing if the command was sent in a ctf channel
-        # This is how I will differenciate between different ctfs in the same server.
-        server = teamdb[str(gid)]
-        verbose = str(verbose)
-        if teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
-            correct_channel = True
-            
-            def updatechallenge(status):
-                challenge = {verbose: status}
-                ctf = server.find_one({'name': str(ctx.message.channel)})
-                try: # If there are existing challenges already...
-                    challenges = ctf['challenges']
-                    challenges.update(challenge)
-                except:
-                    challenges = challenge
-                ctf_info = {'name': str(ctx.message.channel),
-                'challenges': challenges
-                }
-                server.update({'name': str(ctx.message.channel)}, {"$set": ctf_info}, upsert=True)
-
-        else:
-            await ctx.send('You must be in a created ctf channel to use this command!')
-            correct_channel = False
-
-        if len(verbose) > 20:
-            await ctx.send('Challenge length cannot be greater than 20 bytes')
-
-        # TODO: sanitize
-
-        if correct_channel == True:
-
-            if params == 'add': # Usage: ctf challenge add "challenge name"
-                updatechallenge('Unsolved')
-                await ctx.send(f"'{verbose}' has been added to the challenge list for {str(ctx.message.channel)}")
-
-            elif params == 'solved': # Usage: ctf challenge solved "challenge name"
-                solve = f"Solved - {str(ctx.message.author)}"
-                updatechallenge(solve)
-                await ctx.send(f":triangular_flag_on_post: {verbose} has been solved by {str(ctx.message.author)}")
-
-            elif params == 'working': # Usage: ctf challenge working "challenge name"
-                working = f"Working - {str(ctx.message.author)}"
-                updatechallenge(working)
-                await ctx.send(f"{str(ctx.message.author)} is working on {verbose}!")
-
-            elif params == 'list': # Usage: ctf challenge list
-                ctf = server.find_one({'name': str(ctx.message.channel)})
-                challenges = str(ctf['challenges']).replace('"', '').replace("'", "").replace('{', '').replace('}', '').split(',')
-                formatted_chals = ""
-                for i, c in enumerate(challenges):
-                    if i != 0:
-                        pos = c.index(':') - 1
-                    else:
-                        pos = c.index(':')
-                    c = c.lstrip(' ')
-                    formatted_c = '[' + c[:pos] + ']' + c[pos:] + '\n'
-                    formatted_chals += formatted_c
-                
-                await ctx.send(f"```ini\n{formatted_chals}```")
-
-            else: 
-                await ctx.send('Invalid command passed.  Use !help.')
-                       
-
-
-    # Returns upcoming ctfs, leaderboards, and currently running ctfs from ctftime.org (using their api)
-    # Usage: ctftime <upcoming/top/current> <number of ctfs/year>
-    @commands.command() 
-    async def ctftime(self, ctx, status, params=None):
-        current_ctftime_cmds = ['upcoming', 'top', 'current', 'countdown', 'timeleft']
-        default_image = 'https://pbs.twimg.com/profile_images/2189766987/ctftime-logo-avatar_400x400.png'
-
-        def rgb2hex(r, g, b):
-            tohex = '#{:02x}{:02x}{:02x}'.format(r, g, b)
-            return tohex
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:61.0) Gecko/20100101 Firefox/61.0',
-        }
+            pass
         
-        if status == 'upcoming':
-            upcoming_url = 'https://ctftime.org/api/v1/events/'
-            response = requests.get(upcoming_url, headers=headers, params=params)
-            data = response.json()
+        response = requests.get(Ctftime.upcoming_url, headers=Ctftime.headers, params=params)
+        data = response.json()
+        
+        for num in range(0, int(params)):
+            ctf_title = data[num]['title']
+            (ctf_start, ctf_end) = (data[num]['start'].replace('T', ' ').split('+', 1)[0] + ' UTC', data[num]['finish'].replace('T', ' ').split('+', 1)[0] + ' UTC')
+            (ctf_start, ctf_end) = (re.sub(':00 ', ' ', ctf_start), re.sub(':00 ', ' ', ctf_end))
+            dur_dict = data[num]['duration']
+            (ctf_hours, ctf_days) = (str(dur_dict['hours']), str(dur_dict['days']))
+            ctf_link = data[num]['url']
+            ctf_image = data[num]['logo']
+            ctf_format = data[num]['format']
+            ctf_place = data[num]['onsite']
             
-            if params == None:
-                params = '3'
+            if ctf_place == False:
+                ctf_place = 'Online'
             else:
-                pass
+                ctf_place = 'Onsite'
             
-            for num in range(0, int(params)):
-                ctf_title = data[num]['title']
-                (ctf_start, ctf_end) = (data[num]['start'].replace('T', ' ').split('+', 1)[0] + ' UTC', data[num]['finish'].replace('T', ' ').split('+', 1)[0] + ' UTC')
-                (ctf_start, ctf_end) = (re.sub(':00 ', ' ', ctf_start), re.sub(':00 ', ' ', ctf_end))
-                dur_dict = data[num]['duration']
-                (ctf_hours, ctf_days) = (str(dur_dict['hours']), str(dur_dict['days']))
-                ctf_link = data[num]['url']
-                ctf_image = data[num]['logo']
-                ctf_format = data[num]['format']
-                ctf_place = data[num]['onsite']
-                
-                if ctf_place == False:
-                    ctf_place = 'Online'
-                else:
-                    ctf_place = 'Onsite'
-                
-                # if ctf_image != '':
-                #     fd = urlopen(ctf_image) # 403 is on this line, no longer able to access this?
-                # else:
-                #     fd = urlopen(default_image)
-                fd = urlopen(default_image)
-                f = io.BytesIO(fd.read())
-                color_thief = ColorThief(f)
-                rgb_color = color_thief.get_color(quality=49)
-                hexed = str(rgb2hex(rgb_color[0], rgb_color[1], rgb_color[2])).replace('#', '')
-                f_color = int(hexed, 16)
-                embed = discord.Embed(title=ctf_title, description=ctf_link, color=f_color)
-                
-                if ctf_image != '':
-                    embed.set_thumbnail(url=ctf_image)
-                else:
-                    embed.set_thumbnail(url=default_image)
-                
-                embed.add_field(name='Duration', value=((ctf_days + ' days, ') + ctf_hours) + ' hours', inline=True)
-                embed.add_field(name='Format', value=(ctf_place + ' ') + ctf_format, inline=True)
-                embed.add_field(name='─' * 23, value=(ctf_start + ' -> ') + ctf_end, inline=True)
-                await ctx.channel.send(embed=embed)
+            # if ctf_image != '':
+            #     fd = urlopen(ctf_image) # 403 is on this line, no longer able to access this?
+            # else:
+            #     fd = urlopen(Ctftime.default_image)
+            fd = urlopen(Ctftime.default_image)
+            f = io.BytesIO(fd.read())
+            color_thief = ColorThief(f)
+            rgb_color = color_thief.get_color(quality=49)
+            hexed = str(Ctftime.rgb2hex(*rgb_color[:3])).replace('#', '')
+            f_color = int(hexed, 16)
+            embed = discord.Embed(title=ctf_title, description=ctf_link, color=f_color)
+            
+            if ctf_image != '':
+                embed.set_thumbnail(url=ctf_image)
+            else:
+                embed.set_thumbnail(url=Ctftime.default_image)
+            
+            embed.add_field(name='Duration', value=((ctf_days + ' days, ') + ctf_hours) + ' hours', inline=True)
+            embed.add_field(name='Format', value=(ctf_place + ' ') + ctf_format, inline=True)
+            embed.add_field(name='─' * 23, value=(ctf_start + ' -> ') + ctf_end, inline=True)
+            await ctx.channel.send(embed=embed)
+
+    @ctftime.command()
+    async def top(self, ctx, params = None):
+        if not params:
+            params = '2018'
         
-        if status == 'top':
-            if (not params):
-                params = '2018'
+        params = str(params)
+        top_url = 'https://ctftime.org/api/v1/top/' + params + '/'
+        response = requests.get(top_url, headers=Ctftime.headers)
+        data = response.json()
+        leaderboards = ''
+        
+        for team in range(10):
+            rank = team + 1
+            teamname = data[params][team]['team_name']
+            score = data[params][team]['points']
             
-            params = str(params)
-            top_url = 'https://ctftime.org/api/v1/top/' + params + '/'
-            response = requests.get(top_url, headers=headers)
-            data = response.json()
-            leaderboards = ''
-            
-            for team in range(10):
-                rank = team + 1
-                teamname = data[params][team]['team_name']
-                score = data[params][team]['points']
-                
-                if team != 9:
-                    leaderboards += f'''
+            if team != 9:
+                leaderboards += f'''
 [{rank}]    {teamname}: {score}
 '''
-                else:
-                    leaderboards += f'''
+            else:
+                leaderboards += f'''
 [{rank}]   {teamname}: {score}
 '''
-            await ctx.send(f''':triangular_flag_on_post:  **{params} CTFtime Leaderboards**```ini
+        await ctx.send(f''':triangular_flag_on_post:  **{params} CTFtime Leaderboards**```ini
 {leaderboards}```''')
+
+    @ctftime.command()
+    async def current(self, ctx, params=None):
+        Ctftime.updatedb()
+        now = datetime.utcnow()
+        unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
+        running = False
         
-        if status == 'current':
-            Ctfs.updatedb()
-            now = datetime.utcnow()
-            unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
-            running = False
-            
-            for ctf in ctfs.find():
-                if ctf['start'] < unix_now and ctf['end'] > unix_now: # Check if the ctf is running
-                    running = True
-                    embed = discord.Embed(title=':red_circle: ' + ctf['name']+' IS LIVE', description=ctf['url'], color=15874645)
-                    start = datetime.utcfromtimestamp(ctf['start']).strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
-                    end = datetime.utcfromtimestamp(ctf['end']).strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
-                    if ctf['img'] != '':
-                        embed.set_thumbnail(url=ctf['img'])
-                    else:
-                        embed.set_thumbnail(url=default_image)
-                     
-                    embed.add_field(name='Duration', value=ctf['dur'], inline=True)
-                    embed.add_field(name='Format', value=ctf['format'], inline=True)
-                    embed.add_field(name='─' * 23, value=start+' -> '+end, inline=True)
-                    await ctx.channel.send(embed=embed)
-            
-            if running == False: # No ctfs were found to be running
-                await ctx.send("No CTFs currently running! Check out !ctftime countdown, and !ctftime upcoming to see when ctfs will start!")
+        for ctf in ctfs.find():
+            if ctf['start'] < unix_now and ctf['end'] > unix_now: # Check if the ctf is running
+                running = True
+                embed = discord.Embed(title=':red_circle: ' + ctf['name']+' IS LIVE', description=ctf['url'], color=15874645)
+                start = datetime.utcfromtimestamp(ctf['start']).strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
+                end = datetime.utcfromtimestamp(ctf['end']).strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
+                if ctf['img'] != '':
+                    embed.set_thumbnail(url=ctf['img'])
+                else:
+                    embed.set_thumbnail(url=Ctftime.default_image)
+                 
+                embed.add_field(name='Duration', value=ctf['dur'], inline=True)
+                embed.add_field(name='Format', value=ctf['format'], inline=True)
+                embed.add_field(name='─' * 23, value=start+' -> '+end, inline=True)
+                await ctx.channel.send(embed=embed)
+        
+        if running == False: # No ctfs were found to be running
+            await ctx.send("No CTFs currently running! Check out !ctftime countdown, and !ctftime upcoming to see when ctfs will start!")
 
-        if status == 'timeleft': # Return the timeleft in the ctf in days, hours, minutes, seconds
-            Ctfs.updatedb()
-            now = datetime.utcnow()
-            unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
-            running = False
-            for ctf in ctfs.find():
-               if ctf['start'] < unix_now and ctf['end'] > unix_now: # Check if the ctf is running
-                  running = True
-                  time = ctf['end'] - unix_now 
-                  days = time // (24 * 3600)
-                  time = time % (24 * 3600)
-                  hours = time // 3600
-                  time %= 3600
-                  minutes = time // 60
-                  time %= 60
-                  seconds = time
-                  await ctx.send(f"```ini\n{ctf['name']} ends in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{ctf['url']}")
-            
-            if running == False:
-                await ctx.send('No ctfs are running! Use !ctftime upcoming or !ctftime countdown to see upcoming ctfs')
+    # Return the timeleft in the ctf in days, hours, minutes, seconds
+    @ctftime.command()
+    async def timeleft(self, ctx, params=None):
+        Ctftime.updatedb()
+        now = datetime.utcnow()
+        unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
+        running = False
+        for ctf in ctfs.find():
+           if ctf['start'] < unix_now and ctf['end'] > unix_now: # Check if the ctf is running
+              running = True
+              time = ctf['end'] - unix_now 
+              days = time // (24 * 3600)
+              time = time % (24 * 3600)
+              hours = time // 3600
+              time %= 3600
+              minutes = time // 60
+              time %= 60
+              seconds = time
+              await ctx.send(f"```ini\n{ctf['name']} ends in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{ctf['url']}")
+        
+        if running == False:
+            await ctx.send('No ctfs are running! Use !ctftime upcoming or !ctftime countdown to see upcoming ctfs')
 
-        if status == 'countdown':
-            Ctfs.updatedb()
-            now = datetime.utcnow()
-            unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
+    @ctftime.command()
+    async def countdown(self, ctx, params=None):
+        Ctftime.updatedb()
+        now = datetime.utcnow()
+        unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
+        
+        if params == None:
+            self.upcoming_l = []
+            index = ""
+            for ctf in ctfs.find():
+                if ctf['start'] > unix_now:
+                  self.upcoming_l.append(ctf)
+            for i, c in enumerate(self.upcoming_l):
+               index += f"\n[{i + 1}] {c['name']}\n"
             
-            if params == None:
-                self.upcoming_l = []
-                index = ""
+            await ctx.send(f"Type !ctftime countdown <number> to select.\n```ini\n{index}```")
+        
+        else:
+            if self.upcoming_l != []:
+                x = int(params) - 1     
+                start = datetime.utcfromtimestamp(self.upcoming_l[x]['start']).strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
+                end = datetime.utcfromtimestamp(self.upcoming_l[x]['end']).strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
+                  
+                time = self.upcoming_l[x]['start'] - unix_now 
+                days = time // (24 * 3600)
+                time = time % (24 * 3600)
+                hours = time // 3600
+                time %= 3600
+                minutes = time // 60
+                time %= 60
+                seconds = time
+                
+                await ctx.send(f"```ini\n{self.upcoming_l[x]['name']} starts in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{self.upcoming_l[x]['url']}")
+            else: # TODO: make this a function, too much repeated code here.
                 for ctf in ctfs.find():
                     if ctf['start'] > unix_now:
                       self.upcoming_l.append(ctf)
-                for i, c in enumerate(self.upcoming_l):
-                   index += f"\n[{i + 1}] {c['name']}\n"
+                x = int(params) - 1     
+                start = datetime.utcfromtimestamp(self.upcoming_l[x]['start']).strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
+                end = datetime.utcfromtimestamp(self.upcoming_l[x]['end']).strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
+                  
+                time = self.upcoming_l[x]['start'] - unix_now 
+                days = time // (24 * 3600)
+                time = time % (24 * 3600)
+                hours = time // 3600
+                time %= 3600
+                minutes = time // 60
+                time %= 60
+                seconds = time
                 
-                await ctx.send(f"Type !ctftime countdown <number> to select.\n```ini\n{index}```")
-            
-            else:
-                if self.upcoming_l != []:
-                    x = int(params) - 1     
-                    start = datetime.utcfromtimestamp(self.upcoming_l[x]['start']).strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
-                    end = datetime.utcfromtimestamp(self.upcoming_l[x]['end']).strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
-                      
-                    time = self.upcoming_l[x]['start'] - unix_now 
-                    days = time // (24 * 3600)
-                    time = time % (24 * 3600)
-                    hours = time // 3600
-                    time %= 3600
-                    minutes = time // 60
-                    time %= 60
-                    seconds = time
-                    
-                    await ctx.send(f"```ini\n{self.upcoming_l[x]['name']} starts in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{self.upcoming_l[x]['url']}")
-                else: # TODO: make this a function, too much repeated code here.
-                    for ctf in ctfs.find():
-                        if ctf['start'] > unix_now:
-                          self.upcoming_l.append(ctf)
-                    x = int(params) - 1     
-                    start = datetime.utcfromtimestamp(self.upcoming_l[x]['start']).strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
-                    end = datetime.utcfromtimestamp(self.upcoming_l[x]['end']).strftime('%Y-%m-%d %H:%M:%S') + ' UTC'
-                      
-                    time = self.upcoming_l[x]['start'] - unix_now 
-                    days = time // (24 * 3600)
-                    time = time % (24 * 3600)
-                    hours = time // 3600
-                    time %= 3600
-                    minutes = time // 60
-                    time %= 60
-                    seconds = time
-                    
-                    await ctx.send(f"```ini\n{self.upcoming_l[x]['name']} starts in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{self.upcoming_l[x]['url']}")
+                await ctx.send(f"```ini\n{self.upcoming_l[x]['name']} starts in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{self.upcoming_l[x]['url']}")
 
 
-        if status not in current_ctftime_cmds:
-            await ctx.send('Current ctftime commands are: top [year], upcoming [amount up to 5], current, countdown, timeleft')
+async def respond(ctx, fn, *args):
+    guild = ctx.channel.guild
+    async with ctx.channel.typing():
+        for chan_id, msg in await fn(*args):
+            chan = guild.get_channel(chan_id) if chan_id else ctx.channel
+            await chan.send(msg)
+
+def check_name(name):
+    if len(name) > 32:
+        raise ctfmodel.TaskFailed('Challenge name is too long!')
+    # TODO sanitize
+
+def chk_fetch_team(ctx):
+    team = ctfmodel.CtfTeam.fetch(ctx.channel.guild, ctx.channel.id)
+    if not team:
+        raise ctfmodel.TaskFailed('Please type this command in a ctf channel.')
+    return team
+
+def chk_fetch_chal(ctx):
+    chal = ctfmodel.Challenge.fetch(ctx.channel.guild, ctx.channel.id)
+    if not chal:
+        raise ctfmodel.TaskFailed('Please type this command in a challenge ' + \
+                'channel. You may need to join a challenge first.')
+    return chal
+
+def parse_user(guild, user):
+    mat = re.match(r'<@([0-9]+)>$', user)
+    if mat:
+        ret = guild.get_member(int(mat[1]))
+    else:
+        ret = guild.get_member_named(user)
+
+    if not ret:
+        raise ctfmodel.TaskFailed(f'Invalid username: "{user}"')
+    return ret
+    
+def verify_owner():
+    def predicate(ctx):
+        chk_fetch_chal(ctx).check_done(ctx.author)
+        return True
+
+    return commands.check(predicate)
+
+class Ctfs(commands.Cog):
+
+    def __init__(self, bot):
+        self.bot = bot
+        self.challenges = {}
+        self.ctfname = ""
+
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @commands.command()
+    async def create_ctf(self, ctx, name):
+        guild = ctx.channel.guild
+
+        # Create channel
+        chan = await guild.create_text_channel(name=name, 
+                topic=f'General talk for {name} CTF event.')
+        msg = await chan.send(trim_nl(f'''Welcome to {name}. Here you can do
+        general discussion about this event. Also use this this place to type
+        `ctf` related commands. Here is a list of commands just for
+        reference:\n\n'''))
+        await msg.pin()
+        msg = await chan.send(ctf_help_text + chal_help_text)
+        await msg.pin()
+
+        # Create role
+        role = await guild.create_role(name=f'{name}_team', mentionable=True)
+
+        await respond(ctx, ctfmodel.CtfTeam.create, guild, name, chan.id, role.id)
+
+    @commands.guild_only()
+    @commands.group()
+    async def ctf(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send('Invalid command passed. Use !ctf help.')
+
+    @ctf.command('help')
+    async def ctf_help(self, ctx):
+        emb = discord.Embed(description=ctf_help_text, colour=4387968)
+        emb.set_author(name='CTF team help topic')
+        await ctx.send(embed=emb)
+
+
+    @commands.bot_has_permissions(manage_channels=True)
+    @ctf.command()
+    async def add(self, ctx, name):
+        check_name(name)
+        await respond(ctx, chk_fetch_team(ctx).add_chal, name)
+
+    @commands.bot_has_permissions(manage_channels=True)
+    @commands.has_permissions(manage_channels=True)
+    @ctf.command()
+    async def delete(self, ctx, name):
+        check_name(name)
+        await respond(ctx, chk_fetch_team(ctx).del_chal, name)
+
+    @commands.bot_has_permissions(manage_roles=True)
+    @ctf.command('leave')
+    async def leave_ctf(self, ctx):
+        await respond(ctx, chk_fetch_team(ctx).leave, ctx.author)
+
+    @commands.bot_has_permissions(manage_roles=True)
+    @ctf.command()
+    async def join(self, ctx):
+        await respond(ctx, chk_fetch_team(ctx).join, ctx.author)
+
+    @ctf.command()
+    async def working(self, ctx, chalname):
+        chk_fetch_team(ctx)
+        chal = ctfmodel.Challenge.find(ctx.channel.guild, ctx.channel.id, chalname)
+        await respond(ctx, chal.working, ctx.author)
+
+    @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @commands.has_permissions(manage_channels=True)
+    @ctf.command()
+    async def archive(self, ctx):
+        # TODO: drop all roles
+        await respond(ctx, chk_fetch_team(ctx).archive)
+
+    @ctf.command()
+    async def list(self, ctx):
+        chals = chk_fetch_team(ctx).challenges
+        if len(chals) == 0:
+            await ctx.send('No challenges added...')
+            return
+
+        msg_len = 50
+        lines = []
+        for chal in chals:
+            l = f'[{chal.team.name}] [{chal.name}] - {chal.status}'
+            msg_len += len(l) + 1
+            if msg_len > 1000: # Over limit
+                lines = '\n'.join(lines)
+                await ctx.send(f'```ini\n{lines}```')
+                lines = []
+                msg_len = len(l) + 51
+            lines.append(l)
+
+        lines = '\n'.join(lines)
+        await ctx.send(f'```ini\n{lines}```')
+    
+    @commands.guild_only()
+    @commands.group()
+    async def chal(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send('Invalid command passed.  Use !help.')
+
+    @commands.bot_has_permissions(manage_channels=True)
+    @verify_owner()
+    @chal.command()
+    async def done(self, ctx, *withlist):
+        guild = ctx.channel.guild
+        users = [parse_user(guild, u) for u in withlist]
+        await respond(ctx, chk_fetch_chal(ctx).done, ctx.author, users)
+
+    @chal.command('help')
+    async def chal_help(self, ctx):
+        emb = discord.Embed(description=chal_help_text, colour=4387968)
+        emb.set_author(name='Challenge help topic')
+        await ctx.send(embed=emb)
+
+    @commands.bot_has_permissions(manage_channels=True)
+    @verify_owner()
+    @chal.command()
+    async def undone(self, ctx):
+        await respond(ctx, chk_fetch_chal(ctx).undone)
+
+    @commands.bot_has_permissions(manage_channels=True)
+    @chal.command('leave')
+    async def leave_chal(self, ctx):
+        await respond(ctx, chk_fetch_chal(ctx).leave, ctx.author)
 
     @commands.command()
     async def htb(self, ctx):
@@ -409,3 +454,4 @@ class Ctfs(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Ctfs(bot))
+    bot.add_cog(Ctftime(bot))

@@ -15,20 +15,14 @@ return specific times for the time until a ctf begins, or until a currently runn
 `!ctftime top <year>`
 display the leaderboards from ctftime from a certain year.
 
-`!ctf create "<ctf name>"`
+`!create_ctf "<ctf name>"`
 create a text channel and role in the CTF category for a ctf (must have permissions to manage channels).
 
-`!ctf challenge <[add/working/solved> "<challenge name>"`
-add a ctf challenge to a list of challenges in the ctf, then mark it as solved or being worked on.
+`!ctf <action>...`
+Does various actions in a CTF team context. You can issue these commands in a channel that was created by the `!create_ctf` command. See `!ctf help` for more details.
 
-`!ctf challenge <list>`
-get a list of the challenges in the ctf, and their statuses.
-
-`!ctf <join/leave>`
-get or get rid of the ctf role that was created with ctf create.
-
-`!ctf <end>`
-delete the role, and entry from the database for the ctf (must have permissions to manage channels).
+`!chal <action>...`
+Does various actions in a challenge context. You can issue these commands in a channel that was created by the `!ctf add` command. See `!chal help` for more details.
 
 `!htb`
 return the latest tweet from @hackthebox_eu that says when the next box will be released
@@ -37,6 +31,7 @@ return the latest tweet from @hackthebox_eu that says when the next box will be 
 
 **page: 1/2 - (!help 1)**
 '''
+
 help_page_2 = '''
 
 
@@ -89,6 +84,37 @@ for the truth
 report an issue you found with the bot, if it is helpful your name will be added to the 'cool names' list!
 
 **page: 2/2 - (!help 2)** ; more commands and documentation viewable on the github page (>source)
+'''
+
+ctf_help_text = '''
+These commands are callable from a CTF **team** channel environment.
+
+`!ctf working <chal>`
+Mark that you are working on this challenge. You will also be invited to the respective private channel 
+
+`!ctf <join/leave>`
+Gets/gets rid of the CTF role created with this CTF team.
+
+`!ctf add "<chal>"`
+Add a challenge and a respective private channel. There are certain restrictions on the challenge name (i.e. no special characters, less than 32 characters long, etc...)
+
+`!ctf del "<chal>"`
+Remove a challenge (must be able to manage channels). This will NOT automatically delete the respective private channel (if deemed necessary, an admin will manually delete it).
+
+`!ctf archive`
+Archives this ctf and all the respective challenges (must be able to manage channels)
+
+'''
+
+chal_help_text = '''
+These commands are callable from a CTF **challenge** environment.
+
+`!chal done [<with_users...>]`
+Marks this challenge as completed. You may optionally include @'s of users that worked with you. Once a challenge is completed, **no** one except you (and admins) can tamper with the done list or change it to "undone". This will also move the channel to the "done" category.
+
+`!chal undone`
+Marks this challenge as **not** completed. This will move the channel back to the "working" category.
+
 '''
 
 # TODO: update it
