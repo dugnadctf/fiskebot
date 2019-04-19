@@ -22,7 +22,7 @@ import discord
 from discord.ext import commands
 
 from trim import trim_nl
-from help_info import ctf_help_text, chal_help_text
+from help_info import ctf_help_text, chal_help_text, embed_help
 
 from . import ctfmodel
 from .mongo import *
@@ -280,7 +280,13 @@ async def respond(ctx, fn, *args):
 def check_name(name):
     if len(name) > 32:
         raise ctfmodel.TaskFailed('Challenge name is too long!')
-    # TODO sanitize
+
+    if not re.match(r'[-.!0-9A-Za-z ]+$', name):
+        raise ctfmodel.TaskFailed('Challenge contains invalid characters!')
+
+    # Replace spaces with a dash, because discord does it :/
+    return re.sub(r' +', '-', name).lower()
+        
 
 def chk_fetch_team(ctx):
     team = ctfmodel.CtfTeam.fetch(ctx.channel.guild, ctx.channel.id)
@@ -320,27 +326,12 @@ class Ctfs(commands.Cog):
         self.challenges = {}
         self.ctfname = ""
 
-    @commands.guild_only()
+
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @commands.guild_only()
     @commands.command()
     async def create_ctf(self, ctx, name):
-        guild = ctx.channel.guild
-
-        # Create channel
-        chan = await guild.create_text_channel(name=name, 
-                topic=f'General talk for {name} CTF event.')
-        msg = await chan.send(trim_nl(f'''Welcome to {name}. Here you can do
-        general discussion about this event. Also use this this place to type
-        `ctf` related commands. Here is a list of commands just for
-        reference:\n\n'''))
-        await msg.pin()
-        msg = await chan.send(ctf_help_text + chal_help_text)
-        await msg.pin()
-
-        # Create role
-        role = await guild.create_role(name=f'{name}_team', mentionable=True)
-
-        await respond(ctx, ctfmodel.CtfTeam.create, guild, name, chan.id, role.id)
+        await respond(ctx, ctfmodel.CtfTeam.create, ctx.channel.guild, name)
 
     @commands.guild_only()
     @commands.group()
@@ -350,28 +341,31 @@ class Ctfs(commands.Cog):
 
     @ctf.command('help')
     async def ctf_help(self, ctx):
-        emb = discord.Embed(description=ctf_help_text, colour=4387968)
-        emb.set_author(name='CTF team help topic')
-        await ctx.send(embed=emb)
-
+        await embed_help(ctx, 'CTF team help topic', ctf_help_text)
 
     @commands.bot_has_permissions(manage_channels=True)
     @ctf.command()
     async def add(self, ctx, name):
-        check_name(name)
+        name = check_name(name)
         await respond(ctx, chk_fetch_team(ctx).add_chal, name)
 
     @commands.bot_has_permissions(manage_channels=True)
     @commands.has_permissions(manage_channels=True)
     @ctf.command()
     async def delete(self, ctx, name):
-        check_name(name)
+        name = check_name(name)
         await respond(ctx, chk_fetch_team(ctx).del_chal, name)
 
     @commands.bot_has_permissions(manage_roles=True)
     @ctf.command('leave')
     async def leave_ctf(self, ctx):
         await respond(ctx, chk_fetch_team(ctx).leave, ctx.author)
+
+    @commands.bot_has_permissions(manage_roles=True)
+    @ctf.command('invite')
+    async def invite_ctf(self, ctx, user):
+        user = parse_user(ctx.channel.guild, user)
+        await respond(ctx, chk_fetch_team(ctx).invite, ctx.author, user)
 
     @commands.bot_has_permissions(manage_roles=True)
     @ctf.command()
@@ -388,8 +382,13 @@ class Ctfs(commands.Cog):
     @commands.has_permissions(manage_channels=True)
     @ctf.command()
     async def archive(self, ctx):
-        # TODO: drop all roles
         await respond(ctx, chk_fetch_team(ctx).archive)
+
+    @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @commands.has_permissions(manage_channels=True)
+    @ctf.command()
+    async def unarchive(self, ctx):
+        await respond(ctx, chk_fetch_team(ctx).unarchive)
 
     @ctf.command()
     async def list(self, ctx):
@@ -420,6 +419,12 @@ class Ctfs(commands.Cog):
             await ctx.send('Invalid command passed.  Use !help.')
 
     @commands.bot_has_permissions(manage_channels=True)
+    @chal.command('invite')
+    async def invite_chal(self, ctx, user):
+        user = parse_user(ctx.channel.guild, user)
+        await respond(ctx, chk_fetch_chal(ctx).invite, ctx.author, user)
+
+    @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()
     @chal.command()
     async def done(self, ctx, *withlist):
@@ -429,9 +434,7 @@ class Ctfs(commands.Cog):
 
     @chal.command('help')
     async def chal_help(self, ctx):
-        emb = discord.Embed(description=chal_help_text, colour=4387968)
-        emb.set_author(name='Challenge help topic')
-        await ctx.send(embed=emb)
+        await embed_help(ctx, 'Challenge help topic', chal_help_text)
 
     @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()

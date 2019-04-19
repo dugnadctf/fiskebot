@@ -64,7 +64,7 @@ async def on_message(message):
 @bot.event
 async def on_error(evt_type, ctx):
     if evt_type == 'on_message':
-        await ctx.channel.send('An error has occurred... :disappointed:')
+        await ctx.send('An error has occurred... :disappointed:')
     log.error(f'Ignoring exception at {evt_type}')
     log.error(traceback.format_exc())
 
@@ -95,20 +95,13 @@ async def on_command_error(ctx, err):
 # Sends the github link.
 @bot.command()
 async def source(ctx):
-    await ctx.send(src)
+    await ctx.send(src_fork)
+    await ctx.send(f'Forked from: {src}')
 
 @bot.command()
 async def help(ctx, page=None):
-    if (not page) or (page == '1'):
-        page_num = '1'
-        emb = discord.Embed(description=help_page, colour=4387968)
-        emb.set_author(name='!request "x" - request a feature')
-    
-    if page == '2':
-        emb = discord.Embed(description=help_page_2, colour=4387968)
-        emb.set_author(name='!request "x" - request a feature')
-    
-    await ctx.channel.send(embed=emb)
+    info = help_page if not page or page == '1' else help_page_2
+    await embed_help(ctx, '!request "x" - request a feature', info)
 
 # Bot sends a dm to creator with the name of the user and their request.
 @bot.command()

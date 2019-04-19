@@ -1,6 +1,7 @@
 import requests
 import re
 import random
+import discord
 from string import *
 
 help_page = '''
@@ -95,14 +96,20 @@ Mark that you are working on this challenge. You will also be invited to the res
 `!ctf <join/leave>`
 Gets/gets rid of the CTF role created with this CTF team.
 
+`!ctf invite <user>`
+Invites a user to CTF team. (Basically the user gets the CTF role)
+
 `!ctf add "<chal>"`
 Add a challenge and a respective private channel. There are certain restrictions on the challenge name (i.e. no special characters, less than 32 characters long, etc...)
 
-`!ctf del "<chal>"`
+`!ctf delete "<chal>"`
 Remove a challenge (must be able to manage channels). This will NOT automatically delete the respective private channel (if deemed necessary, an admin will manually delete it).
 
 `!ctf archive`
 Archives this ctf and all the respective challenges (must be able to manage channels)
+
+`!ctf unarchive`
+Unarchives this ctf and all the respective challenges (must be able to manage channels)
 
 '''
 
@@ -112,11 +119,20 @@ These commands are callable from a CTF **challenge** environment.
 `!chal done [<with_users...>]`
 Marks this challenge as completed. You may optionally include @'s of users that worked with you. Once a challenge is completed, **no** one except you (and admins) can tamper with the done list or change it to "undone". This will also move the channel to the "done" category.
 
+`!chal invite <user>`
+Invites a user to a challenge channel. 
+
 `!chal undone`
 Marks this challenge as **not** completed. This will move the channel back to the "working" category.
 
 '''
 
 # TODO: update it
+src_fork = "https://github.com/theKidOfArcrania/UTCCtfBot"
 src = "https://github.com/NullPxl/NullCTF"
 creator_info = "https://youtube.com/nullpxl\nhttps://github.com/nullpxl\nhttps://twitter.com/nullpxl"
+
+async def embed_help(chan, help_topic, help_text):
+    emb = discord.Embed(description=help_text, colour=4387968)
+    emb.set_author(name=help_topic)
+    return await chan.send(embed=emb)
