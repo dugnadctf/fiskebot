@@ -1,12 +1,16 @@
-<img src="https://i.imgur.com/mZ2bVY4.png"/>
+![UTCBot](/images/bot2.png)
 
->### *A [discord.py](http://discordpy.readthedocs.io/en/latest/) bot focused on
->providing CTF tools for collaboration in Discord servers (ctftime.org commands,
->team setup, utilites, etc)!  If you have a feature request, make it a GitHub
->issue or use the !request "x" command.*
+# UTCBot
 
-[Invite to your
-server](https://discordapp.com/api/oauth2/authorize?client_id=565011034948239390&permissions=268548208&scope=bot) 
+>### A [discord.py](http://discordpy.readthedocs.io/en/latest/) bot focused on
+ providing CTF tools for collaboration in Discord servers (ctftime.org commands,
+ team setup, utilites, etc)!  If you have a feature request, make it a GitHub
+ issue or use the !request "x" command.
+
+This is a fork of the Nullctf Bot, as used by the recently created Texas-based
+team: UTC!
+
+[Invite to your server](https://discordapp.com/api/oauth2/authorize?client_id=565011034948239390&permissions=268548208&scope=bot) 
 
 [Join the support server](https://discord.gg/x5TJTje)
 
