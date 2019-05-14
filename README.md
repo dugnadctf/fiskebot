@@ -1,4 +1,4 @@
-![UTCBot](/images/bot2.png | width=200)
+![UTCBot](/images/bot2.png)
 
 # UTCBot
 
