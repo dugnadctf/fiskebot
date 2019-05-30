@@ -261,7 +261,7 @@ class CtfTeam(object):
         chal = self.find_chal(name)
         chk_upd(fullname, teams.update_one({'chan_id': cid}, 
             {'$pull': {'chals': chal['chan_id']}}))
-        await chal._delete()
+        await chal._delete(catg_archive)
         self.refresh()
 
         return [(None, f'Challenge "{name}" is deleted, challenge channel archived.')]
@@ -434,15 +434,15 @@ class Challenge(object):
         if not guild.get_channel(self.__id).permissions_for(user).manage_channels:
             raise commands.MissingPermissions('manage_channels')        
 
-    async def _delete(self):
+    async def _delete(self, catg_archive):
         cid = self.__id
 
         # Delete entry
-        chk_del(name, self.__chals.delete_one({'chan_id': self.__id}))
+        chk_del(self.name, self.__chals.delete_one({'chan_id': self.__id}))
         del Challenge.__chals__[self.__id]
 
         # Archive channel
-        await guild.get_channel(cid).edit(category=catg_archive)
+        await self.__guild.get_channel(cid).edit(category=catg_archive)
 
     @chk_archive
     async def done(self, owner, users):
