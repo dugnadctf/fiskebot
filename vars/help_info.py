@@ -1,90 +1,139 @@
+import requests
+import re
+import random
+import discord
+from string import *
+
 help_page = '''
+Adapted from: https://github.com/NullPxl/NullCTF
 
-
-
-`>ctftime <upcoming/current> <number>`
+`!ctftime <upcoming/current> <number>`
 return info on a number of upcoming ctfs, or currently running ctfs from ctftime.org (number param is just for upcoming)
 
-`>ctftime <countdown/timeleft>`
+`!ctftime <countdown/timeleft>`
 return specific times for the time until a ctf begins, or until a currently running ctf ends.
 
-`>ctftime top <year>`
+`!ctftime top <year>`
 display the leaderboards from ctftime from a certain year.
 
-`>ctf create "<ctf name>"`
+`!create_ctf "<ctf name>"`
 create a text channel and role in the CTF category for a ctf (must have permissions to manage channels).
 
-`>ctf challenge <[add/working/solved> "<challenge name>"`
-add a ctf challenge to a list of challenges in the ctf, then mark it as solved or being worked on.
+`!ctf <action>...`
+Does various actions in a CTF team context. You can issue these commands in a channel that was created by the `!create_ctf` command. See `!ctf help` for more details.
 
-`>ctf challenge <list>`
-get a list of the challenges in the ctf, and their statuses.
+`!chal <action>...`
+Does various actions in a challenge context. You can issue these commands in a channel that was created by the `!ctf add` command. See `!chal help` for more details.
 
-`>ctf <join/leave>`
-get or get rid of the ctf role that was created with ctf create.
-
-`>ctf <end>`
-delete the role, and entry from the database for the ctf (must have permissions to manage channels).
-
-`>htb`
+`!htb`
 return the latest tweet from @hackthebox_eu that says when the next box will be released
 
 *next page is utility commands*
 
-**page: 1/2 - (>help 1)**
+**page: 1/2 - (!help 1)**
 '''
+
 help_page_2 = '''
 
 
-`>rot <message> <direction(optional, will default to left)>`
+`!rot <message> <direction(optional, will default to left)>`
 return all 25 different possible combinations for the popular caesar cipher - use quotes for messages more than 1 word
 
-`>magicb <filetype>`
+`!magicb <filetype>`
 return the magicbytes/file header of a supplied filetype.
 
-`>b64 <encode/decode> <message>`
+`!b64 <encode/decode> <message>`
 encode or decode in base64 - if message has spaces use quotations
 
-`>binary <encode/decode> <message>`
+`!binary <encode/decode> <message>`
 encode or decode in binary - if message has spaces use quotations
 
-`>hex <encode/decode> <message>`
+`!hex <encode/decode> <message>`
 encode or decode in hex - if message has spaces use quotations
 
-`>url <encode/decode> <message>`
+`!url <encode/decode> <message>`
 encode or decode based on url encoding - if message has spaces use quotations
 
-`>reverse <message>`
+`!reverse <message>`
 reverse the supplied string - if message has spaces use quotations
 
-`>counteach <message>`
+`!counteach <message>`
 count the occurences of each character in the supplied message - if message has spaces use quotations
 
-`>characters <message>`
+`!characters <message>`
 count the amount of characters in your supplied message
 
-`>wordcount <phrase>`
+`!wordcount <phrase>`
 count the amount of words in your supplied message
 
-`>atbash <message>`
+`!atbash <message>`
 encode or decode in the atbash cipher - if message has spaces use quotations (encode/decode do the same thing)
 
-`>github <user>`
+`!github <user>`
 get a direct link to a github profile page with your supplied user
 
-`>twitter <user>`
+`!twitter <user>`
 get a direct link to a twitter profile page with your supplied user
 
-`>cointoss`
+`!cointoss`
 get a 50/50 cointoss to make all your life's decisions
 
-`>amicool`
+`!amicool`
 for the truth
 
-`>report <"an issue">`
+`!report <"an issue">`
 report an issue you found with the bot, if it is helpful your name will be added to the 'cool names' list!
 
-**page: 2/2 - (>help 2)** ; more commands and documentation viewable on the github page (>source)
+**page: 2/2 - (!help 2)** ; more commands and documentation viewable on the github page (>source)
 '''
 
+ctf_help_text = '''
+These commands are callable from a CTF **team** channel environment.
+
+`!ctf working <chal>`
+Mark that you are working on this challenge. You will also be invited to the respective private channel 
+
+`!ctf <join/leave>`
+Gets/gets rid of the CTF role created with this CTF team.
+
+`!ctf invite <user>`
+Invites a user to CTF team. (Basically the user gets the CTF role)
+
+`!ctf add "<chal>"`
+Add a challenge and a respective private channel. There are certain restrictions on the challenge name (i.e. no special characters, less than 32 characters long, etc...)
+
+`!ctf delete "<chal>"`
+Remove a challenge (must be able to manage channels). This will NOT automatically delete the respective private channel (if deemed necessary, an admin will manually delete it).
+
+`!ctf archive`
+Archives this ctf and all the respective challenges (must be able to manage channels)
+
+`!ctf unarchive`
+Unarchives this ctf and all the respective challenges (must be able to manage channels)
+
+'''
+
+chal_help_text = '''
+These commands are callable from a CTF **challenge** environment.
+
+`!chal done [<with_users...>]`
+Marks this challenge as completed. You may optionally include @'s of users that worked with you. Once a challenge is completed, **no** one except you (and admins) can tamper with the done list or change it to "undone". This will also move the channel to the "done" category.
+
+`!chal invite <user>`
+Invites a user to a challenge channel. 
+
+`!chal undone`
+Marks this challenge as **not** completed. This will move the channel back to the "working" category.
+
+'''
+
+# TODO: update it
+src_fork = "https://github.com/theKidOfArcrania/UTCCtfBot"
 src = "https://github.com/NullPxl/NullCTF"
+creator_info = "https://youtube.com/nullpxl\nhttps://github.com/nullpxl\nhttps://twitter.com/nullpxl"
+
+
+async def embed_help(chan, help_topic, help_text):
+    emb = discord.Embed(description=help_text, colour=4387968)
+    emb.set_author(name=help_topic)
+    return await chan.send(embed=emb)

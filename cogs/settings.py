@@ -1,10 +1,11 @@
-# from pymongo import MongoClient
-# from mongo import *
-# import discord
-# from discord.ext import commands
+#from pymongo import MongoClient
+#import discord
+#from discord.ext import commands
+#
+#from .mongo import *
+#
+# class Settings(commands.Cog):
 
-# class Settings():
-    
 #     def __init__(self, bot):
 #         self.bot = bot
 
@@ -19,11 +20,11 @@
 #     @configure.command()
 #     async def ctfcategory(self, ctx, category_name):
 #         category = discord.utils.get(ctx.guild.categories, name=category_name)
-        
+
 #         if category == None: # Checks if category exists, if it doesn't it will create it.
 #             await guild.create_category(name=category_name)
 #             category = discord.utils.get(ctx.guild.categories, name=category_name)
-        
+
 #         sconf = serverdb[str(gid) + 'CONF'] # sconf means server configuration
 #         info = {"ctfcategory": category_name}
 #         sconf.update({"name": 'category_name'}, {"$set": info}, upsert=True)
@@ -33,5 +34,3 @@
 
 # def setup(bot):
 #     bot.add_cog(Settings(bot))
-
-
