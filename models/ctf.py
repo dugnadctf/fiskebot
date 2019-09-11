@@ -3,9 +3,10 @@ import discord, discord.member
 from discord.ext import commands
 from functools import partial, wraps
 
-from trim import trim_nl
-from help_info import ctf_help_text, chal_help_text, embed_help
-from .mongo import *
+from vars.help_info import ctf_help_text, chal_help_text, embed_help
+from util import trim_nl
+
+from controllers.db import client, ctfdb, ctfs, teamdb, serverdb, challdb
 
 # Globals
 # > done_id
@@ -326,7 +327,7 @@ class Challenge(object):
 
     @staticmethod
     def create(guild, ctf_id, chan_id, name):
-        chals = chaldb[str(guild.id)]
+        chals = challdb[str(guild.id)]
         chals.insert_one({'name': name, 'ctf_id': ctf_id, 'finished': False,
             'solvers': [], 'chan_id': chan_id, 'owner': 0})
 
@@ -337,7 +338,7 @@ class Challenge(object):
     @staticmethod
     def fetch(guild, chan_id):
         if chan_id not in Challenge.__chals__:
-            chal = chaldb[str(guild.id)].find_one({'chan_id': chan_id})
+            chal = challdb[str(guild.id)].find_one({'chan_id': chan_id})
             if not chal:
                 return None
             Challenge.__chals__[chan_id] = Challenge(guild, chan_id)
@@ -347,7 +348,7 @@ class Challenge(object):
 
     @staticmethod
     def find(guild, ctfid, name, err_on_fail=True):
-        chal = chaldb[str(guild.id)].find_one({'name': name, 'ctf_id': ctfid})
+        chal = challdb[str(guild.id)].find_one({'name': name, 'ctf_id': ctfid})
         if chal:
             return Challenge.fetch(guild, chal['chan_id'])
         elif err_on_fail:
@@ -358,7 +359,7 @@ class Challenge(object):
     def __init__(self, guild, chan_id):
         self.__guild = guild
         self.__id = chan_id
-        self.__chals = chaldb[str(guild.id)]
+        self.__chals = challdb[str(guild.id)]
         self.refresh()
 
     @property
