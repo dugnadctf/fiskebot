@@ -1,3 +1,15 @@
+import os
+
+
+def getVal(val):
+    token = os.getenv(val)
+    if token != "":
+        return token
+
+    token = open("/var/secrets/"+val.lower(), "r").read()
+    return token
+
+
 def trim_nl(s):
     import string
     ret = []
@@ -16,4 +28,3 @@ def trim_nl(s):
             ret.append(c)
             consec_nl = 0
     return ''.join(ret)
-

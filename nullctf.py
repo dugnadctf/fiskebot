@@ -4,16 +4,16 @@ from colorama import Back, Fore, Style
 import sys
 import os
 import discord
-from discord.ext.commands import bot
+from discord.ext.commands import MissingPermissions, BotMissingPermissions, DisabledCommand, CommandNotFound, NoPrivateMessage, Bot, bot
 from discord.ext import commands
-from vars.help_info import *
-from utils.util import getVal
+from vars.help_info import help_page, help_page_2, embed_help, src
+from util import getVal, trim_nl
+from pymongo import MongoClient
 
 import traceback
 import logging as log
 
-from trim import trim_nl
-from cogs.ctfmodel import TaskFailed
+from models.ctf import *
 
 creator_id = [412077060207542284, 491610275993223170]
 
@@ -43,6 +43,9 @@ async def on_ready():
 
 
 @bot.event
+<< << << < HEAD
+
+
 async def on_command_error(ctx, error):
     await ctx.send(f"There was an error, sorry!\nIf you think this should be fixed, report it with {PREFIX}report \"what happened\"")
     print(Style.BRIGHT + Fore.RED +
@@ -51,6 +54,10 @@ async def on_command_error(ctx, error):
 
 
 @bot.event
+== == == =
+>>>>>> > dev
+
+
 async def on_message(message):
     if 'who should I subscribe to?' in message.content:
         choice = random.randint(1, 2)
@@ -74,8 +81,11 @@ async def on_error(evt_type, ctx):
 
 @bot.event
 async def on_command_error(ctx, err):
+    print(Style.BRIGHT + Fore.RED +
+          f"Error occured with: {ctx.command}\n{err}\n")
+    print(Style.RESET_ALL)
     if isinstance(err, MissingPermissions):
-        await ctx.send('You do not have permission to do that! ¯\_(ツ)_/¯')
+        await ctx.send('You do not have permission to do that! ¯\_(ツ)_/¯')  # pylint: disable=anomalous-backslash-in-string
     elif isinstance(err, BotMissingPermissions):
         await ctx.send(trim_nl(f''':cry: I can\'t do that. Please ask server ops
         to add all the permission for me!
@@ -98,7 +108,7 @@ async def on_command_error(ctx, err):
 # Sends the github link.
 @bot.command()
 async def source(ctx):
-    await ctx.send(src_fork)
+    await ctx.send(GIT_URL)
     await ctx.send(f'Forked from: {src}')
 
 

@@ -11,3 +11,5 @@ cogs/mongo.py
 env
 bot-variables.env
 .vscode
+.venv
+**/*.sw?

@@ -13,9 +13,10 @@ USER igctf
 
 WORKDIR ${APP_HOME}
 
-COPY --chown=igctf:igctf nullctf.py nullctf.py
+COPY --chown=igctf:igctf nullctf.py util.py ${APP_HOME}/
 COPY --chown=igctf:igctf cogs ${APP_HOME}/cogs
 COPY --chown=igctf:igctf vars ${APP_HOME}/vars
-COPY --chown=igctf:igctf utils ${APP_HOME}/utils
+COPY --chown=igctf:igctf models ${APP_HOME}/models
+COPY --chown=igctf:igctf controllers ${APP_HOME}/controllers
 
 CMD ["python", "-u", "nullctf.py"]

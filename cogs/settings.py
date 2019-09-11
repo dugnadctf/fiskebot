@@ -26,11 +26,11 @@ class Settings(commands.Cog):
 #     @configure.command()
 #     async def ctfcategory(self, ctx, category_name):
 #         category = discord.utils.get(ctx.guild.categories, name=category_name)
-        
+
 #         if category == None: # Checks if category exists, if it doesn't it will create it.
 #             await guild.create_category(name=category_name)
 #             category = discord.utils.get(ctx.guild.categories, name=category_name)
-        
+
 #         sconf = serverdb[str(gid) + 'CONF'] # sconf means server configuration
 #         info = {"ctfcategory": category_name}
 #         sconf.update({"name": 'category_name'}, {"$set": info}, upsert=True)
@@ -40,5 +40,3 @@ class Settings(commands.Cog):
 
 # def setup(bot):
 #     bot.add_cog(Settings(bot))
-
-
