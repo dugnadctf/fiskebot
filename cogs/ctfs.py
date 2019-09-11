@@ -1,3 +1,4 @@
+import os
 import urllib
 import requests
 import re
@@ -11,19 +12,18 @@ from urllib.request import urlopen
 import io
 import time
 import datetime
-from pymongo import MongoClient
 from pprint import pprint
 from random import randint
 from datetime import *
 from dateutil.parser import parse
-from mongo import *
 from colorama import Fore, Style
+from pymongo import MongoClient
 
 from colorthief import ColorThief
 import discord
 from discord.ext import commands
 
-class Ctfs():
+class Ctfs(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -31,8 +31,13 @@ class Ctfs():
         self.ctfname = ""
         self.upcoming_l = []
 
-    @staticmethod
-    def updatedb():
+        self.client = MongoClient(os.getenv("CONN"))
+        self.ctfdb = self.client['ctftime']  # Create ctftime database
+        self.ctfs = self.ctfdb['ctfs']  # Create ctfs collection
+        self.teamdb = self.client['ctfteams']  # Create ctf teams database
+        self.serverdb = self.client['serverinfo']
+
+    def updatedb(self):
         now = datetime.utcnow()
         unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
         headers = {
@@ -73,15 +78,15 @@ class Ctfs():
         got_ctfs = []
         for ctf in info: # If the document doesn't exist: add it, if it does: update it.
             query = ctf['name']
-            ctfs.update({'name': query}, {"$set":ctf}, upsert=True)
+            self.ctfs.update({'name': query}, {"$set":ctf}, upsert=True)
             got_ctfs.append(ctf['name'])
         print(Fore.WHITE + f"{datetime.now()}: " + Fore.GREEN + f"Got and updated {got_ctfs}")
         print(Style.RESET_ALL)
         
         
-        for ctf in ctfs.find(): # Delete ctfs that are over from the db
+        for ctf in self.ctfs.find(): # Delete ctfs that are over from the db
             if ctf['end'] < unix_now:
-                ctfs.remove({'name': ctf['name']})
+                self.ctfs.remove({'name': ctf['name']})
 
     @commands.group()
     async def ctf(self, ctx):
@@ -108,7 +113,7 @@ class Ctfs():
             category = discord.utils.get(ctx.guild.categories, name=scat)
 
         await guild.create_text_channel(name=params, category=category)        
-        server = teamdb[str(gid)]
+        server = self.teamdb[str(gid)]
         name = params.replace(' ', '-').replace("'", "").lower() # Discord does this when creating text channels. 
         await guild.create_role(name=name, mentionable=True)         
         ctf_info = {'name': name, "text_channel": name}
@@ -116,7 +121,7 @@ class Ctfs():
 
     @ctf.command()
     async def join(self, ctx):
-        if teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
+        if self.teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
             role = discord.utils.get(ctx.guild.roles, name=str(ctx.message.channel))
             user = ctx.message.author
             await user.add_roles(role)
@@ -126,7 +131,7 @@ class Ctfs():
 
     @ctf.command()
     async def leave(self, ctx):
-        if teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
+        if self.teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
             role = discord.utils.get(ctx.guild.roles, name=str(ctx.message.channel))
             user = ctx.message.author
             await user.remove_roles(role)
@@ -137,12 +142,12 @@ class Ctfs():
     @commands.has_permissions(manage_channels=True)
     @ctf.command()
     async def end(self, ctx):
-        if teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
+        if self.teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
             #delete role from server, delete entry from db
             role = discord.utils.get(ctx.guild.roles, name=str(ctx.message.channel))
             await role.delete()
             await ctx.send(f"`{role.name}` role deleted")
-            teamdb[str(gid)].remove({'name': str(ctx.message.channel)})
+            self.teamdb[str(gid)].remove({'name': str(ctx.message.channel)})
             await ctx.send(f"`{str(ctx.message.channel)}` deleted from db")
         else:
             await ctx.send('You must be in a channel created using >ctf create to use this command!')
@@ -151,8 +156,8 @@ class Ctfs():
     async def challenge(self, ctx, params, verbose=None):       
         # Testing if the command was sent in a ctf channel
         # This is how I will differenciate between different ctfs in the same server.
-        server = teamdb[str(gid)]
-        if teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
+        server = self.teamdb[str(gid)]
+        if self.teamdb[str(gid)].find_one({'name': str(ctx.message.channel)}):
             correct_channel = True
             
             def updatechallenge(status):
@@ -300,12 +305,12 @@ class Ctfs():
 {leaderboards}```''')
         
         if status == 'current':
-            Ctfs.updatedb()
+            self.updatedb()
             now = datetime.utcnow()
             unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
             running = False
             
-            for ctf in ctfs.find():
+            for ctf in self.ctfs.find():
                 if ctf['start'] < unix_now and ctf['end'] > unix_now: # Check if the ctf is running
                     running = True
                     embed = discord.Embed(title=':red_circle: ' + ctf['name']+' IS LIVE', description=ctf['url'], color=15874645)
@@ -325,11 +330,11 @@ class Ctfs():
                 await ctx.send("No CTFs currently running! Check out >ctftime countdown, and >ctftime upcoming to see when ctfs will start!")
 
         if status == 'timeleft': # Return the timeleft in the ctf in days, hours, minutes, seconds
-            Ctfs.updatedb()
+            self.updatedb()
             now = datetime.utcnow()
             unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
             running = False
-            for ctf in ctfs.find():
+            for ctf in self.ctfs.find():
                if ctf['start'] < unix_now and ctf['end'] > unix_now: # Check if the ctf is running
                   running = True
                   time = ctf['end'] - unix_now 
@@ -346,14 +351,14 @@ class Ctfs():
                 await ctx.send('No ctfs are running! Use >ctftime upcoming or >ctftime countdown to see upcoming ctfs')
 
         if status == 'countdown':
-            Ctfs.updatedb()
+            self.updatedb()
             now = datetime.utcnow()
             unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
             
             if params == None:
                 self.upcoming_l = []
                 index = ""
-                for ctf in ctfs.find():
+                for ctf in self.ctfs.find():
                     if ctf['start'] > unix_now:
                       self.upcoming_l.append(ctf)
                 for i, c in enumerate(self.upcoming_l):
@@ -378,7 +383,7 @@ class Ctfs():
                     
                     await ctx.send(f"```ini\n{self.upcoming_l[x]['name']} starts in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{self.upcoming_l[x]['url']}")
                 else: # TODO: make this a function, too much repeated code here.
-                    for ctf in ctfs.find():
+                    for ctf in self.ctfs.find():
                         if ctf['start'] > unix_now:
                           self.upcoming_l.append(ctf)
                     x = int(params) - 1     
