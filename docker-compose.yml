@@ -1,0 +1,13 @@
+version: "2"
+services:
+  bot:
+    build: .
+    image: kfbi/igctf
+    depends_on:
+      - mongo
+    env_file:
+      - bot-variables.env
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"

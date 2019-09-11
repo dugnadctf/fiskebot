@@ -6,3 +6,8 @@ cogs/__pycache__/
 auth.py
 .venv
 **/*.sw?
+cogs/auth.py
+cogs/mongo.py
+env
+bot-variables.env
+.vscode

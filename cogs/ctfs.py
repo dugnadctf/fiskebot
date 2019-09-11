@@ -1,3 +1,4 @@
+import os
 import urllib
 import requests
 import re
@@ -11,11 +12,12 @@ from urllib.request import urlopen
 import io
 import time
 import datetime
-from pymongo import MongoClient
 from pprint import pprint
 from random import randint
 from datetime import *
 from dateutil.parser import parse
+from colorama import Fore, Style
+from pymongo import MongoClient
 
 from colorthief import ColorThief
 import discord
@@ -44,8 +46,13 @@ class Ctftime(commands.Cog):
         tohex = '#{:02x}{:02x}{:02x}'.format(r, g, b)
         return tohex
 
-    @staticmethod
-    def updatedb():
+        self.client = MongoClient(os.getenv("CONN"))
+        self.ctfdb = self.client['ctftime']  # Create ctftime database
+        self.ctfs = self.ctfdb['ctfs']  # Create ctfs collection
+        self.teamdb = self.client['ctfteams']  # Create ctf teams database
+        self.serverdb = self.client['serverinfo']
+
+    def updatedb(self):
         now = datetime.utcnow()
         unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
         limit = '5' # Max amount I can grab the json data for
@@ -79,14 +86,18 @@ class Ctftime(commands.Cog):
                  }
             info.append(ctf)
         
+        got_ctfs = []
         for ctf in info: # If the document doesn't exist: add it, if it does: update it.
-            print(f"Got {ctf['name']} from ctftime")
             query = ctf['name']
-            ctfs.update({'name': query}, {"$set":ctf}, upsert=True)
+            self.ctfs.update({'name': query}, {"$set":ctf}, upsert=True)
+            got_ctfs.append(ctf['name'])
+        print(Fore.WHITE + f"{datetime.now()}: " + Fore.GREEN + f"Got and updated {got_ctfs}")
+        print(Style.RESET_ALL)
         
-        for ctf in ctfs.find(): # Delete ctfs that are over from the db
+        
+        for ctf in self.ctfs.find(): # Delete ctfs that are over from the db
             if ctf['end'] < unix_now:
-                ctfs.remove({'name': ctf['name']})
+                self.ctfs.remove({'name': ctf['name']})
 
     @commands.group()
     async def ctftime(self, ctx):

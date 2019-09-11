@@ -132,6 +132,7 @@ src_fork = "https://github.com/theKidOfArcrania/UTCCtfBot"
 src = "https://github.com/NullPxl/NullCTF"
 creator_info = "https://youtube.com/nullpxl\nhttps://github.com/nullpxl\nhttps://twitter.com/nullpxl"
 
+
 async def embed_help(chan, help_topic, help_text):
     emb = discord.Embed(description=help_text, colour=4387968)
     emb.set_author(name=help_topic)
