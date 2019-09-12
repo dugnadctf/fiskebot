@@ -16,12 +16,13 @@ from random import randint
 from datetime import *
 from dateutil.parser import parse
 from colorama import Fore, Style
-from nullctf import client, ctfdb, ctfs, teamdb, serverdb
 
 from colorthief import ColorThief
 import discord
 from discord.ext import commands
-
+from vars.help_info import help_page, help_page_2, embed_help, src, embed_help, ctf_help_text, chal_help_text
+from controllers.db import client, ctfdb, ctfs, teamdb, serverdb, challdb
+import models.ctf as ctfmodel
 
 
 class Ctftime(commands.Cog):

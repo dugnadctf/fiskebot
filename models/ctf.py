@@ -2,6 +2,7 @@ import enum
 import discord, discord.member
 from discord.ext import commands
 from functools import partial, wraps
+from pprint import pprint
 
 from vars.help_info import ctf_help_text, chal_help_text, embed_help
 from util import trim_nl
@@ -54,7 +55,7 @@ def _find_chan(chantype, group, name):
         if chan.name.casefold() == name:
             return chan
 
-    raise ValueError(f'Cannot find {name}')
+    raise ValueError(f'Cannot find category {name}')
 
 find_category = partial(_find_chan, 'categories')
 find_text_channel = partial(_find_chan, 'text_channels')
@@ -260,6 +261,7 @@ class CtfTeam(object):
         # Update database
         fullname = f'{self.name}-{name}'
         chal = self.find_chal(name)
+        pprint(chal)
         chk_upd(fullname, teams.update_one({'chan_id': cid}, 
             {'$pull': {'chals': chal['chan_id']}}))
         await chal._delete(catg_archive)
@@ -268,7 +270,7 @@ class CtfTeam(object):
         return [(None, f'Challenge "{name}" is deleted, challenge channel archived.')]
 
     def find_chal(self, name, err_on_fail=True):
-        return Challenge.find(self.__guild, self.__chan_id, name, err_on_fail)
+         Challenge.find(self.__guild, self.__chan_id, name, err_on_fail)
 
     @chk_archive
     async def invite(self, author, user):

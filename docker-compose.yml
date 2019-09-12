@@ -3,6 +3,9 @@ services:
   bot:
     build: .
     image: kfbi/igctf
+    volumes:
+      - mongodb:/data/db
+      - mongodb_config:/data/configdb
     depends_on:
       - mongo
     env_file:
@@ -11,3 +14,7 @@ services:
     image: mongo
     ports:
       - "27017:27017"
+
+volumes:
+  mongodb:
+  mongodb_config:

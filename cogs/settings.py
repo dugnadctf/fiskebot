@@ -2,16 +2,16 @@ from pymongo import MongoClient
 import discord
 from discord.ext import commands
 
-from .mongo import *
+# 1from .mongo import *
 
-class Settings(commands.Cog):
+# class Settings(commands.Cog):
 # from pymongo import MongoClient
 # from mongo import *
 # import discord
 # from discord.ext import commands
 
 # class Settings():
-    
+
 #     def __init__(self, bot):
 #         self.bot = bot
 

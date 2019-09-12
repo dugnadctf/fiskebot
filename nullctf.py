@@ -6,14 +6,14 @@ import os
 import discord
 from discord.ext.commands import MissingPermissions, BotMissingPermissions, DisabledCommand, CommandNotFound, NoPrivateMessage, Bot, bot
 from discord.ext import commands
-from vars.help_info import help_page, help_page_2, embed_help, src
+from vars.help_info import help_page, help_page_2, embed_help, src, embed_help, ctf_help_text
 from util import getVal, trim_nl
 from pymongo import MongoClient
+from models.ctf import TaskFailed
 
 import traceback
 import logging as log
 
-from models.ctf import *
 
 creator_id = [412077060207542284, 491610275993223170]
 
@@ -21,7 +21,7 @@ client = discord.Client()
 PREFIX = "!"
 # TODO: easter egg if typing != :)
 bot = commands.Bot(command_prefix=PREFIX)
-extensions = ['encoding_decoding', 'cipher', 'ctfs', 'utility']
+extensions = ['ctfs', 'utility', 'cipher', 'encoding_deceoding']
 bot.remove_command('help')
 blacklisted = []
 cool_names = ['KFBI']
@@ -40,22 +40,6 @@ async def on_ready():
     print(('<' + bot.user.name) + ' Online>')
     print(f"discord.py {discord.__version__}\n")
     await bot.change_presence(activity=discord.Game(name=f'{PREFIX}help / {PREFIX}report "issue"'))
-
-
-@bot.event
-<< << << < HEAD
-
-
-async def on_command_error(ctx, error):
-    await ctx.send(f"There was an error, sorry!\nIf you think this should be fixed, report it with {PREFIX}report \"what happened\"")
-    print(Style.BRIGHT + Fore.RED +
-          f"Error occured with: {ctx.command}\n{error}\n")
-    print(Style.RESET_ALL)
-
-
-@bot.event
-== == == =
->>>>>> > dev
 
 
 async def on_message(message):
@@ -154,7 +138,7 @@ async def amicool(ctx):
 if __name__ == '__main__':
     #sys.path.insert(1, os.getcwd() + '/cogs/')
     for extension in extensions:
-        #bot.load_extension('cogs.' + extension)
-        bot.load_extension(extension)
+        bot.load_extension('cogs.' + extension)
+        # bot.load_extension(extension)
 
     bot.run(getVal("TOKEN"))
