@@ -263,7 +263,7 @@ class CtfTeam(object):
         chal = self.find_chal(name)
         pprint(chal)
         chk_upd(fullname, teams.update_one({'chan_id': cid}, 
-            {'$pull': {'chals': chal['chan_id']}}))
+            {'$pull': {'chals': chal.chan_id}}))
         await chal._delete(catg_archive)
         self.refresh()
 
@@ -439,6 +439,7 @@ class Challenge(object):
 
     async def _delete(self, catg_archive):
         cid = self.__id
+        guild = self.__guild
 
         # Delete entry
         chk_del(self.name, self.__chals.delete_one({'chan_id': self.__id}))
