@@ -66,7 +66,7 @@ def load_category(guild, catg):
     return find_category(guild, catg)
 
 basic_allow = discord.PermissionOverwrite(add_reactions=True,
-        read_messages=True, send_messages=True, read_message_history=True)
+        read_messages=True, send_messages=True, read_message_history=True, manage_channels=True )
 basic_disallow = discord.PermissionOverwrite(add_reactions=False,
         read_messages=False, send_messages=False, read_message_history=False)
 
@@ -104,16 +104,28 @@ class CtfTeam(object):
 
     @staticmethod
     async def create(guild, name):
+        names = [ role.name for role in guild.roles] + [channel for channel in guild.channels]
+        if name in names:
+            return [(ValueError, f'`{name}` already exists :grimacing:')]
+
+
         # Create role
-        role = await guild.create_role(name=f'{name}_team', mentionable=True)
+        role_name =f'{name}_team'
+        role = await guild.create_role(name=role_name, mentionable=True)
 
         # Create channel
-        chan = await guild.create_text_channel(name=name, 
+        overwrites = {
+            guild.default_role: basic_disallow,
+            guild.me: basic_allow,
+            role:basic_allow
+        }
+
+        chan = await guild.create_text_channel(name=name, overwrites=overwrites, 
                 topic=f'General talk for {name} CTF event.')
-        await (await chan.send(trim_nl(f'''Welcome to {name}. Here you can do
+        await chan.send(trim_nl(f'''Welcome to {name}. Here you can do
         general discussion about this event. Also use this this place to type
         `ctf` related commands. Here is a list of commands just for
-        reference:\n\n'''))).pin()
+        reference:\n\n'''))
         await (await embed_help(chan, 'CTF team help topic', ctf_help_text)).pin()
         await (await embed_help(chan, 'Challenge help topic', chal_help_text)).pin()
 
@@ -126,7 +138,7 @@ class CtfTeam(object):
                 'chals': []})
         CtfTeam.__teams__[chan.id] = CtfTeam(guild,chan.id)
 
-        return [(None, f'{name} ctf has been created! :tada:')]
+        return [(None, f'{name} ctf has been created! :tada: type `!join {name}`')]
 
     @staticmethod
     def fetch(guild, chan_id):
@@ -179,17 +191,22 @@ class CtfTeam(object):
         cid = self.__chan_id
         guild = self.__guild
         teams = self.__teams
+        team = self.__teamdata
+
 
         catg_working = load_category(guild, 'working')
         if self.find_chal(name, False):
             raise TaskFailed(f'Challenge "{name}" already exists!')
 
         # Create a secret channel, initially only with us added.
+        fullname = f'{self.name}-{name}'
+
+        role = chk_get_role(guild, team['role_id'])
         overwrites = {
             guild.default_role: basic_disallow,
-            guild.me: basic_allow
+            guild.me: basic_allow,
+            role:basic_allow
         }
-        fullname = f'{self.name}-{name}'
         chan = await catg_working.create_text_channel(name=fullname, overwrites=overwrites)
         Challenge.create(guild, cid, chan.id, name)
         chk_upd(fullname, teams.update_one({'chan_id': cid}, 
@@ -210,7 +227,7 @@ class CtfTeam(object):
 
         # Update database
         chk_upd(self.name, teams.update_one({'chan_id': cid}, 
-            {'$set': {'archived': True, 'role_id': 0}}))
+            {'$set': {'archived': True}}))
         self.refresh()
 
         # Archive all challenge channels
@@ -219,9 +236,9 @@ class CtfTeam(object):
             await chal._archive(catg_archive)
 
         # Delete role
-        await role.delete()
+        #await role.delete()
 
-        return [(None, f'@here {self.name} CTF has been archived.')]
+        return [(None, f'{role.mention} {self.name} CTF has been archived.')]
 
     async def unarchive(self):
         cid = self.__chan_id
@@ -235,11 +252,13 @@ class CtfTeam(object):
         #    raise TaskFailed('This is already not archived!')
 
         # Create role
-        role = await guild.create_role(name=f'{self.name}_team', mentionable=True)
+        role = chk_get_role(guild, self.__teamdata['role_id'])
+        # TODO: Store who was in the role
+        #role = await guild.create_role(name=f'{self.name}_team', mentionable=True)
 
         # Update database
         chk_upd(self.name, teams.update_one({'chan_id': cid}, 
-            {'$set': {'archived': False, 'role_id': role.id}}))
+            {'$set': {'archived': False}}))
         self.refresh()
 
         # Unarchive all challenge channels
@@ -247,7 +266,7 @@ class CtfTeam(object):
         for chal in self.challenges:
             await chal._unarchive(catg_working, catg_done)
 
-        return [(cid, f'@here {self.name} CTF has been unarchived.')]
+        return [(cid, f'{role.mention} {self.name} CTF has been unarchived.')]
 
 
     @chk_archive
@@ -261,7 +280,6 @@ class CtfTeam(object):
         # Update database
         fullname = f'{self.name}-{name}'
         chal = self.find_chal(name)
-        pprint(chal)
         chk_upd(fullname, teams.update_one({'chan_id': cid}, 
             {'$pull': {'chals': chal.chan_id}}))
         await chal._delete(catg_archive)
@@ -270,7 +288,7 @@ class CtfTeam(object):
         return [(None, f'Challenge "{name}" is deleted, challenge channel archived.')]
 
     def find_chal(self, name, err_on_fail=True):
-         Challenge.find(self.__guild, self.__chan_id, name, err_on_fail)
+        return Challenge.find(self.__guild, self.__chan_id, name, err_on_fail)
 
     @chk_archive
     async def invite(self, author, user):
@@ -300,7 +318,7 @@ class CtfTeam(object):
             raise TaskFailed(f'{user.mention} has already joined {self.name}')
         await user.add_roles(role)
 
-        return [(None, f'{user.mention} has joined the {self.name} team! :sparkles:')]
+        return [(None, f'{user.mention} has joined the <#{cid}> team! :sparkles:')]
     
     @chk_archive
     async def leave(self, user):
@@ -439,7 +457,6 @@ class Challenge(object):
 
     async def _delete(self, catg_archive):
         cid = self.__id
-        guild = self.__guild
 
         # Delete entry
         chk_del(self.name, self.__chals.delete_one({'chan_id': self.__id}))

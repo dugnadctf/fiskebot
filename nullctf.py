@@ -2,30 +2,32 @@ import asyncio
 import random
 from colorama import Back, Fore, Style
 import sys
+from time import sleep
 import os
 import discord
-from discord.ext.commands import MissingPermissions, BotMissingPermissions, DisabledCommand, CommandNotFound, NoPrivateMessage, Bot, bot
+from discord.ext.commands import MissingPermissions, BotMissingPermissions, DisabledCommand, CommandNotFound, CommandInvokeError, NoPrivateMessage, Bot, bot
 from discord.ext import commands
 from vars.help_info import help_page, help_page_2, embed_help, src, embed_help, ctf_help_text
 from util import getVal, trim_nl
 from pymongo import MongoClient
-from models.ctf import TaskFailed
+from models.ctf import TaskFailed, basic_allow, basic_disallow
 
 import traceback
 import logging as log
 
-
-creator_id = [412077060207542284, 491610275993223170]
+# TODO: detect edit of comamnd, and invoke the edited command and delete error message if existent
+# TODO: testing
+creator_id = [87606885405982720]
+default_categories = ["working", "archive", "done"]
 
 client = discord.Client()
 PREFIX = "!"
 # TODO: easter egg if typing != :)
 bot = commands.Bot(command_prefix=PREFIX)
-extensions = ['ctfs', 'utility', 'cipher', 'encoding_deceoding']
+extensions = ['ctfs', 'utility', 'cipher', 'codec']
 bot.remove_command('help')
 blacklisted = []
 cool_names = ['KFBI']
-CREATOR_ID = 87606885405982720
 GIT_URL = "https://gitlab.com/inequationgroup/igCTF"
 # This is intended to be able to be circumvented.
 # If you do something like report a bug with the report command (OR GITHUB), e.g, >report "a bug", you might be added to the list!
@@ -83,6 +85,8 @@ async def on_command_error(ctx, err):
         await ctx.send(f':bangbang: {str(err)}')
     elif isinstance(err, NoPrivateMessage):
         await ctx.send(':bangbang: This command cannot be used in PMs.')
+    # elif isinstance(err, CommandInvokeError) and not ctx.command.name in ["setup", "test123"]:
+    #    await ctx.send(':bangbang: Couldn\'t invoke command, have you run `!setup`?')
     else:
         await ctx.send('An error has occurred... :disappointed:')
         log.error(f'Ignoring exception in command {ctx.command}')
@@ -92,8 +96,7 @@ async def on_command_error(ctx, err):
 # Sends the github link.
 @bot.command()
 async def source(ctx):
-    await ctx.send(GIT_URL)
-    await ctx.send(f'Forked from: {src}')
+    await ctx.send(f'Source: {GIT_URL}\nForked from: {src}')
 
 
 @bot.command()
@@ -134,6 +137,49 @@ async def amicool(ctx):
         await ctx.send('lolno')
         await ctx.send('Psst, kid.  Want to be cool?  Find an issue and report it or request a feature you think would be cool.')
 
+
+@bot.command()
+async def setup(ctx):
+    guild = ctx.guild
+
+    overwrites = {
+        guild.default_role: basic_disallow,
+        guild.me: basic_allow,
+    }
+    existing_categories = [category.name for category in ctx.guild.categories]
+    for category in default_categories:
+        if category not in existing_categories:
+            category_channel = await ctx.guild.create_category(category, overwrites=overwrites)
+
+    await ctx.send('Setup successfull! :tada:')
+
+
+@bot.command()
+async def leaveordelete(ctx):
+    cnt = 0
+    for guild in bot.guilds:
+        try:
+            await guild.delete()
+            cnt += 1
+        except:
+            if guild.member_count <= 2:
+                await guild.leave()
+                cnt += 1
+
+
+@bot.command()
+async def test123(ctx):
+    if not ctx.author.id in creator_id:
+        await ctx.send("Sorry you're not allowed to test")
+        return
+
+    guild = await bot.create_guild("Test igCTF bot")
+    channel = await guild.create_text_channel("test")
+    await channel.send("!amicool")
+    invite = await channel.create_invite(max_age=0, max_uses=1)
+    await ctx.send(f"{invite.url}")
+    await asyncio.sleep(300)
+    await guild.delete()
 
 if __name__ == '__main__':
     #sys.path.insert(1, os.getcwd() + '/cogs/')

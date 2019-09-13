@@ -9,7 +9,7 @@ from discord.ext import commands
 # TODO: l14ck3r0x01: ROT47 , base32 encoding
 
 
-class EncodingDecoding(commands.Cog):
+class Codec(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -68,4 +68,4 @@ class EncodingDecoding(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(EncodingDecoding(bot))
+    bot.add_cog(Codec(bot))

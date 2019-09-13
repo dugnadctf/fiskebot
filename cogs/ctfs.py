@@ -284,6 +284,19 @@ def check_name(name):
     # Replace spaces with a dash, because discord does it :/
     return re.sub(r' +', '-', name).lower()
         
+def chk_fetch_team_by_name(ctx,name):
+    channels = ctx.guild.channels
+    if len([channel.id for channel in channels if name == channel.name]) > 1:
+        raise ctfmodel.TaskFailed('Multiple channels with same name exists')
+    
+    found_channel_id = ""
+    for channel in channels:
+        if channel.name == name:
+            found_channel_id = channel.id
+    team = ctfmodel.CtfTeam.fetch(ctx.channel.guild, found_channel_id)
+    if not team:
+        raise ctfmodel.TaskFailed('Failed to join CTF')
+    return team
 
 def chk_fetch_team(ctx):
     team = ctfmodel.CtfTeam.fetch(ctx.channel.guild, ctx.channel.id)
@@ -327,7 +340,7 @@ class Ctfs(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     @commands.guild_only()
     @commands.command()
-    async def create_ctf(self, ctx, name):
+    async def create(self, ctx, name):
         await respond(ctx, ctfmodel.CtfTeam.create, ctx.channel.guild, name)
 
     @commands.guild_only()
@@ -365,9 +378,9 @@ class Ctfs(commands.Cog):
         await respond(ctx, chk_fetch_team(ctx).invite, ctx.author, user)
 
     @commands.bot_has_permissions(manage_roles=True)
-    @ctf.command()
-    async def join(self, ctx):
-        await respond(ctx, chk_fetch_team(ctx).join, ctx.author)
+    @commands.command()
+    async def join(self, ctx, name):
+        await respond(ctx, chk_fetch_team_by_name(ctx,name).join, ctx.author)
 
     @ctf.command()
     async def working(self, ctx, chalname):
