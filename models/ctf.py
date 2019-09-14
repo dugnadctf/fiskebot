@@ -214,7 +214,7 @@ class CtfTeam(object):
         self.refresh()
 
         return [(None, trim_nl(f'''Challenge "{name}" has been added! Run `!ctf
-        working {name}` join this challenge channel!'''))]
+        working {name}` to work on <#{chan.id}>!'''))]
     
     @chk_archive
     async def archive(self):

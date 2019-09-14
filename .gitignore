@@ -13,3 +13,5 @@ bot-variables.env
 .vscode
 .venv
 **/*.sw?
+kube/key.txt
+kube/secret.yml
