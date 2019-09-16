@@ -69,6 +69,9 @@ async def on_error(evt_type, ctx):
 
 @bot.event
 async def on_command_error(ctx, err):
+    log.error(f'Ignoring exception in command {ctx.command}')
+    log.error(''.join(traceback.format_exception(type(err), err,
+                                                 err.__traceback__)))
     print(Style.BRIGHT + Fore.RED +
           f"Error occured with: {ctx.command}\n{err}\n")
     print(Style.RESET_ALL)
@@ -91,9 +94,6 @@ async def on_command_error(ctx, err):
     #    await ctx.send(':bangbang: Couldn\'t invoke command, have you run `!setup`?')
     else:
         await ctx.send('An error has occurred... :disappointed:')
-        log.error(f'Ignoring exception in command {ctx.command}')
-        log.error(''.join(traceback.format_exception(type(err), err,
-                                                     err.__traceback__)))
 
 
 # Sends the github link.
