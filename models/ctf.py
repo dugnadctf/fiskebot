@@ -2,10 +2,10 @@ import enum
 import discord, discord.member
 from discord.ext import commands
 from functools import partial, wraps
-from pprint import pprint
 
 from vars.help_info import ctf_help_text, chal_help_text, embed_help
 from util import trim_nl
+import logging as log
 
 from controllers.db import client, ctfdb, ctfs, teamdb, serverdb, challdb
 
@@ -73,8 +73,10 @@ basic_disallow = discord.PermissionOverwrite(add_reactions=False,
 def chk_upd(ctx_name, update_res):
     if not update_res.matched_count:
         raise ValueError(f'{ctx_name}: Not matched on update')
-    if not update_res.modified_count:
-        raise ValueError(f'{ctx_name}: Not modified on update')
+    #if not update_res.modified_count:
+    #    raise ValueError(f'{ctx_name}: Not modified on update')
+    log.error(f'{ctx_name}: Not modified on update')
+
 
 def chk_del(ctx_name, delete_res):
     if not delete_res.deleted_count:
