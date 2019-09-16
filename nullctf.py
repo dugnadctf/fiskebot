@@ -105,7 +105,7 @@ async def on_command_error(ctx, err):
     # elif isinstance(err, CommandInvokeError) and not ctx.command.name in ["setup", "test123"]:
     #    await ctx.send(':bangbang: Couldn\'t invoke command, have you run `!setup`?')
     else:
-        await ctx.send('An error has occurred... :disappointed: \n{err}\n')
+        await ctx.send(f'An error has occurred... :disappointed: \n{err}\n')
 
 
 # Sends the github link.
