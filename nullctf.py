@@ -25,7 +25,7 @@ handler.setFormatter(logging.Formatter(
     '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 discordLogger.addHandler(handler)
 
-logging.basicConfig(filename='bot.log', level=logging.DEBUG)
+logging.basicConfig(filename='bot.log', level=logging.INFO)
 
 
 # TODO: working and status, and revert to working unlocking individual channels
