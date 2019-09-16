@@ -25,7 +25,7 @@ handler.setFormatter(logging.Formatter(
     '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 discordLogger.addHandler(handler)
 
-botLogger = logging.basicConfig(filename='bot.log', level=logging.DEBUG)
+logging.basicConfig(filename='bot.log', level=logging.DEBUG)
 
 
 # TODO: working and status, and revert to working unlocking individual channels
@@ -75,15 +75,15 @@ async def on_message(message):
 async def on_error(evt_type, ctx):
     if evt_type == 'on_message':
         await ctx.send('An error has occurred... :disappointed:')
-    botLogger.error(f'Ignoring exception at {evt_type}')
-    botLogger.error(traceback.format_exc())
+    logging.error(f'Ignoring exception at {evt_type}')
+    logging.error(traceback.format_exc())
 
 
 @bot.event
 async def on_command_error(ctx, err):
-    botLogger.error(f'Ignoring exception in command {ctx.command}')
-    botLogger.error(''.join(traceback.format_exception(type(err), err,
-                                                       err.__traceback__)))
+    logging.error(f'Ignoring exception in command {ctx.command}')
+    logging.error(''.join(traceback.format_exception(type(err), err,
+                                                     err.__traceback__)))
     print(Style.BRIGHT + Fore.RED +
           f"Error occured with: {ctx.command}\n{err}\n")
     print(Style.RESET_ALL)

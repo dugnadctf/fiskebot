@@ -5,7 +5,6 @@ from functools import partial, wraps
 
 from vars.help_info import ctf_help_text, chal_help_text, embed_help
 from util import trim_nl
-from ..nullctf import botLogger
 
 from controllers.db import client, ctfdb, ctfs, teamdb, serverdb, challdb
 
@@ -73,9 +72,8 @@ basic_disallow = discord.PermissionOverwrite(add_reactions=False,
 def chk_upd(ctx_name, update_res):
     if not update_res.matched_count:
         raise ValueError(f'{ctx_name}: Not matched on update')
-    #if not update_res.modified_count:
-    #    raise ValueError(f'{ctx_name}: Not modified on update')
-    botLogger.error(f'{ctx_name}: Not modified on update')
+    if not update_res.modified_count:
+        raise ValueError(f'{ctx_name}: Not modified on update')
 
 
 def chk_del(ctx_name, delete_res):
