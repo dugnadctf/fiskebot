@@ -435,9 +435,9 @@ class Challenge(object):
         guild = self.__guild
         chk_upd(self.name, self.__chals.update_one({'chan_id': cid}, {"$set": { \
                 'archived': True}}))
-        channel = await guild.get_channel(cid)
+        channel = guild.get_channel(cid)
         if channel != None:
-            channel.edit(category=catg_archive)
+            await channel.edit(category=catg_archive)
             self.refresh()
         else:
             raise ValueError(f"Couldn't find channel {cid}")
@@ -447,11 +447,10 @@ class Challenge(object):
         guild = self.__guild
         chk_upd(self.name, self.__chals.update_one({'chan_id': cid}, {"$set": { \
                 'archived': False}}))
-        channel = await guild.get_channel(cid)
+        channel = guild.get_channel(cid)
         
         if channel != None:
-            channel.edit(category=(catg_working,
-            catg_done)[self.is_finished])
+            await channel.edit(category=(catg_working,catg_done)[self.is_finished])
             self.refresh()
         else:
             raise ValueError(f"Couldn't find channel {cid}")
