@@ -72,8 +72,8 @@ basic_disallow = discord.PermissionOverwrite(add_reactions=False,
 def chk_upd(ctx_name, update_res):
     if not update_res.matched_count:
         raise ValueError(f'{ctx_name}: Not matched on update')
-    if not update_res.modified_count:
-        raise ValueError(f'{ctx_name}: Not modified on update')
+    #if not update_res.modified_count:
+    #    raise ValueError(f'{ctx_name}: Not modified on update')
 
 
 def chk_del(ctx_name, delete_res):
