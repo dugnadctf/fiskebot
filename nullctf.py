@@ -14,7 +14,19 @@ from pymongo import MongoClient
 from models.ctf import TaskFailed, basic_allow, basic_disallow
 
 import traceback
-import logging as log
+import logging
+
+
+discordLogger = logging.getLogger('discord')
+discordLogger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(
+    filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter(
+    '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+discordLogger.addHandler(handler)
+
+botLogger = logging.basicConfig(filename='bot.log', level=logging.DEBUG)
+
 
 # TODO: working and status, and revert to working unlocking individual channels
 # TODO: detect edit of comamnd, and invoke the edited command and delete error message if existent
@@ -63,15 +75,15 @@ async def on_message(message):
 async def on_error(evt_type, ctx):
     if evt_type == 'on_message':
         await ctx.send('An error has occurred... :disappointed:')
-    log.error(f'Ignoring exception at {evt_type}')
-    log.error(traceback.format_exc())
+    botLogger.error(f'Ignoring exception at {evt_type}')
+    botLogger.error(traceback.format_exc())
 
 
 @bot.event
 async def on_command_error(ctx, err):
-    log.error(f'Ignoring exception in command {ctx.command}')
-    log.error(''.join(traceback.format_exception(type(err), err,
-                                                 err.__traceback__)))
+    botLogger.error(f'Ignoring exception in command {ctx.command}')
+    botLogger.error(''.join(traceback.format_exception(type(err), err,
+                                                       err.__traceback__)))
     print(Style.BRIGHT + Fore.RED +
           f"Error occured with: {ctx.command}\n{err}\n")
     print(Style.RESET_ALL)
