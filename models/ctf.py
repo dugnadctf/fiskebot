@@ -435,17 +435,26 @@ class Challenge(object):
         guild = self.__guild
         chk_upd(self.name, self.__chals.update_one({'chan_id': cid}, {"$set": { \
                 'archived': True}}))
-        await guild.get_channel(cid).edit(category=catg_archive)
-        self.refresh()
+        channel = await guild.get_channel(cid)
+        if channel != None:
+            channel.edit(category=catg_archive)
+            self.refresh()
+        else:
+            raise ValueError(f"Couldn't find channel {cid}")
 
     async def _unarchive(self, catg_working, catg_done):
         cid = self.__id
         guild = self.__guild
         chk_upd(self.name, self.__chals.update_one({'chan_id': cid}, {"$set": { \
                 'archived': False}}))
-        await guild.get_channel(cid).edit(category=(catg_working,
+        channel = await guild.get_channel(cid)
+        
+        if channel != None:
+            channel.edit(category=(catg_working,
             catg_done)[self.is_finished])
-        self.refresh()
+            self.refresh()
+        else:
+            raise ValueError(f"Couldn't find channel {cid}")
 
     def check_done(self, user):
         if not self.is_finished or Challenge._uid(user) == self.owner:
