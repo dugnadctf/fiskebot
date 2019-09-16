@@ -440,6 +440,7 @@ class Challenge(object):
             await channel.edit(category=catg_archive)
             self.refresh()
         else:
+
             raise ValueError(f"Couldn't find channel {cid}")
 
     async def _unarchive(self, catg_working, catg_done):
