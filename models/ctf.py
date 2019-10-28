@@ -262,8 +262,7 @@ class CtfTeam(object):
             (
                 None,
                 trim_nl(
-                    f"""Challenge "{name}" has been added! Run `!ctf
-        working {name}` to work on <#{chan.id}>!"""
+                    f"""Challenge "{name}" has been added! React to this message to work on <#{chan.id}>!"""
                 ),
             )
         ]

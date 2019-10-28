@@ -135,11 +135,13 @@ async def on_command_error(ctx, err):
 async def on_raw_reaction_add(payload):
     # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
+    chan = bot.get_channel(payload.channel_id)
     team = teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
     member = guild.get_member(payload.user_id)
-    role = guild.get_role(team["role_id"])
-    if guild and member and team and role:
-        await member.add_roles(role, reason="User wanted to join team")
+    if guild and member and chan:
+        if team:
+            role = guild.get_role(team["role_id"])
+            await member.add_roles(role, reason="User wanted to join team")
 
 
 @bot.event
@@ -148,9 +150,10 @@ async def on_raw_reaction_remove(payload):
     guild = bot.get_guild(payload.guild_id)
     team = teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
     member = guild.get_member(payload.user_id)
-    role = guild.get_role(team["role_id"])
-    if guild and member and team and role:
-        await member.remove_roles(role, reason="User wanted to leave team")
+    if guild and member:
+        if team:
+            role = guild.get_role(team["role_id"])
+            await member.remove_roles(role, reason="User wanted to leave team")
 
 
 # Sends the github link.
