@@ -6,6 +6,7 @@ services:
     volumes:
       - mongodb:/data/db
       - mongodb_config:/data/configdb
+      - ./:/igctf
     depends_on:
       - mongo
     env_file:

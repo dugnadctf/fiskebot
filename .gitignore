@@ -11,6 +11,7 @@ cogs/mongo.py
 env
 bot-variables.env
 .vscode
+.idea
 .venv
 **/*.sw?
 kube/key.txt
