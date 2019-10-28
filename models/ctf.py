@@ -152,16 +152,16 @@ class CtfTeam(object):
             overwrites=overwrites,
             topic=f"General talk for {name} CTF event.",
         )
-        await chan.send(
-            trim_nl(
-                f"""Welcome to {name}. Here you can do
-        general discussion about this event. Also use this this place to type
-        `ctf` related commands. Here is a list of commands just for
-        reference:\n\n"""
-            )
-        )
-        await (await embed_help(chan, "CTF team help topic", ctf_help_text)).pin()
-        await (await embed_help(chan, "Challenge help topic", chal_help_text)).pin()
+        # await chan.send(
+        #    trim_nl(
+        #        f"""Welcome to {name}. Here you can do
+        # general discussion about this event. Also use this this place to type
+        # `ctf` related commands. Here is a list of commands just for
+        # reference:\n\n"""
+        #    )
+        # )
+        # await (await embed_help(chan, "CTF team help topic", ctf_help_text)).pin()
+        # await (await embed_help(chan, "Challenge help topic", chal_help_text)).pin()
 
         # Update database
         teamdb[str(guild.id)].insert_one(
