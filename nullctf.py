@@ -16,23 +16,20 @@ from models.ctf import TaskFailed, basic_allow, basic_disallow
 import traceback
 import logging
 
+FORMAT = '%(asctime)s:%(levelname)s:%(name)s: %(message)s'
 
-discordLogger = logging.getLogger('discord')
-discordLogger.setLevel(logging.DEBUG)
-handler = logging.FileHandler(
-    filename='discord.log', encoding='utf-8', mode='w')
-handler.setFormatter(logging.Formatter(
-    '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
-discordLogger.addHandler(handler)
+#discordLogger = logging.getLogger('discord')
+# discordLogger.setLevel(logging.WARN)
+# handler = logging.FileHandler(
+#    filename='discord.log', encoding='utf-8', mode='w')
+# handler.setFormatter(logging.Formatter(
+#    FORMAT))
+# discordLogger.addHandler(handler)
 
-logging.basicConfig(filename='bot.log', level=logging.INFO)
+logging.basicConfig(format=FORMAT, level=logging.WARN)
 
-
-# TODO: working and status, and revert to working unlocking individual channels
-# TODO: detect edit of comamnd, and invoke the edited command and delete error message if existent
-# TODO: testing
 creator_id = [87606885405982720]
-default_categories = ["working", "archive", "done"]
+default_categories = ["working", "done"]
 
 client = discord.Client()
 PREFIX = "!"
@@ -41,7 +38,7 @@ bot = commands.Bot(command_prefix=PREFIX)
 extensions = ['ctfs', 'utility', 'cipher', 'codec']
 bot.remove_command('help')
 blacklisted = []
-cool_names = ['KFBI']
+cool_names = ["KFBI", "404'd"]
 GIT_URL = "https://gitlab.com/inequationgroup/igCTF"
 # This is intended to be able to be circumvented.
 # If you do something like report a bug with the report command (OR GITHUB), e.g, >report "a bug", you might be added to the list!
@@ -190,7 +187,6 @@ async def test123(ctx):
 
     guild = await bot.create_guild("Test igCTF bot")
     channel = await guild.create_text_channel("test")
-    await channel.send("!amicool")
     invite = await channel.create_invite(max_age=0, max_uses=1)
     await ctx.send(f"{invite.url}")
     await asyncio.sleep(300)
