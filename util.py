@@ -6,25 +6,26 @@ def getVal(val):
     if token != "":
         return token
 
-    token = open("/var/secrets/"+val.lower(), "r").read()
+    token = open("/var/secrets/" + val.lower(), "r").read()
     return token
 
 
 def trim_nl(s):
     import string
+
     ret = []
     consec_nl = 0
     for c in s:
-        if c == '\n':
+        if c == "\n":
             consec_nl += 1
             if consec_nl == 2:
-                ret.append('\n')
+                ret.append("\n")
             elif consec_nl == 1:
-                ret.append(' ')
+                ret.append(" ")
             continue
         elif c in string.whitespace and consec_nl > 0:
             continue
-        elif c != '\r':
+        elif c != "\r":
             ret.append(c)
             consec_nl = 0
-    return ''.join(ret)
+    return "".join(ret)
