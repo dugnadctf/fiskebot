@@ -1,7 +1,9 @@
+image: tiangolo/docker-with-compose
+
 before_script:
   - docker info
 
-build_image:
+build_and_push_image:
   script:
     - docker build -t kfbi/igctf .
     - docker push kfbi/igctf
