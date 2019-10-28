@@ -7,7 +7,7 @@ stages:
 build:
   stage: build
   script:
-    - docker build kfbi/igctf .
+    - docker build -t kfbi/igctf .
   tags:
     - docker
 
