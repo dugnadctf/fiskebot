@@ -7,13 +7,13 @@ stages:
 build:
   stage: build
   script:
-    - docker build $CI_REGISTRY_IMAGE .
+    - docker build kfbi/igctf .
   tags:
     - docker
 
 push:
   stage: push
   script:
-    - docker push $CI_REGISTRY_IMAGE
+    - docker push kfbi/igctf
   tags:
     - docker
