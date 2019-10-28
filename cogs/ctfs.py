@@ -352,11 +352,14 @@ class Ctftime(commands.Cog):
 
 
 async def respond(ctx, fn, *args):
+    messages = []
     guild = ctx.channel.guild
     async with ctx.channel.typing():
         for chan_id, msg in await fn(*args):
             chan = guild.get_channel(chan_id) if chan_id else ctx.channel
-            await chan.send(msg)
+            msg = await chan.send(msg)
+            messages.append(msg)
+    return messages
 
 
 def check_name(name):
@@ -432,7 +435,10 @@ class Ctfs(commands.Cog):
     @commands.guild_only()
     @commands.command()
     async def create(self, ctx, name):
-        await respond(ctx, ctfmodel.CtfTeam.create, ctx.channel.guild, name)
+        messages = await respond(ctx, ctfmodel.CtfTeam.create, ctx.channel.guild, name)
+        teamdb[str(ctx.channel.guild.id)].update_one(
+            {"name": name}, {"$set": {"msg_id": messages[0].id}}
+        )
 
     @commands.guild_only()
     @commands.group()
@@ -458,7 +464,7 @@ class Ctfs(commands.Cog):
         await respond(ctx, chk_fetch_team(ctx).del_chal, name)
 
     @commands.bot_has_permissions(manage_roles=True)
-    @ctf.command("leave")
+    @commands.command("leave")
     async def leave_ctf(self, ctx):
         await respond(ctx, chk_fetch_team(ctx).leave, ctx.author)
 

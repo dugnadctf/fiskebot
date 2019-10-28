@@ -27,7 +27,8 @@ from vars.help_info import (
 )
 from util import getVal, trim_nl
 from pymongo import MongoClient
-from models.ctf import TaskFailed, basic_allow, basic_disallow
+from models.ctf import TaskFailed, basic_allow, basic_disallow, CtfTeam
+from controllers.db import teamdb
 
 import traceback
 import logging
@@ -128,6 +129,28 @@ async def on_command_error(ctx, err):
     #    await ctx.send(':bangbang: Couldn\'t invoke command, have you run `!setup`?')
     else:
         await ctx.send(f"An error has occurred... :disappointed: \n`{err}`\n")
+
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    # check if the user is not the bot
+    guild = bot.get_guild(payload.guild_id)
+    team = teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
+    member = guild.get_member(payload.user_id)
+    role = guild.get_role(team["role_id"])
+    if guild and member and team and role:
+        await member.add_roles(role, reason="User wanted to join team")
+
+
+@bot.event
+async def on_raw_reaction_remove(payload):
+    # check if the user is not the bot
+    guild = bot.get_guild(payload.guild_id)
+    team = teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
+    member = guild.get_member(payload.user_id)
+    role = guild.get_role(team["role_id"])
+    if guild and member and team and role:
+        await member.remove_roles(role, reason="User wanted to leave team")
 
 
 # Sends the github link.

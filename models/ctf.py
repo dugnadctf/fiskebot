@@ -170,12 +170,18 @@ class CtfTeam(object):
                 "name": name,
                 "chan_id": chan.id,
                 "role_id": role.id,
+                "msg_id": 0,
                 "chals": [],
             }
         )
         CtfTeam.__teams__[chan.id] = CtfTeam(guild, chan.id)
 
-        return [(None, f"{name} ctf has been created! :tada: type `!join {name}`")]
+        return [
+            (
+                None,
+                f"{name} ctf has been created! :tada: react to this message or type `!join {name}`.",
+            )
+        ]
 
     @staticmethod
     def fetch(guild, chan_id):
