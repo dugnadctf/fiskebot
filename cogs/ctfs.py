@@ -361,6 +361,16 @@ async def respond(ctx, fn, *args):
             messages.append(msg)
     return messages
 
+async def respond_with_reaction(ctx, fn, *args):
+    messages = []
+    guild = ctx.channel.guild
+    async with ctx.channel.typing():
+        for chan_id, msg in await fn(*args):
+            chan = guild.get_channel(chan_id) if chan_id else ctx.channel
+            msg = await chan.send(msg)
+            messages.append(msg)
+    return messages
+
 
 def check_name(name):
     if len(name) > 32:
@@ -474,10 +484,10 @@ class Ctfs(commands.Cog):
         user = parse_user(ctx.channel.guild, user)
         await respond(ctx, chk_fetch_team(ctx).invite, ctx.author, user)
 
-    @commands.bot_has_permissions(manage_roles=True)
-    @commands.command()
-    async def join(self, ctx, name):
-        await respond(ctx, chk_fetch_team_by_name(ctx, name).join, ctx.author)
+    #@commands.bot_has_permissions(manage_roles=True)
+    #@commands.command()
+    #async def join(self, ctx, name):
+    #    await respond(ctx, chk_fetch_team_by_name(ctx, name).join, ctx.author)
 
     @ctf.command()
     async def working(self, ctx, chalname):

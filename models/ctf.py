@@ -179,7 +179,7 @@ class CtfTeam(object):
         return [
             (
                 None,
-                f"{name} ctf has been created! :tada: react to this message or type `!join {name}`.",
+                f"{name} ctf has been created! :tada: react to this message to join.",
             )
         ]
 
