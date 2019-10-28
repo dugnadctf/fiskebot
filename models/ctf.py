@@ -268,7 +268,8 @@ class CtfTeam(object):
         guild = self.__guild
         teams = self.__teams
 
-        if len(self.challenges) + 1 > CATEGORY_CHANNEL_LIMIT:
+        total_channels = len(self.challenges) + 1
+        if total_channels > CATEGORY_CHANNEL_LIMIT:
             raise TaskFailed(
                 f'Failed to archive "{name}" as it has more than {CATEGORY_CHANNEL_LIMIT} channels in total'
             )
@@ -279,10 +280,8 @@ class CtfTeam(object):
                 catg_archive = [
                     catg for catg in guild.categories if catg.name == category
                 ][0]
-                if (
-                    CATEGORY_CHANNEL_LIMIT - len(catg_archive.channels)
-                    > len(self.challenges) + 1
-                ):
+                current_catg_channels = len(catg_archive.channels)
+                if CATEGORY_CHANNEL_LIMIT - current_catg_channels >= total_channels:
                     break
             except IndexError:
                 catg_archive = await guild.create_category(category)
@@ -704,3 +703,4 @@ class Challenge(object):
             return user.id
         else:
             raise ValueError(f"Cannot convert to user: {user}")
+

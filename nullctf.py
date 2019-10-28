@@ -73,16 +73,17 @@ async def on_ready():
     )
 
 
+# @bot.event
+# async def process_commands(message):
+#    print("processed")
+#    ctx = await bot.get_context(message)
+#    await bot.invoke(ctx)
+
+
+@bot.event
 async def on_message(message):
-    if "who should I subscribe to?" in message.content:
-        choice = random.randint(1, 2)
-
-        if choice == 1:
-            await message.channel.send("https://youtube.com/nullpxl")
-
-        if choice == 2:
-            await message.channel.send("https://www.youtube.com/user/RootOfTheNull")
-
+    # print(message.content)
+    # print(message.content.startswith("!"))
     await bot.process_commands(message)
 
 
@@ -223,6 +224,15 @@ async def test123(ctx):
     await ctx.send(f"{invite.url}")
     await asyncio.sleep(300)
     await guild.delete()
+
+
+@bot.command()
+async def test321(ctx):
+    if not ctx.author.id in creator_id:
+        await ctx.send("Sorry you're not allowed to test")
+        return
+    # check if not in dm channel
+    await ctx.send("!amicool")
 
 
 @bot.command()
