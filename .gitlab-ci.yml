@@ -1,13 +1,19 @@
 image: tiangolo/docker-with-compose
 
 stages:
-    - build
-    - push
+  - build
+  - push
 
 build:
+  stage: build
   script:
-    - docker build -t kfbi/igctf .
+    - docker build $CI_REGISTRY_IMAGE .
+  tags:
+    - docker
 
 push:
+  stage: push
   script:
-    - docker push kfbi/igctf
+    - docker push $CI_REGISTRY_IMAGE
+  tags:
+    - docker
