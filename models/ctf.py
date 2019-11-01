@@ -262,7 +262,7 @@ class CtfTeam(object):
             (
                 None,
                 trim_nl(
-                    f"""Challenge "{name}" has been added! React to this message to work on <#{chan.id}>!"""
+                    f"""Challenge "{name}" has been added! React to this message to work on <#{chan.id}>! Or type `!ctf working {name}`"""
                 ),
             )
         ]
@@ -310,7 +310,7 @@ class CtfTeam(object):
         # Delete role
         # await role.delete()
 
-        return [(None, f"{role.mention} {self.name} CTF has been archived.")]
+        return [(None, f"{self.name} CTF has been archived.")]
 
     async def unarchive(self):
         cid = self.__chan_id
@@ -341,7 +341,7 @@ class CtfTeam(object):
         for chal in self.challenges:
             await chal._unarchive(catg_working, catg_done)
 
-        return [(cid, f"{role.mention} {self.name} CTF has been unarchived.")]
+        return [(cid, f"{self.name} CTF has been unarchived.")]
 
     @chk_archive
     async def del_chal(self, name):
