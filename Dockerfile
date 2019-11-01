@@ -15,7 +15,7 @@ RUN chown ${NAME}:${NAME} ${APP_HOME}
 
 USER igctf
 
-COPY --chown=igctf:igctf nullctf.py util.py test.py ${APP_HOME}/
+COPY --chown=igctf:igctf nullctf.py util.py ${APP_HOME}/
 COPY --chown=igctf:igctf cogs ${APP_HOME}/cogs
 COPY --chown=igctf:igctf vars ${APP_HOME}/vars
 COPY --chown=igctf:igctf models ${APP_HOME}/models
