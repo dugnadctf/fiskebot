@@ -3,6 +3,7 @@ services:
   bot:
     build: .
     image: kfbi/igctf
+    restart: always
     volumes:
       - mongodb:/data/db
       - mongodb_config:/data/configdb
