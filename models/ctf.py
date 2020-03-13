@@ -5,16 +5,18 @@ from discord.ext import commands
 from functools import partial, wraps
 
 from vars.help_info import ctf_help_text, chal_help_text, embed_help
+from vars.general import cool_names
+
 from util import trim_nl
+
+import json
 
 from controllers.db import client, ctfdb, ctfs, teamdb, serverdb, challdb
 
 CATEGORY_CHANNEL_LIMIT = 50
 # Globals
 # > done_id
-# > archive_id
-# > working_id
-#
+# > archive_id > working_id
 # CtfTeam
 # [gid...]
 #   > challenges [array of chan IDs]
@@ -49,6 +51,7 @@ CATEGORY_CHANNEL_LIMIT = 50
 # chal done <with-list>
 # chal undone
 
+# TODO changelog, showing the latest changes since latest release
 
 def _find_chan(chantype, group, name):
     name = name.casefold()
@@ -119,6 +122,8 @@ def chk_archive(func):
 
     return wrapper
 
+def userToDict(user):
+    return {"id":user.id,"nick":user.nick,"user":user.name, "avatar":user.avatar, "bot":user.bot}
 
 class TaskFailed(commands.UserInputError):
     def __init__(self, msg):
@@ -311,6 +316,62 @@ class CtfTeam(object):
         # await role.delete()
 
         return [(None, f"{self.name} CTF has been archived.")]
+
+    async def export(self, author):
+        cid = self.__chan_id
+        guild = self.__guild
+        teams = self.__teams
+
+        authors_name = str(author)
+
+        if not self.is_archived:
+            return [(None, f"You need to archive the CTF before exporting")]
+        # TODO superuser, cool_names or a quorum of users in the team that participated in a CTF
+        if not any((name in authors_name for name in cool_names)):
+            return [(None, f"Sorry you are not authorized at this time")]
+
+        CTF = {"channels":[]}
+        main_chan = guild.get_channel(cid)
+        for channel in [main_chan]:
+            chan = {"name":channel.name, "topic":channel.topic, "messages": []}
+
+            async for m in main_chan.history(limit=None, oldest_first=True):
+                d = {"id":m.id , "created_at":m.created_at.isoformat(), "content":m.clean_content, "raw_content":m.content}
+                d["author"] = userToDict(m.author)
+                d["attachments"] = [{"filename":a.filename, "url": str(a.url)} for a in m.attachments]
+                d["channel"] = {"name": m.channel.name}
+                d["edited_at"] = m.edited_at.isoformat() if m.edited_at != None else m.edited_at
+                #used for URLs
+                d["embeds"] = [ e.to_dict() for e in m.embeds]
+                d["mentions"] = [userToDict(mention) for mention in m.mentions]
+                d["channel_mentions"] = [{"id":c.id,"name":c.name} for c in m.channel_mentions]
+                d["mention_everyone"] = m.mention_everyone
+                d["reactions"] = [{"count":r.count,"emoji": r.emoji if type(r.emoji) == str else { "name":r.emoji.name, "url": str(r.emoji.url)}} for r in m.reactions]
+                chan["messages"].append(d)
+
+        CTF["channels"].append(chan)
+        print(json.dumps(CTF,indent=4))
+
+
+
+
+
+
+        # Get all messages
+        # Export to JSON
+	# save on host system, upload to discord again, save blob to mongo and trigger backup
+        # Get role
+        # CONFIRMATION
+        # delete role
+        # delete channels
+	# delete category if category empty after deletion
+        #
+        ##Mongo db update
+        #chk_upd(
+        #    self.name, teams.update_one({"chan_id": cid}, {"$set": {"exported": True}})
+        #)
+        #self.refresh()
+        return [(None, f"{self.name} CTF has been exported.")]
 
     async def unarchive(self):
         cid = self.__chan_id

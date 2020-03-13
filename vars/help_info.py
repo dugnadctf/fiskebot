@@ -7,7 +7,7 @@ creator_info = """https://blog.inequationgroup.com/
 https://gitlab.com/inequationgroup
 https://ctftime.org/team/59772"""
 
-help_page = """
+help_page = f"""
 Adapted from: https://github.com/NullPxl/NullCTF
 
 `!ctftime <current/upcoming <number>>`
@@ -19,16 +19,16 @@ Returns remaining time until an upcoming CTF begins, or ongoing event ends.
 `!ctftime top <year>`
 Display the leader boards from ctftimeorg for a specified `year`.
 
-`!create_ctf "<ctf name>"`
+`!create "<ctf name>"`
 Create a text channel and role in the CTF category for a specified `ctf name`.
 (This requires the bot has manage channels permissions)
 
 `!ctf <action>...`
-You can only issue these commands in a channel that was created by the `!create_ctf` command.
+You can only issue these commands in a channel that was created by the `!create` command.
 See `!ctf help` for more details.
 
 `!chal <action>...`
-You can only issue these commands in a channel that was created by the `!ctf add` command. 
+You can only issue these commands in a channel that was created by the `!ctf add` command.
 See `!chal help` for more details.
 
 `!htb`
@@ -100,24 +100,18 @@ These commands are callable from a CTF **team** channel environment.
 Add a `challenge` and a respective private channel. Challenge names may be altered to meet Discord restrictions.
 (i.e. no special characters, less than 32 characters long, etc...)
 
-`!ctf working <challenge>`
-Mark that you are working on a `challenge`. You will also be invited to the respective private channel. 
-
-`!ctf <join/leave>`
-Gets/gets rid of the CTF role created with this CTF team.
-
 `!ctf invite <user>`
 Invites a user to CTF team - `user` is granted the CTF role.
 
 `!ctf delete "<challenge>"`
-Remove a challenge (this requires the bot has manage channels permissions). 
+Remove a challenge (this requires the bot has manage channels permissions).
 This will **not** automatically delete the respective private channel. Server staff can remove manually if required.
 
 `!ctf archive`
-Archives this ctf and all the respective challenges (this requires the bot has manage channels permissions). 
+Archives this ctf and all the respective challenges (this requires the bot has manage channels permissions).
 
 `!ctf unarchive`
-Unarchives this ctf and all the respective challenges (this requires the bot has manage channels permissions). 
+Unarchives this ctf and all the respective challenges (this requires the bot has manage channels permissions).
 
 """
 
@@ -125,11 +119,11 @@ chal_help_text = """
 These commands are callable from a CTF **challenge** environment.
 
 `!chal done [<users>]`
-Marks this challenge as completed, and moves channel to "done" category. You may optionally include @'s of `users` that worked with you. 
-Once a challenge is completed, **no one** except you (and admins) can alter the done list or change reset the status to "undone". 
+Marks this challenge as completed, and moves channel to "done" category. You may optionally include @'s of `users` that worked with you.
+Once a challenge is completed, **no one** except you (and admins) can alter the done list or change reset the status to "undone".
 
 `!chal invite <user>`
-Invites a `user` to a challenge channel. 
+Invites a `user` to a challenge channel.
 
 `!chal undone`
 Marks this challenge as **not** completed. This will move the channel back to the "working" category.

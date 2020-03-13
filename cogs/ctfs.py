@@ -33,6 +33,7 @@ from controllers.db import client, ctfdb, ctfs, teamdb, serverdb, challdb
 import models.ctf as ctfmodel
 
 
+
 class Ctftime(commands.Cog):
     def __init__(self, bot):
         self.upcoming_l = []
@@ -509,6 +510,12 @@ class Ctfs(commands.Cog):
     @ctf.command()
     async def unarchive(self, ctx):
         await respond(ctx, chk_fetch_team(ctx).unarchive)
+
+    @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
+    @commands.has_permissions(manage_channels=True)
+    @ctf.command()
+    async def export(self, ctx):
+        await respond(ctx, chk_fetch_team(ctx).export, ctx.author)
 
     @ctf.command()
     async def list(self, ctx):

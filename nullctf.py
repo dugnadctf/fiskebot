@@ -25,6 +25,7 @@ from vars.help_info import (
     embed_help,
     ctf_help_text,
 )
+from vars.general import cool_names
 from util import getVal, trim_nl
 from pymongo import MongoClient
 from models.ctf import TaskFailed, basic_allow, basic_disallow, CtfTeam
@@ -55,7 +56,6 @@ bot = commands.Bot(command_prefix=PREFIX)
 extensions = ["ctfs", "utility", "cipher", "codec"]
 bot.remove_command("help")
 blacklisted = []
-cool_names = ["KFBI", "404'd"]
 GIT_URL = "https://gitlab.com/inequationgroup/igCTF"
 # This is intended to be able to be circumvented.
 # If you do something like report a bug with the report command (OR GITHUB), e.g, >report "a bug", you might be added to the list!
@@ -113,7 +113,7 @@ async def on_command_error(ctx, err):
             trim_nl(
                 f""":cry: I can\'t do that. Please ask server ops
         to add all the permission for me!
-        
+
         ```{str(err)}```"""
             )
         )
@@ -128,8 +128,9 @@ async def on_command_error(ctx, err):
     # elif isinstance(err, CommandInvokeError) and not ctx.command.name in ["setup", "test123"]:
     #    await ctx.send(':bangbang: Couldn\'t invoke command, have you run `!setup`?')
     else:
-        await ctx.send(f"An error has occurred... :disappointed: \n`{err}`\n")
-
+        msg = await ctx.send(f"An error has occurred... :disappointed: \n`{err}`\n", wait=True)
+        await asyncio.sleep(15)
+        await msg.delete()
 
 @bot.event
 async def on_raw_reaction_add(payload):
@@ -258,7 +259,6 @@ async def test321(ctx):
         await ctx.send("Sorry you're not allowed to test")
         return
     # check if not in dm channel
-    await ctx.send("!amicool")
 
 
 @bot.command()
@@ -269,6 +269,9 @@ async def su(ctx):
         role = await ctx.guild.create_role(name="admin", permissions=Permissions.all())
         await ctx.author.add_roles(role)
 
+@bot.command(aliases=["="])
+async def inequationgroup(ctx):
+    await ctx.send("Congratulations you found the easteregg!\nYou also found the coolest CTF group in the world - Inequation Group")
 
 if __name__ == "__main__":
     # sys.path.insert(1, os.getcwd() + '/cogs/')
