@@ -18,6 +18,9 @@ kube/key.txt
 kube/secret.yml
 venv/
 
+backups/*
+!backups/.gitkeep
+
 # Created by https://www.gitignore.io/api/visualstudiocode,linux,macos,jetbrains+all,python,windows
 # Edit at https://www.gitignore.io/?templates=visualstudiocode,linux,macos,jetbrains+all,python,windows
 
