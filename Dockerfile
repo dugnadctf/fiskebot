@@ -13,7 +13,6 @@ WORKDIR ${APP_HOME}
 
 RUN chown ${NAME}:${NAME} ${APP_HOME}
 
-USER igctf
 
 COPY --chown=igctf:igctf nullctf.py util.py ${APP_HOME}/
 COPY --chown=igctf:igctf cogs ${APP_HOME}/cogs

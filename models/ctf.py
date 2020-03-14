@@ -332,7 +332,12 @@ class CtfTeam(object):
 
         CTF = {"channels":[]}
         main_chan = guild.get_channel(cid)
-        for channel in [main_chan]:
+
+        channels = [main_chan]
+        for chal in self.challenges:
+            channels.append(guild.get_channel(chal.chan_id))
+
+        for channel in channels:
             chan = {"name":channel.name, "topic":channel.topic, "messages": []}
 
             async for m in main_chan.history(limit=None, oldest_first=True):
@@ -351,11 +356,18 @@ class CtfTeam(object):
 
         CTF["channels"].append(chan)
         print(json.dumps(CTF,indent=4))
+        f = f"backups/{guild.name} - {main_chan.name}.json"
+        with open(f, "w") as w:
+            json.dump(CTF,w)
 
+        for chn in guild.text_channels:
+            if chn.name == "bot":
+                await chn.send(file=discord.File(f))
+                break
+        else:
+            return [(None, f"Saved JSON, but couldn't find a bot channel to upload the writeup to")]
 
-
-
-
+        return [(None, f"{self.name} CTF has been exported. Verify and issue the `!ctf deletectf` command")]
 
         # Get all messages
         # Export to JSON
@@ -372,6 +384,31 @@ class CtfTeam(object):
         #)
         #self.refresh()
         return [(None, f"{self.name} CTF has been exported.")]
+
+    async def delete(self, author):
+        cid = self.__chan_id
+        guild = self.__guild
+        teams = self.__teams
+
+        authors_name = str(author)
+
+        # TODO superuser, cool_names or a quorum of users in the team that participated in a CTF
+        if not any((name in authors_name for name in cool_names)):
+            return [(None, f"Sorry you are not authorized at this time")]
+
+        main_chan = guild.get_channel(cid)
+
+        channels = [main_chan]
+        for chal in self.challenges:
+            channels.append(guild.get_channel(chal.chan_id))
+
+        role = chk_get_role(guild, self.__teamdata["role_id"])
+        await role.delete(reason="exporting CTF")
+        for chn in channels:
+            await chn.delete(reason="exporting CTF")
+        return []
+
+
 
     async def unarchive(self):
         cid = self.__chan_id
