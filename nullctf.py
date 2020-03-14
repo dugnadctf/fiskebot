@@ -239,6 +239,7 @@ async def leaveordelete(ctx):
                 cnt += 1
 
 
+
 @bot.command()
 async def test123(ctx):
     if not ctx.author.id in creator_id:
@@ -259,6 +260,18 @@ async def test321(ctx):
         await ctx.send("Sorry you're not allowed to test")
         return
     # check if not in dm channel
+    #
+@bot.command()
+async def delete_teams(ctx):
+    if not ctx.author.id in creator_id:
+        await ctx.send("Sorry you're not allowed to test")
+        return
+    guild = ctx.guild
+    for role in guild.roles:
+        if "_team" in role.name:
+            await role.delete()
+
+
 
 
 @bot.command()

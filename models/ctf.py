@@ -128,7 +128,6 @@ def userToDict(user):
     try:
         return {"id":user.id,"nick":user.nick,"user":user.name, "avatar":user.avatar, "bot":user.bot}
     except AttributeError:
-        print(user)
         return {"id":user.id,"nick":"<USER LEFT BOOTPLUG>","user":user.name, "avatar":user.avatar, "bot":user.bot}
 
 
@@ -816,7 +815,7 @@ async def delete(ctx, author):
             channels.append(chal)
 
     for role in guild.roles:
-        if f"{main_chan.name}_" in role.name:
+        if f"{main_chan.name}_" in role.name.lower():
             await role.delete(reason="exporting CTF")
             break
 
