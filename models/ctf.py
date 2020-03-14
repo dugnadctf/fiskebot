@@ -10,6 +10,8 @@ from vars.general import cool_names
 from util import trim_nl
 
 import json
+import bson
+from bson.codec_options import CodecOptions
 
 from controllers.db import client, ctfdb, ctfs, teamdb, serverdb, challdb
 
@@ -316,97 +318,6 @@ class CtfTeam(object):
         # await role.delete()
 
         return [(None, f"{self.name} CTF has been archived.")]
-
-    async def export(self, author):
-        cid = self.__chan_id
-        guild = self.__guild
-        teams = self.__teams
-
-        authors_name = str(author)
-
-        if not self.is_archived:
-            return [(None, f"You need to archive the CTF before exporting")]
-        # TODO superuser, cool_names or a quorum of users in the team that participated in a CTF
-        if not any((name in authors_name for name in cool_names)):
-            return [(None, f"Sorry you are not authorized at this time")]
-
-        CTF = {"channels":[]}
-        main_chan = guild.get_channel(cid)
-
-        channels = [main_chan]
-        for chal in self.challenges:
-            channels.append(guild.get_channel(chal.chan_id))
-
-        for channel in channels:
-            chan = {"name":channel.name, "topic":channel.topic, "messages": []}
-
-            async for m in main_chan.history(limit=None, oldest_first=True):
-                d = {"id":m.id , "created_at":m.created_at.isoformat(), "content":m.clean_content, "raw_content":m.content}
-                d["author"] = userToDict(m.author)
-                d["attachments"] = [{"filename":a.filename, "url": str(a.url)} for a in m.attachments]
-                d["channel"] = {"name": m.channel.name}
-                d["edited_at"] = m.edited_at.isoformat() if m.edited_at != None else m.edited_at
-                #used for URLs
-                d["embeds"] = [ e.to_dict() for e in m.embeds]
-                d["mentions"] = [userToDict(mention) for mention in m.mentions]
-                d["channel_mentions"] = [{"id":c.id,"name":c.name} for c in m.channel_mentions]
-                d["mention_everyone"] = m.mention_everyone
-                d["reactions"] = [{"count":r.count,"emoji": r.emoji if type(r.emoji) == str else { "name":r.emoji.name, "url": str(r.emoji.url)}} for r in m.reactions]
-                chan["messages"].append(d)
-
-        CTF["channels"].append(chan)
-        print(json.dumps(CTF,indent=4))
-        f = f"backups/{guild.name} - {main_chan.name}.json"
-        with open(f, "w") as w:
-            json.dump(CTF,w)
-
-        for chn in guild.text_channels:
-            if chn.name == "bot":
-                await chn.send(file=discord.File(f))
-                break
-        else:
-            return [(None, f"Saved JSON, but couldn't find a bot channel to upload the writeup to")]
-
-        return [(None, f"{self.name} CTF has been exported. Verify and issue the `!ctf deletectf` command")]
-
-        # Get all messages
-        # Export to JSON
-	# save on host system, upload to discord again, save blob to mongo and trigger backup
-        # Get role
-        # CONFIRMATION
-        # delete role
-        # delete channels
-	# delete category if category empty after deletion
-        #
-        ##Mongo db update
-        #chk_upd(
-        #    self.name, teams.update_one({"chan_id": cid}, {"$set": {"exported": True}})
-        #)
-        #self.refresh()
-        return [(None, f"{self.name} CTF has been exported.")]
-
-    async def delete(self, author):
-        cid = self.__chan_id
-        guild = self.__guild
-        teams = self.__teams
-
-        authors_name = str(author)
-
-        # TODO superuser, cool_names or a quorum of users in the team that participated in a CTF
-        if not any((name in authors_name for name in cool_names)):
-            return [(None, f"Sorry you are not authorized at this time")]
-
-        main_chan = guild.get_channel(cid)
-
-        channels = [main_chan]
-        for chal in self.challenges:
-            channels.append(guild.get_channel(chal.chan_id))
-
-        role = chk_get_role(guild, self.__teamdata["role_id"])
-        await role.delete(reason="exporting CTF")
-        for chn in channels:
-            await chn.delete(reason="exporting CTF")
-        return []
 
 
 
@@ -807,3 +718,101 @@ class Challenge(object):
         else:
             raise ValueError(f"Cannot convert to user: {user}")
 
+
+async def export(ctx, author):
+    guild = ctx.guild
+
+    authors_name = str(author)
+
+    #if not self.is_archived:
+    #    return [(None, f"You need to archive the CTF before exporting")]
+    # TODO superuser, cool_names or a quorum of users in the team that participated in a CTF
+    if not any((name in authors_name for name in cool_names)):
+        return [(None, f"Sorry you are not authorized at this time")]
+
+    CTF = {"channels":[]}
+    main_chan = ctx.channel
+
+    channels = [main_chan]
+    for chal in guild.text_channels:
+        if f"{main_chan.name}-" in chal.name:
+            channels.append(chal)
+
+    for channel in channels:
+        chan = {"name":channel.name, "topic":channel.topic, "messages": []}
+
+        async for m in channel.history(limit=None, oldest_first=True):
+            d = {"id":m.id , "created_at":m.created_at.isoformat(), "content":m.clean_content, "raw_content":m.content}
+            d["author"] = userToDict(m.author)
+            d["attachments"] = [{"filename":a.filename, "url": str(a.url)} for a in m.attachments]
+            d["channel"] = {"name": m.channel.name}
+            d["edited_at"] = m.edited_at.isoformat() if m.edited_at != None else m.edited_at
+            #used for URLs
+            d["embeds"] = [ e.to_dict() for e in m.embeds]
+            d["mentions"] = [userToDict(mention) for mention in m.mentions]
+            d["channel_mentions"] = [{"id":c.id,"name":c.name} for c in m.channel_mentions]
+            d["mention_everyone"] = m.mention_everyone
+            d["reactions"] = [{"count":r.count,"emoji": r.emoji if type(r.emoji) == str else { "name":r.emoji.name, "url": str(r.emoji.url)}} for r in m.reactions]
+            chan["messages"].append(d)
+
+        CTF["channels"].append(chan)
+
+    json_file = f"backups/{guild.name} - {main_chan.name}.json"
+    with open(json_file, "w") as w:
+        json.dump(CTF,w)
+
+    bson_file = f"backups/{guild.name} - {main_chan.name}.bson"
+    with open(bson_file, "wb") as w:
+        w.write(bson.BSON.encode(CTF))
+
+    for chn in guild.text_channels:
+        if chn.name == "bot":
+            await chn.send(files=[
+                discord.File(bson_file),
+                discord.File(json_file)
+                ])
+            break
+    else:
+        return [(None, f"Saved JSON, but couldn't find a bot channel to upload the writeup to")]
+
+    return [(None, f"{main_chan.name} CTF has been exported. Verify and issue the `!ctf deletectf` command")]
+
+    # Get all messages
+    # Export to JSON
+    # save on host system, upload to discord again, save blob to mongo and trigger backup
+    # Get role
+    # CONFIRMATION
+    # delete role
+    # delete channels
+    # delete category if category empty after deletion
+    #
+    ##Mongo db update
+    #chk_upd(
+    #    self.name, teams.update_one({"chan_id": cid}, {"$set": {"exported": True}})
+    #)
+    #self.refresh()
+    return [(None, f"{self.name} CTF has been exported.")]
+
+async def delete(ctx, author):
+    guild = ctx.guild
+
+    authors_name = str(author)
+
+    # TODO superuser, cool_names or a quorum of users in the team that participated in a CTF
+    if not any((name in authors_name for name in cool_names)):
+        return [(None, f"Sorry you are not authorized at this time")]
+
+    main_chan = ctx.channel
+    channels = [main_chan]
+    for chal in guild.text_channels:
+        if f"{main_chan.name}-" in chal.name:
+            channels.append(chal)
+
+    for role in guild.roles:
+        if f"{main_chan.name}_" in role.name:
+            await role.delete(reason="exporting CTF")
+            break
+
+    for chn in channels:
+        await chn.delete(reason="exporting CTF")
+    return []
