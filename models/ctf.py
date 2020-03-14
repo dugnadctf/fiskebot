@@ -125,7 +125,14 @@ def chk_archive(func):
     return wrapper
 
 def userToDict(user):
-    return {"id":user.id,"nick":user.nick,"user":user.name, "avatar":user.avatar, "bot":user.bot}
+    try:
+        return {"id":user.id,"nick":user.nick,"user":user.name, "avatar":user.avatar, "bot":user.bot}
+    except AttributeError:
+        print(user)
+        return {"id":user.id,"nick":"<USER LEFT BOOTPLUG>","user":user.name, "avatar":user.avatar, "bot":user.bot}
+
+
+
 
 class TaskFailed(commands.UserInputError):
     def __init__(self, msg):
