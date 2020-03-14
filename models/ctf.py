@@ -742,7 +742,7 @@ async def export(ctx, author):
         chan = {"name":channel.name, "topic":channel.topic, "messages": []}
 
         async for m in channel.history(limit=None, oldest_first=True):
-            d = {"id":m.id , "created_at":m.created_at.isoformat(), "content":m.clean_content, "raw_content":m.content}
+            d = {"id":m.id , "created_at":m.created_at.isoformat(), "content":m.clean_content}
             d["author"] = userToDict(m.author)
             d["attachments"] = [{"filename":a.filename, "url": str(a.url)} for a in m.attachments]
             d["channel"] = {"name": m.channel.name}
@@ -766,7 +766,7 @@ async def export(ctx, author):
         w.write(bson.BSON.encode(CTF))
 
     for chn in guild.text_channels:
-        if chn.name == "bot":
+        if chn.name == "archive":
             await chn.send(files=[
                 discord.File(bson_file),
                 discord.File(json_file)
