@@ -16,11 +16,11 @@ services:
     ports:
       - "127.0.0.1:27017:27017"
     volumes:
-      - mongodb:/data/db
-      - mongodb_config:/data/configdb
+      - mdb:/data/db
+      - mdb:/data/configdb
 
 volumes:
-  MongoDB:
+  mdb:
     external: true
-  MongoDB_config:
+  mdb:
     external: true
