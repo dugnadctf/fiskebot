@@ -5,8 +5,6 @@ services:
     image: kfbi/igctf
     restart: always
     volumes:
-      - mongodb:/data/db
-      - mongodb_config:/data/configdb
       - ./:/igctf
     depends_on:
       - mongo
@@ -17,6 +15,9 @@ services:
     restart: always
     ports:
       - "127.0.0.1:27017:27017"
+    volumes:
+      - mongodb:/data/db
+      - mongodb_config:/data/configdb
 
 volumes:
   MongoDB:
