@@ -17,10 +17,10 @@ services:
       - "127.0.0.1:27017:27017"
     volumes:
       - mdb:/data/db
-      - mdb:/data/configdb
+      - mdb_config:/data/configdb
 
 volumes:
   mdb:
     external: true
-  mdb:
+  mdb_config:
     external: true
