@@ -20,4 +20,6 @@ services:
 
 volumes:
   mongodb:
+    external: true
   mongodb_config:
+    external: true
