@@ -1,6 +1,4 @@
-auth_token.py
-nullsig.pyc
-nullctf.pyc
+config_vars.py
 __pycache__/
 cogs/__pycache__/
 auth.py
@@ -296,3 +294,4 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/visualstudiocode,linux,macos,jetbrains+all,python,windows
+cogs/__pycache__/

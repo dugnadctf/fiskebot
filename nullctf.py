@@ -17,14 +17,13 @@ from discord.ext.commands import (
     bot,
 )
 from discord.ext import commands
+
 from vars.help_info import (
-    help_page,
-    help_page_2,
-    embed_help,
     src,
-    embed_help,
     ctf_help_text,
 )
+from help_info import *
+
 from vars.general import cool_names
 from util import getVal, trim_nl
 from pymongo import MongoClient
@@ -51,9 +50,7 @@ default_categories = ["working", "done"]
 
 client = discord.Client()
 PREFIX = "!"
-# TODO: easter egg if typing != :)
 bot = commands.Bot(command_prefix=PREFIX)
-extensions = ["ctfs", "utility", "cipher", "codec"]
 bot.remove_command("help")
 blacklisted = []
 GIT_URL = "https://gitlab.com/inequationgroup/igCTF"
@@ -63,6 +60,11 @@ GIT_URL = "https://gitlab.com/inequationgroup/igCTF"
 # TODO: ok so I was/am an idiot and kind of forgot that I was calling the updateDb function every time ctftime current, timeleft, and countdown are called...  so I should probably fix that.
 
 # https://github.com/Rapptz/discord.py/blob/master/examples/background_task.py
+
+import help_info
+
+extensions = ['ctfs', 'ctftime', 'configuration', 'encoding', 'cipher', 'utility']
+cool_names = ['nullpxl', 'Yiggles', 'JohnHammond', 'voidUpdate', 'Michel Ney', 'theKidOfArcrania', 'l14ck3r0x01', 'hasu', 'KFBI', 'mrFu', 'warlock_rootx', 'd347h4ck'] 
 
 
 @bot.event
@@ -162,14 +164,47 @@ async def on_raw_reaction_remove(payload):
 async def source(ctx):
     await ctx.send(f"Source: {GIT_URL}\nForked from: {src}")
 
-
 @bot.command()
 async def help(ctx, page=None):
-    info = help_page if not page or page == "1" else help_page_2
-    await embed_help(ctx, '!request "x" - request a feature', info)
+    
+    if page == 'ctftime':
+        emb = discord.Embed(description=help_info.ctftime_help, colour=4387968)
+        emb.set_author(name='CTFTime Help')
+    elif page == 'ctf':
+        emb = discord.Embed(description=help_info.ctf_help, colour=4387968)
+        emb.set_author(name='CTF Help')
+    elif page == 'config':
+        emb = discord.Embed(description=help_info.config_help, colour=4387968)
+        emb.set_author(name='Configuration Help')
+    elif page == 'utility':
+        emb = discord.Embed(description=help_info.utility_help, colour=4387968)
+        emb.set_author(name='Utilities Help')
+    elif page == "2":
+        emb = discord.Embed(description=help_info.help_page_1, colour=4387968)
+        emb.set_author(name='NullCTF Help')
+    elif page == "1":
+        emb = discord.Embed(description=help_info.help_page_2, colour=4387968)
+        emb.set_author(name='NullCTF Help')
+    else:
+        emb = discord.Embed(description=help_info.help_page, colour=4387968)
+        emb.set_author(name='Index Help')
 
+    await ctx.channel.send(embed=emb)
 
-# Bot sends a dm to creator with the name of the user and their request.
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        return
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("Missing a required argument.  Do >help")
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("You do not have the appropriate permissions to run this command.")
+    if isinstance(error, commands.BotMissingPermissions):
+        await ctx.send("I don't have sufficient permissions!")
+    else:
+        print("error not caught")
+        print(error)
+
 @bot.command()
 async def request(ctx, feature):
     for cid in creator_id:
@@ -179,7 +214,6 @@ async def request(ctx, feature):
     await ctx.send(f""":pencil: Thanks, "{feature}" has been requested!""")
 
 
-# Bot sends a dm to creator with the name of the user and their report.
 @bot.command()
 async def report(ctx, error_report):
     for cid in creator_id:
@@ -238,8 +272,6 @@ async def leaveordelete(ctx):
                 await guild.leave()
                 cnt += 1
 
-
-
 @bot.command()
 async def test123(ctx):
     if not ctx.author.id in creator_id:
@@ -270,9 +302,6 @@ async def delete_teams(ctx):
     for role in guild.roles:
         if "_team" in role.name:
             await role.delete()
-
-
-
 
 @bot.command()
 async def su(ctx):

@@ -1,6 +1,6 @@
 # igCTF
 
-This is work in progress.. Copied with permission from nullpxl to make my own modifications.
+Copied with permission from nullpxl to make my own modifications. Also merged in changes from the UTCBot fork
 
 [Original Project](https://github.com/NullPxl/NullCTF)
 
@@ -19,6 +19,13 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### setup
+
+```
+docker volume create mdb
+docker volume create mdb_config
+```
+
 ### build
 
 `docker-comopse up --build`
@@ -28,6 +35,24 @@ pip install -r requirements.txt
 `docker-compose up`
 
 ## How to Use
+>### *A [discord.py](http://discordpy.readthedocs.io/en/latest/) bot focused on providing CTF tools for collaboration in Discord servers (ctftime.org commands, team setup + ctfd integration, utilites, etc)!  If you have a feature request, make it a GitHub issue or use the >request "x" command.*
+
+[Invite to your server](https://discordapp.com/oauth2/authorize?client_id=455502163452362753&permissions=268528720&scope=bot)
+\
+[Join the support server](https://discord.gg/yf8E2s8)
+
+#  How to Use
+*If you ever forget a command, use `>help`!*
+
+After inviting to your server, it is recommended that you first configure the categories you want active and archived CTF channels to go into.
+* When you create a ctf, it will by default go into the "CTF" category (it will create one if it is not present), and when you archive a ctf it will go into the ARCHIVE category.
+* You can configure this with `>config ctf_category "Category for CTFs"` and `>config archive_category "Category for Archived CTFs"` 
+---
+
+## CTF Commands
+
+The following commands are the ones you will most likely want to pay attention to, although if you do not expect to use this bot to manage CTFs you can skip this category and go down to CTFTime commands.
+
 
 > This bot has commands for encoding/decoding, ciphers, and other commonly accessed tools during CTFs. But, the main use for igCTF is to easily set up a CTF for your discord server to play as a team. The following commands listed are probably going to be used the most.
 
@@ -46,6 +71,33 @@ _NOTE: the following ctf specific commands will only be accepted under the chann
 - `>ctf end` Delete the ctf info from the db, and remove the role from your server. _Must have permissions to manage channels_
 
 ---
+ * `>ctf join/leave` Using this command will either give or remove the role of a created ctf to/from you.
+ ![ctf join/leave](https://i.imgur.com/R1ktkMv.png)
+ 
+ * `>ctf challenge add/working/solved/remove "challenge"` Allows users to add or remove challenges to a list, and then set the status of that challenge. *Use quotations*
+
+  * `>ctf challenge list` This is the list command that was previously mentioned, it displays the added challenges, who's working on what, and if a challenge is solved (and by who).
+ ![desc](https://i.imgur.com/l9jsuLz.png)
+
+  > NOTE: There is shorthand!  challenge -> chal/chall, add -> a, working -> w, solved -> s, remove -> r
+ 
+* `>ctf challenge pull "http(s)://ctfd.url"` Pull challenges and their solved states from a CTFd hosted CTF, and add them to your challenges list.  Requires the username and password to be set with `>ctf setcreds "username" "password"`
+
+* `>ctf setcreds "ctfd username" "password"` Pin the message of ctf credentials, can be fetched by the bot later in order to use `>ctf challenge pull`.  Credentials are never stored outside of Discord.
+![ctf pull and setcreds](https://i.imgur.com/Z3e0pE3.png)
+
+* `>ctf creds` Gets the credentials from the pinned message.
+
+> *IMPORTANT: credentials are never stored outside of the pinned message on Discord. They are needed to pull challenge data and solve state from the CTFd platform.*
+
+
+* `>ctf archive` Move the CTF channel into the Archive category.  *Must have permissions to manage channels*
+
+* `>ctf delete` Delete the CTF info from the database, and delete the role. *Must have permissions to manage channels*
+
+---
+
+## [CTFtime](https://ctftime.org) Commands
 
 > The following commands use the api from [ctftime](https://ctftime.org/api)
 
@@ -65,10 +117,22 @@ _NOTE: the following ctf specific commands will only be accepted under the chann
 ---
 
 > Utility commands
+* `>ctftime top <year>`  Shows the ctftime leaderboards from a certain year *(dates back to 2011)*.
+![enter image description here](https://i.imgur.com/jdPWmCV.png)
+
+---
+## Utility Commands
+* `>help` Returns the help page
+
+* `>magicb filetype` Returns the mime and magicbytes of your supplied filetype. Useful for stegonography challenges where a filetype is corrupt.
+
+* `>rot  "a message"` Returns all 25 possible rotations for a message.
 
 - `>magicb filetype` Returns the mime and magicbytes of your supplied filetype. Useful for stegonography challenges where a filetype is corrupt.
 
-- `>rot "a message" <right/left>` Returns all 25 possible rotations for a message with an optional direction (defaults to left).
+* `>b32 encode/decode "message"` Encode or decode in base32
+
+* `>binary encode/decode "message"` Encode or decode in binary.
 
 - `>b64 encode/decode "message"` Encode or decode in base64 _(at the time of writing this, if there are any unprintable characters this command will not work, this goes for all encoding/decoding commands)._
 
@@ -92,6 +156,33 @@ _NOTE: the following ctf specific commands will only be accepted under the chann
 
 - `>request/report "a feature"/"a bug"` Dm's the creator with your feature/bug request/report.
 
-- `>help pagenumber` Returns the help page of your supplied number (currently there are 2 pages)
+# Setup - General Overview
+---
+General guide for setup, not very detailed currently but I will expand in the future if people actually end up wanting to host locally :P 
+* This may be necessary in the future because of Disord's recent [verification requirements](https://support.discordapp.com/hc/en-us/articles/360040720412-Bot-Verification-and-Data-Whitelisting) for bots in over 100 servers (which this bot is already over).  This rule, which will disallow users to invite bots that have not been verified by the owner (which requires photoid) will be enforced starting october 7th. 
+```
+Create a discord bot on discord's developer portal -> get the bot token -> clone this repo -> install discord.py >= 1.3.3 ->
+Create mongodb account -> create project -> create cluster -> create db user -> 
+add your ip to db whitelist access -> connect to cluster and select python as driver ->
+get connection string and follow mongodb's steps with your password ->
+pip install pymongo and dnspython -> use the following template for creating dbs and collections under the file config_vars.py
+```
+```
+# config_vars.py
+from pymongo import MongoClient
 
-> ### Have a feature request? Make a GitHub issue or use the >request command
+discord_token = ""
+mongodb_connection = ""
+
+client = MongoClient(mongodb_connection)
+
+ctfdb = client['ctftime'] # Create ctftime database
+ctfs = ctfdb['ctfs'] # Create ctfs collection
+
+teamdb = client['ctfteams'] # Create ctf teams database
+
+serverdb = client['serverinfo'] # configuration db
+```
+```
+invite the bot to your server
+```

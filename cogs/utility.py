@@ -1,10 +1,8 @@
-import base64
-import binascii
 import collections
 import string
 import urllib.parse
-import json
 import random
+import json
 import discord
 from discord.ext import commands
 from nullctf import PREFIX
@@ -25,7 +23,7 @@ class Utility(commands.Cog):
     #     except discord.errors.HTTPException:
     #         await ctx.send("Can't delete messages more than 14 days old!  Try a lower number.")
 
-    @commands.command(aliases=["char"])
+    @commands.command(aliases=['char'])
     async def characters(self, ctx, string):
         await ctx.send(len(string))
 
