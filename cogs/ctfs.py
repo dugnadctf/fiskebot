@@ -21,8 +21,6 @@ from colorthief import ColorThief
 import discord
 from discord.ext import commands
 from vars.help_info import (
-    help_page,
-    help_page_2,
     embed_help,
     src,
     embed_help,
@@ -31,7 +29,6 @@ from vars.help_info import (
 )
 from controllers.db import client, ctfdb, ctfs, teamdb, serverdb, challdb
 import models.ctf as ctfmodel
-
 
 
 class Ctftime(commands.Cog):
@@ -591,7 +588,6 @@ class Ctfs(commands.Cog):
         match = tweet.group(0)
         await ctx.send(match + "\nhttps://hackthebox.eu")
 
-
 def setup(bot):
     bot.add_cog(Ctfs(bot))
-    bot.add_cog(Ctftime(bot))
+    #bot.add_cog(Ctftime(bot))

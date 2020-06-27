@@ -2,7 +2,7 @@ version: "2"
 services:
   bot:
     build: .
-    image: kfbi/igctf
+    image: kfbi/igctf:latest
     restart: always
     volumes:
       - ./:/igctf
@@ -11,7 +11,7 @@ services:
     env_file:
       - bot-variables.env
   mongo:
-    image: mongo
+    image: mongo:latest
     restart: always
     ports:
       - "127.0.0.1:27017:27017"
