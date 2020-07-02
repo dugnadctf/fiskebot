@@ -5,7 +5,7 @@ from discord.ext import commands
 from functools import partial, wraps
 
 from vars.help_info import ctf_help_text, chal_help_text, embed_help
-from vars.general import cool_names
+from vars.general import cool_names, deleted_category, export_channel
 
 from util import trim_nl
 
@@ -93,6 +93,13 @@ basic_disallow = discord.PermissionOverwrite(
     read_messages=False,
     send_messages=False,
     read_message_history=False,
+)
+
+only_read = discord.PermissionOverwrite(
+    add_reactions=False,
+    read_messages=True,
+    send_messages=False,
+    read_message_history=True,
 )
 
 
@@ -192,7 +199,7 @@ class CtfTeam(object):
         return [
             (
                 None,
-                f"{name} ctf has been created! :tada: react to this message to join.",
+                f"ctf <#{chan.id}>  has been created! :tada: react to this message to join.",
             )
         ]
 
@@ -364,7 +371,7 @@ class CtfTeam(object):
         guild = self.__guild
         teams = self.__teams
 
-        catg_archive = load_category(guild, "archive")
+        catg_delete = load_category(guild, deleted_category)
 
         # Update database
         fullname = f"{self.name}-{name}"
@@ -373,10 +380,10 @@ class CtfTeam(object):
             fullname,
             teams.update_one({"chan_id": cid}, {"$pull": {"chals": chal.chan_id}}),
         )
-        await chal._delete(catg_archive)
+        await chal._delete(catg_delete)
         self.refresh()
 
-        return [(None, f'Challenge "{name}" is deleted, challenge channel archived.')]
+        return [(None, f'Challenge <#{chal.chan_id}> is deleted, challenge channel archived in {deleted_category}.')]
 
     def find_chal(self, name, err_on_fail=True):
         return Challenge.find(self.__guild, self.__chan_id, name, err_on_fail)
@@ -622,12 +629,13 @@ class Challenge(object):
             (
                 self.ctf_id,
                 trim_nl(
-                    f"""{self.team.mention} :tada: "{self.name}" has
+                    f"""{self.team.mention} :tada: <#{cid}> has
                 been completed by {mentions}!"""
                 ),
             ),
             (None, f"Challenge moved to done!"),
         ]
+
 
     @chk_archive
     async def invite(self, author, user):
@@ -745,7 +753,7 @@ async def export(ctx, author):
             channels.append(chal)
 
     for channel in channels:
-        chan = {"name":channel.name, "topic":channel.topic, "messages": []}
+        chan = {"name":channel.name, "topic":channel.topic, "messages":[], "pins":[m.id for m in await channel.pins()]}
 
         async for m in channel.history(limit=None, oldest_first=True):
             d = {"id":m.id , "created_at":m.created_at.isoformat(), "content":m.clean_content}
@@ -772,7 +780,7 @@ async def export(ctx, author):
         w.write(bson.BSON.encode(CTF))
 
     for chn in guild.text_channels:
-        if chn.name == "archive":
+        if chn.name == export_channel:
             await chn.send(files=[
                 discord.File(bson_file),
                 discord.File(json_file)

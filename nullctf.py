@@ -22,12 +22,13 @@ from vars.help_info import (
     src,
     ctf_help_text,
 )
+from vars.general import deleted_category, export_channel
 from help_info import *
 
 from vars.general import cool_names
 from util import getVal, trim_nl
 from pymongo import MongoClient
-from models.ctf import TaskFailed, basic_allow, basic_disallow, CtfTeam
+from models.ctf import TaskFailed, basic_allow, basic_disallow, CtfTeam, only_read
 from controllers.db import teamdb
 
 import traceback
@@ -46,7 +47,8 @@ FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
 logging.basicConfig(format=FORMAT, level=logging.WARN)
 
 creator_id = [87606885405982720]
-default_categories = ["working", "done"]
+default_categories = ["working", "done", deleted_category]
+default_channels = [export_channel]
 
 client = discord.Client()
 PREFIX = "!"
@@ -191,20 +193,6 @@ async def help(ctx, page=None):
 
     await ctx.channel.send(embed=emb)
 
-@bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound):
-        return
-    if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("Missing a required argument.  Do >help")
-    if isinstance(error, commands.MissingPermissions):
-        await ctx.send("You do not have the appropriate permissions to run this command.")
-    if isinstance(error, commands.BotMissingPermissions):
-        await ctx.send("I don't have sufficient permissions!")
-    else:
-        print("error not caught")
-        print(error)
-
 @bot.command()
 async def request(ctx, feature):
     for cid in creator_id:
@@ -255,6 +243,13 @@ async def setup(ctx):
         if category not in existing_categories:
             category_channel = await ctx.guild.create_category(
                 category, overwrites=overwrites
+            )
+    overwrites = {guild.default_role: only_read, guild.me: basic_allow}
+    existing_channels = [channel.name for channel in ctx.guild.text_channels]
+    for channel in default_channels:
+        if channel not in existing_channels:
+            channel = await ctx.guild.create_text_channel(
+                channel, overwrites=overwrites
             )
 
     await ctx.send("Setup successfull! :tada:")
@@ -314,6 +309,10 @@ async def su(ctx):
 @bot.command(aliases=["="])
 async def inequationgroup(ctx):
     await ctx.send("Congratulations you found the easteregg!\nYou also found the coolest CTF group in the world - Inequation Group")
+
+@bot.command()
+async def sudo(ctx):
+    await ctx.send("This incident will be reported. https://xkcd.com/838/")
 
 if __name__ == "__main__":
     # sys.path.insert(1, os.getcwd() + '/cogs/')

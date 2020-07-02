@@ -372,10 +372,10 @@ async def respond_with_reaction(ctx, emoji, fn, *args):
 
 
 def check_name(name):
-    if len(name) > 32:
+    if len(name) > 100:
         raise ctfmodel.TaskFailed("Challenge name is too long!")
 
-    if not re.match(r"[-.!0-9A-Za-z ]+$", name):
+    if not re.match(r"[-.!0-9A-Za-z _]+$", name):
         raise ctfmodel.TaskFailed("Challenge contains invalid characters!")
 
     # Replace spaces with a dash, because discord does it :/
@@ -396,8 +396,20 @@ def chk_fetch_team_by_name(ctx, name):
         raise ctfmodel.TaskFailed("Failed to join CTF")
     return team
 
+def chk_fetch_team_by_challenge_id(ctx, id):
+    channels = ctx.guild.channels
 
-def chk_fetch_team(ctx):
+    found_channel_id = ""
+    for channel in channels:
+        if channel.name == name:
+            found_channel_id = channel.id
+    team = ctfmodel.CtfTeam.fetch(ctx.channel.guild, found_channel_id)
+    if not team:
+        raise ctfmodel.TaskFailed("Failed to join CTF")
+    return team
+
+
+def chk_fetch_team(ctx, ):
     team = ctfmodel.CtfTeam.fetch(ctx.channel.guild, ctx.channel.id)
     if not team:
         raise ctfmodel.TaskFailed("Please type this command in a ctf channel.")
@@ -415,7 +427,7 @@ def chk_fetch_chal(ctx):
 
 
 def parse_user(guild, user):
-    mat = re.match(r"<@([0-9]+)>$", user)
+    mat = re.match(r"<@!([0-9]+)>$", user)
     if mat:
         ret = guild.get_member(int(mat[1]))
     else:
@@ -451,26 +463,37 @@ class Ctfs(commands.Cog):
         )
 
     @commands.guild_only()
-    @commands.group()
+    @commands.group(aliases=["ct", "cf", "tf"])
     async def ctf(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send("Invalid command passed. Use !ctf help.")
 
-    @ctf.command("help")
+    @ctf.command("help",aliases=["h","man"])
     async def ctf_help(self, ctx):
         await embed_help(ctx, "CTF team help topic", ctf_help_text)
 
+
     @commands.bot_has_permissions(manage_channels=True)
-    @ctf.command()
-    async def add(self, ctx, name):
+    @ctf.command(aliases=["a", "new", "touch", "create"])
+    async def add(self, ctx, *words):
+        name = " ".join(words)
+        name = check_name(name)
+        emoji = '🔨'
+        await respond_with_reaction(ctx, emoji,  chk_fetch_team(ctx).add_chal, name)
+
+    @commands.bot_has_permissions(manage_channels=True)
+    @commands.command(aliases=["a", "c", "new", "touch", "add"])
+    async def add_shortcut(self, ctx, *words):
+        name = " ".join(words)
         name = check_name(name)
         emoji = '🔨'
         await respond_with_reaction(ctx, emoji,  chk_fetch_team(ctx).add_chal, name)
 
     @commands.bot_has_permissions(manage_channels=True)
     @commands.has_permissions(manage_channels=True)
-    @ctf.command()
-    async def delete(self, ctx, name):
+    @ctf.command(aliases=["r", "rm", "del", "d", "remove"])
+    async def delete(self, ctx, *words):
+        name = " ".join(words)
         name = check_name(name)
         await respond(ctx, chk_fetch_team(ctx).del_chal, name)
 
@@ -509,7 +532,7 @@ class Ctfs(commands.Cog):
         await respond(ctx, chk_fetch_team(ctx).unarchive)
 
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
-    @commands.has_permissions(manage_channels=True)
+    #@commands.has_permissions(manage_channels=True)
     @ctf.command()
     async def export(self, ctx):
         await respond(ctx, ctfmodel.export, ctx, ctx.author)
@@ -520,7 +543,7 @@ class Ctfs(commands.Cog):
     async def deletectf(self, ctx):
         await respond(ctx, ctfmodel.delete, ctx, ctx.author)
 
-    @ctf.command()
+    @ctf.command(aliases=["ls", "dir", "l", "challenges", "chals", "challs", "s", "status"])
     async def list(self, ctx):
         chals = chk_fetch_team(ctx).challenges
         if len(chals) == 0:
@@ -542,22 +565,53 @@ class Ctfs(commands.Cog):
         lines = "\n".join(lines)
         await ctx.send(f"```ini\n{lines}```")
 
+    @commands.command(aliases=["ls", "list", "dir", "l", "challenges", "chals", "challs", "s" , "status"])
+    async def list_shortcut(self, ctx):
+        chals = chk_fetch_team(ctx).challenges
+        if len(chals) == 0:
+            await ctx.send("No challenges added...")
+            return
+
+        msg_len = 50
+        lines = []
+        for chal in chals:
+            l = f"[{chal.team.name}] [{chal.name}] - {chal.status}"
+            msg_len += len(l) + 1
+            if msg_len > 1000:  # Over limit
+                lines = "\n".join(lines)
+                await ctx.send(f"```ini\n{lines}```")
+                lines = []
+                msg_len = len(l) + 51
+            lines.append(l)
+
+        lines = "\n".join(lines)
+        await ctx.send(f"```ini\n{lines}```")
+
     @commands.guild_only()
-    @commands.group()
+    @commands.group(aliases=["ch", "cha", "chall", "challenge"])
     async def chal(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send("Invalid command passed.  Use !help.")
 
     @commands.bot_has_permissions(manage_channels=True)
-    @chal.command("invite")
+    @chal.command("invite", aliases=["inv",])
     async def invite_chal(self, ctx, user):
         user = parse_user(ctx.channel.guild, user)
         await respond(ctx, chk_fetch_chal(ctx).invite, ctx.author, user)
 
     @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()
-    @chal.command()
+    @chal.command(aliases=["solve", "finish", "complete", "solved", "finished", "completed"])
     async def done(self, ctx, *withlist):
+        guild = ctx.channel.guild
+        users = [parse_user(guild, u) for u in withlist]
+        await respond(ctx, chk_fetch_chal(ctx).done, ctx.author, users)
+
+    @commands.bot_has_permissions(manage_channels=True)
+    @verify_owner()
+    @commands.guild_only()
+    @commands.command(aliases=["done", "solve", "finish", "complete", "solved", "finished", "completed"])
+    async def done_shortcut(self, ctx, *withlist):
         guild = ctx.channel.guild
         users = [parse_user(guild, u) for u in withlist]
         await respond(ctx, chk_fetch_chal(ctx).done, ctx.author, users)
@@ -566,10 +620,18 @@ class Ctfs(commands.Cog):
     async def chal_help(self, ctx):
         await embed_help(ctx, "Challenge help topic", chal_help_text)
 
+
     @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()
-    @chal.command()
+    @chal.command(aliases=["unsolve", "unfinish", "incomplete", "unsolved", "unfinished", "incompleted"])
     async def undone(self, ctx):
+        await respond(ctx, chk_fetch_chal(ctx).undone)
+
+    @commands.bot_has_permissions(manage_channels=True)
+    @verify_owner()
+    @commands.guild_only()
+    @commands.command(aliases=["undone", "unsolve", "unfinish", "incomplete", "unsolved", "unfinished", "incompleted"])
+    async def undone_shortcut(self, ctx):
         await respond(ctx, chk_fetch_chal(ctx).undone)
 
     @commands.bot_has_permissions(manage_channels=True)
