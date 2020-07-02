@@ -538,7 +538,7 @@ class Ctfs(commands.Cog):
         await respond(ctx, ctfmodel.export, ctx, ctx.author)
 
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
-    @commands.has_permissions(manage_channels=True)
+    #@commands.has_permissions(manage_channels=True)
     @ctf.command()
     async def deletectf(self, ctx):
         await respond(ctx, ctfmodel.delete, ctx, ctx.author)
