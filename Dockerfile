@@ -1,7 +1,7 @@
 FROM python:3.7
 
-ENV NAME igctf
-ENV APP_HOME /igctf
+ENV NAME eptbot
+ENV APP_HOME /eptbot
 
 RUN groupadd -r ${NAME} && useradd -r -g ${NAME} ${NAME}
 
@@ -14,10 +14,10 @@ WORKDIR ${APP_HOME}
 RUN chown ${NAME}:${NAME} ${APP_HOME}
 
 
-COPY --chown=igctf:igctf nullctf.py util.py ${APP_HOME}/
-COPY --chown=igctf:igctf cogs ${APP_HOME}/cogs
-COPY --chown=igctf:igctf vars ${APP_HOME}/vars
-COPY --chown=igctf:igctf models ${APP_HOME}/models
-COPY --chown=igctf:igctf controllers ${APP_HOME}/controllers
+COPY --chown=eptbot:eptbot nullctf.py util.py ${APP_HOME}/
+COPY --chown=eptbot:eptbot cogs ${APP_HOME}/cogs
+COPY --chown=eptbot:eptbot vars ${APP_HOME}/vars
+COPY --chown=eptbot:eptbot models ${APP_HOME}/models
+COPY --chown=eptbot:eptbot controllers ${APP_HOME}/controllers
 
 CMD ["python", "-u", "nullctf.py"]

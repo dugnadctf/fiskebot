@@ -1,4 +1,4 @@
-# EPT-bot
+# EPTbot
 
 This bot is still work in process. It is a fork of [igCTF](https://gitlab.com/inequationgroup/igCTF), which is again a fork of [NullCTF](https://github.com/NullPxl/NullCTF).
 
@@ -23,7 +23,7 @@ pip install -r requirements.txt
 
 ## How to Use
 
-> This bot has commands for encoding/decoding, ciphers, and other commonly accessed tools during CTFs. But, the main use for igCTF is to easily set up a CTF for your discord server to play as a team. The following commands listed are probably going to be used the most.
+> This bot has commands for encoding/decoding, ciphers, and other commonly accessed tools during CTFs. But, the main use for EPTbot is to easily set up a CTF for your discord server to play as a team. The following commands listed are probably going to be used the most.
 
 - `!create "ctf name"` This is the command you'll use when you want to begin a new CTF. This command will make a text channel with your supplied name under the category 'CTF' (If the category doesn't exist it will be created). _Must have permissions to manage channels_
 

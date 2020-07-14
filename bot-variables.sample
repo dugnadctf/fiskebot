@@ -1,2 +1,0 @@
-CONN=mongodb://mongo:27017
-TOKEN=tokenhere

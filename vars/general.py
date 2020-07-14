@@ -1,2 +1,2 @@
 
-cool_names = ["KFBI", "404'd"]
+cool_names = ["null", "nordbo", "LOLASL", "rckwl", "vcpo"]
