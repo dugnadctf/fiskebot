@@ -1,14 +1,12 @@
 import discord
 
 
-src = "https://github.com/NullPxl/NullCTF"
-src_fork = "https://gitlab.com/inequationgroup/igCTF"
-creator_info = """https://blog.inequationgroup.com/
-https://gitlab.com/inequationgroup
-https://ctftime.org/team/59772"""
+src_fork1 = "https://github.com/NullPxl/NullCTF"
+src_fork2 = "https://gitlab.com/inequationgroup/igCTF"
 
 help_page = f"""
-Adapted from: https://github.com/NullPxl/NullCTF
+Fork from: {src_fork2}
+Who again forked from {src_fork1}
 
 `!ctftime <current/upcoming <number>>`
 Returns info on ongoing CTFs from ctftime.org, or displays the `number` of upcoming events.
@@ -18,6 +16,9 @@ Returns remaining time until an upcoming CTF begins, or ongoing event ends.
 
 `!ctftime top <year>`
 Display the leader boards from ctftimeorg for a specified `year`.
+
+`!ctftime team <team name>`
+Display the top 10 events this year for a team, sorted by rating points.
 
 `!create "<ctf name>"`
 Create a text channel and role in the CTF category for a specified `ctf name`.

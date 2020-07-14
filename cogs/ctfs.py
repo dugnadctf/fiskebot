@@ -31,6 +31,7 @@ from vars.help_info import (
 )
 from controllers.db import client, ctfdb, ctfs, teamdb, serverdb, challdb
 import models.ctf as ctfmodel
+from lxml import html
 
 
 
@@ -176,7 +177,7 @@ class Ctftime(commands.Cog):
     @ctftime.command()
     async def top(self, ctx, params=None):
         if not params:
-            params = "2018"
+            params = str(datetime.now().year)
 
         params = str(params)
         top_url = "https://ctftime.org/api/v1/top/" + params + "/"
@@ -201,6 +202,30 @@ class Ctftime(commands.Cog):
             f""":triangular_flag_on_post:  **{params} CTFtime Leaderboards**```ini
 {leaderboards}```"""
         )
+    
+    @ctftime.command()
+    async def team(self, ctx, team=None):
+        team_id = 119480 # EPT
+        if team:
+            msg = await ctx.send(f"Looking id for team {team}...")
+            team_id = get_team_id(team)
+            await msg.delete()
+        else:
+            team = 'EPT'
+        if team_id <= 0:
+            ctx.send(f':warning: Unknown team `{team}`.')
+            return
+        msg = await ctx.send(f"Looking up scores for {team} with id {team_id}...")
+        table = get_scores(team_id)
+        await msg.delete()
+        table = [line[:2] + line[3:] for line in table] # remove CTF points column, not interesting
+        table = table[:11] # top 10 scores, already sorted by rating points
+        out = f'Top 10 events for {team}'
+        out += '```'
+        out += format_table(table[:10])
+        out += '```'
+        await ctx.send(out)
+
 
     @ctftime.command()
     async def current(self, ctx, params=None):
@@ -351,6 +376,43 @@ class Ctftime(commands.Cog):
                     f"```ini\n{self.upcoming_l[x]['name']} starts in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{self.upcoming_l[x]['url']}"
                 )
 
+def get_scores(team_id):
+    url = f"https://ctftime.org/team/{team_id}"
+
+    data = requests.get(url, headers=Ctftime.headers).content
+    doc = html.fromstring(data)
+    lines = doc.xpath('//div[@id="rating_2020"]//table//tr')
+    column_names = lines[0].xpath(".//th/text()")
+    lines = lines[1:]
+    table = []
+    for line in lines:
+        columns = line.xpath('.//td')
+        columns = [c.text_content().replace('\t', ' ') for c in columns[1:]]
+        table.append(columns)
+
+    table.sort(key=lambda l: float(l[3].replace("*", "")), reverse=True)
+    table = [column_names] + table
+    return table
+
+def get_team_id(team_name):
+    ses = requests.Session()
+    url = 'https://ctftime.org/stats/'
+    r = ses.get(url, headers=Ctftime.headers)
+    doc = html.fromstring(r.content)
+    token = doc.xpath('//input[@name="csrfmiddlewaretoken"]')[0]
+
+    url = "https://ctftime.org/team/list/"
+    h = {'Referer': 'https://ctftime.org/stats/'}
+    h.update(Ctftime.headers)
+    r = ses.post(url, data={'team_name': team_name, 'csrfmiddlewaretoken': token.value}, headers=h)
+    team_id = r.url.split("/")[-1]
+    if team_id.isnumeric():
+        return int(team_id)
+    return -1
+
+def format_table(table, seperator='      '):
+    widths = [max(len(line[i]) for line in table) for i in range(len(table[0]))]
+    return '\n'.join([seperator.join([c.ljust(w) for w, c in zip(widths, line)]) for line in table])
 
 async def respond(ctx, fn, *args):
     messages = []

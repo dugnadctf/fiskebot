@@ -2,10 +2,10 @@ version: "2"
 services:
   bot:
     build: .
-    image: kfbi/igctf
+    image: ept/eptbot
     restart: always
     volumes:
-      - ./:/igctf
+      - ./:/eptbot
     depends_on:
       - mongo
     env_file:

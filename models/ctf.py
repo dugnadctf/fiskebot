@@ -542,7 +542,7 @@ class Challenge(object):
         channel = guild.get_channel(cid)
         if channel != None:
             await channel.edit(category=catg_archive)
-            await channel.set_permissions(guild.default_role, overwrite=basic_read_send)
+#            await channel.set_permissions(guild.default_role, overwrite=basic_read_send)
             self.refresh()
         else:
 
