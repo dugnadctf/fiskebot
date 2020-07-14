@@ -1,11 +1,5 @@
-import base64
-import binascii
-import collections
-import string
-import urllib.parse
 import json
 import random
-import discord
 from discord.ext import commands
 from nullctf import PREFIX
 

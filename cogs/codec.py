@@ -1,9 +1,6 @@
 import base64
 import binascii
-import collections
-import string
 import urllib.parse
-import discord
 from discord.ext import commands
 
 # TODO: l14ck3r0x01: ROT47 , base32 encoding

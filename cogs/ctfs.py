@@ -1,35 +1,19 @@
-import os
-import urllib
 import requests
 import re
-import json
-import base64
-import binascii
-import collections
-import string
-import urllib.parse
 from urllib.request import urlopen
 import io
-import time
-from pprint import pprint
-from random import randint
 from datetime import *
 from dateutil.parser import parse
-from colorama import Fore, Style
 
 from colorthief import ColorThief
 import discord
 from discord.ext import commands
 from vars.help_info import (
-    help_page,
-    help_page_2,
-    embed_help,
-    src,
     embed_help,
     ctf_help_text,
     chal_help_text,
 )
-from controllers.db import client, ctfdb, ctfs, teamdb, serverdb, challdb
+from controllers.db import ctfs, teamdb
 import models.ctf as ctfmodel
 from lxml import html
 

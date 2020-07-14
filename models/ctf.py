@@ -1,19 +1,17 @@
-import enum
 import discord
 import discord.member
 from discord.ext import commands
 from functools import partial, wraps
 
-from vars.help_info import ctf_help_text, chal_help_text, embed_help
+#from vars.help_info import ctf_help_text, chal_help_text, embed_help
 from vars.general import cool_names
 
 from util import trim_nl
 
 import json
 import bson
-from bson.codec_options import CodecOptions
 
-from controllers.db import client, ctfdb, ctfs, teamdb, serverdb, challdb
+from controllers.db import teamdb, challdb
 
 CATEGORY_CHANNEL_LIMIT = 50
 # Globals

@@ -1,6 +1,5 @@
 import collections
 import string
-import discord
 from discord.ext import commands
 
 
@@ -16,7 +15,7 @@ class Ciphers(commands.Cog):
             upper = collections.deque(string.ascii_uppercase)
             lower = collections.deque(string.ascii_lowercase)
 
-            if (direction == None) or (direction == "left"):
+            if direction in [None, "left"]: 
                 upper.rotate((-i))
                 lower.rotate((-i))
 

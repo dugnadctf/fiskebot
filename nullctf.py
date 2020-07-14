@@ -1,19 +1,13 @@
 import asyncio
-import random
-from colorama import Back, Fore, Style
-import sys
-from time import sleep
-import os
+from colorama import Fore, Style
 import discord
-from discord import Permissions
 from discord.ext.commands import (
     MissingPermissions,
     BotMissingPermissions,
     DisabledCommand,
     CommandNotFound,
-    CommandInvokeError,
+#    CommandInvokeError,
     NoPrivateMessage,
-    Bot,
     bot,
 )
 from discord.ext import commands
@@ -24,12 +18,10 @@ from vars.help_info import (
     src_fork1,
     src_fork2,
     embed_help,
-    ctf_help_text,
 )
 from vars.general import cool_names
 from util import getVal, trim_nl
-from pymongo import MongoClient
-from models.ctf import TaskFailed, basic_allow, basic_disallow, CtfTeam
+from models.ctf import TaskFailed, basic_allow, basic_disallow
 from controllers.db import teamdb
 
 import traceback
