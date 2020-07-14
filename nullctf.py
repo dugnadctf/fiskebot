@@ -30,6 +30,8 @@ from util import getVal, trim_nl
 from pymongo import MongoClient
 from models.ctf import TaskFailed, basic_allow, basic_disallow, CtfTeam
 from controllers.db import teamdb
+import requests
+from lxml import html
 
 import traceback
 import logging
@@ -271,6 +273,35 @@ async def delete_teams(ctx):
         if "_team" in role.name:
             await role.delete()
 
+# TODO: Support other teams and maybe configurable amount instead of top 10. Also maybe check last 18 months instead of just this year.
+@bot.command()
+async def eptctftime(ctx):
+    team=119480
+    top=10
+    url = f"https://ctftime.org/team/{team}"
+
+    data = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0) Gecko/20100101 Firefox/78.0'}).content
+    doc = html.fromstring(data)
+    lines = doc.xpath('//div[@id="rating_2020"]//table//tr')
+    headers = lines[0].xpath(".//th/text()")
+    lines = lines[1:]
+    table = []
+    for line in lines:
+            columns = line.xpath('.//td')
+            columns = [c.text_content().replace('\t', ' ') for c in columns[1:]]
+            table.append(columns)
+
+    table.sort(key=lambda l: float(l[3]), reverse=True)
+    table = [headers] + table
+
+    widths = [max(len(line[i]) for line in table) for i in range(len(table[0]))]
+
+    out = '**Top 10 events this year:**'
+    out += '\n```'
+    for line in table[:10]:
+            out += '\n' + '      '.join([c.ljust(w) for w, c in zip(widths, line)])
+    out += '\n```'
+    await ctx.send(out)
 
 
 
