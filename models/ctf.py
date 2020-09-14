@@ -314,7 +314,7 @@ class CtfTeam(object):
         # Archive all challenge channels
         main_chan = guild.get_channel(cid)
         await main_chan.edit(category=catg_archive)
-        await main_chan.set_permissions(guild.default_role, overwrite=basic_read_send)
+#        await main_chan.set_permissions(guild.default_role, overwrite=basic_read_send)
         for chal in self.challenges:
             await chal._archive(catg_archive)
 
