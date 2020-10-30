@@ -1,7 +1,8 @@
-from util import getVal
+from config import config
 from pymongo import MongoClient
 
-client = MongoClient(getVal("CONN"))
+client = MongoClient(config["db"])
+
 ctfdb = client["ctftime"]  # Create ctftime database
 ctfs = ctfdb["ctfs"]  # Create ctfs collection
 challdb = ctfdb["challs"]  # Create challs collection
