@@ -14,10 +14,6 @@ WORKDIR ${APP_HOME}
 RUN chown ${NAME}:${NAME} ${APP_HOME}
 
 
-COPY --chown=eptbot:eptbot eptbot.py util.py ${APP_HOME}/
-COPY --chown=eptbot:eptbot cogs ${APP_HOME}/cogs
-COPY --chown=eptbot:eptbot vars ${APP_HOME}/vars
-COPY --chown=eptbot:eptbot models ${APP_HOME}/models
-COPY --chown=eptbot:eptbot controllers ${APP_HOME}/controllers
+COPY --chown=eptbot:eptbot bot ${APP_HOME}/
 
 CMD ["python", "-u", "eptbot.py"]

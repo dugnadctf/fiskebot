@@ -1,19 +1,17 @@
+import functools
+import json
+import os
+
+import bson
 import discord
 import discord.member
 from discord.ext import commands
-from functools import partial, wraps
 
-#from vars.help_info import ctf_help_text, chal_help_text, embed_help
-from vars.general import cool_names
-
-from util import trim_nl
-
-import json
-import bson
-
-from controllers.db import teamdb, challdb
+import db
+from config import config
 
 CATEGORY_CHANNEL_LIMIT = 50
+
 # Globals
 # > done_id
 # > archive_id > working_id
@@ -51,7 +49,6 @@ CATEGORY_CHANNEL_LIMIT = 50
 # chal done <with-list>
 # chal undone
 
-# TODO changelog, showing the latest changes since latest release
 
 def _find_chan(chantype, group, name):
     name = name.casefold()
@@ -62,8 +59,8 @@ def _find_chan(chantype, group, name):
     raise ValueError(f"Cannot find category {name}")
 
 
-find_category = partial(_find_chan, "categories")
-find_text_channel = partial(_find_chan, "text_channels")
+find_category = functools.partial(_find_chan, "categories")
+find_text_channel = functools.partial(_find_chan, "text_channels")
 
 
 def load_category(guild, catg):
@@ -83,7 +80,7 @@ basic_allow = discord.PermissionOverwrite(
     read_messages=True,
     send_messages=True,
     read_message_history=True,
-    manage_channels=True,
+    #    manage_channels=True, # If the use actually starts managing/changing the channel, then it will probably fuck up the bot
 )
 
 basic_disallow = discord.PermissionOverwrite(
@@ -114,7 +111,7 @@ def chk_get_role(guild, role_id):
 
 
 def chk_archive(func):
-    @wraps(func)
+    @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         if self.is_archived:
             raise TaskFailed("Cannot do that, this is archived")
@@ -122,13 +119,12 @@ def chk_archive(func):
 
     return wrapper
 
+
 def userToDict(user):
     try:
-        return {"id":user.id,"nick":user.nick,"user":user.name, "avatar":user.avatar, "bot":user.bot}
+        return {"id": user.id, "nick": user.nick, "user": user.name, "avatar": user.avatar, "bot": user.bot}
     except AttributeError:
-        return {"id":user.id,"nick":"<USER LEFT BOOTPLUG>","user":user.name, "avatar":user.avatar, "bot":user.bot}
-
-
+        return {"id": user.id, "nick": "<Unknown>", "user": user.name, "avatar": user.avatar, "bot": user.bot}
 
 
 class TaskFailed(commands.UserInputError):
@@ -163,19 +159,12 @@ class CtfTeam(object):
             overwrites=overwrites,
             topic=f"General talk for {name} CTF event.",
         )
-        # await chan.send(
-        #    trim_nl(
-        #        f"""Welcome to {name}. Here you can do
-        # general discussion about this event. Also use this this place to type
-        # `ctf` related commands. Here is a list of commands just for
-        # reference:\n\n"""
-        #    )
-        # )
+        # await chan.send(f"Welcome to {name}. Here you can do general discussion about this event. Also use this this place to type `ctf` related commands. Here is a list of commands just for reference:\n\n")
         # await (await embed_help(chan, "CTF team help topic", ctf_help_text)).pin()
         # await (await embed_help(chan, "Challenge help topic", chal_help_text)).pin()
 
         # Update database
-        teamdb[str(guild.id)].insert_one(
+        db.teamdb[str(guild.id)].insert_one(
             {
                 "archived": False,
                 "name": name,
@@ -187,17 +176,12 @@ class CtfTeam(object):
         )
         CtfTeam.__teams__[chan.id] = CtfTeam(guild, chan.id)
 
-        return [
-            (
-                None,
-                f"{name} ctf has been created! :tada: react to this message to join.",
-            )
-        ]
+        return [(None, f"{name} ctf has been created! :tada: react to this message to join.",)]
 
     @staticmethod
     def fetch(guild, chan_id):
         if chan_id not in CtfTeam.__teams__:
-            if not teamdb[str(guild.id)].find_one({"chan_id": chan_id}):
+            if not db.teamdb[str(guild.id)].find_one({"chan_id": chan_id}):
                 return None
             CtfTeam.__teams__[chan_id] = CtfTeam(guild, chan_id)
         else:
@@ -209,7 +193,7 @@ class CtfTeam(object):
     def __init__(self, guild, chan_id):
         self.__guild = guild
         self.__chan_id = chan_id
-        self.__teams = teamdb[str(guild.id)]
+        self.__teams = db.teamdb[str(guild.id)]
         self.refresh()
 
     @property
@@ -247,7 +231,7 @@ class CtfTeam(object):
         teams = self.__teams
         team = self.__teamdata
 
-        catg_working = load_category(guild, "working")
+        catg_working = load_category(guild, config["categories"]["working"])
         if self.find_chal(name, False):
             raise TaskFailed(f'Challenge "{name}" already exists!')
 
@@ -264,21 +248,12 @@ class CtfTeam(object):
             name=fullname, overwrites=overwrites
         )
         Challenge.create(guild, cid, chan.id, name)
-        chk_upd(
-            fullname, teams.update_one({"chan_id": cid}, {"$push": {"chals": chan.id}})
-        )
+        chk_upd(fullname, teams.update_one({"chan_id": cid}, {"$push": {"chals": chan.id}}))
         self.refresh()
 
-        return [
-            (
-                None,
-                trim_nl(
-                    f"""Challenge "{name}" has been added! React to this message to work on <#{chan.id}>! Or type `!ctf working {name}`"""
-                ),
-            )
-        ]
+        return[(None, 'Challenge"{name}"hasbeenadded!Reacttothismessagetoworkon<#{chan.id}>!Ortype`!ctfworking{name}`',)]
 
-    @chk_archive
+    @ chk_archive
     async def archive(self):
         cid = self.__chan_id
         guild = self.__guild
@@ -286,16 +261,12 @@ class CtfTeam(object):
 
         total_channels = len(self.challenges) + 1
         if total_channels > CATEGORY_CHANNEL_LIMIT:
-            raise TaskFailed(
-                f'Failed to archive "{name}" as it has more than {CATEGORY_CHANNEL_LIMIT} channels in total'
-            )
+            raise TaskFailed(f'Failed to archive "{self.name}" as it has more than {CATEGORY_CHANNEL_LIMIT} channels in total')
 
         for i in range(100):
             category = f"archive-{i}"
             try:
-                catg_archive = [
-                    catg for catg in guild.categories if catg.name == category
-                ][0]
+                catg_archive = [catg for catg in guild.categories if catg.name == category][0]
                 current_catg_channels = len(catg_archive.channels)
                 if CATEGORY_CHANNEL_LIMIT - current_catg_channels >= total_channels:
                     break
@@ -323,15 +294,13 @@ class CtfTeam(object):
 
         return [(None, f"{self.name} CTF has been archived.")]
 
-
-
     async def unarchive(self):
         cid = self.__chan_id
         guild = self.__guild
         teams = self.__teams
 
-        catg_working = load_category(guild, "working")
-        catg_done = load_category(guild, "done")
+        catg_working = load_category(guild, config["categories"]["working"])
+        catg_done = load_category(guild, config["categories"]["done"])
 
         # if not self.is_archived:
         #    raise TaskFailed('This is already not archived!')
@@ -342,9 +311,7 @@ class CtfTeam(object):
         # role = await guild.create_role(name=f'{self.name}_team', mentionable=True)
 
         # Update database
-        chk_upd(
-            self.name, teams.update_one({"chan_id": cid}, {"$set": {"archived": False}})
-        )
+        chk_upd(self.name, teams.update_one({"chan_id": cid}, {"$set": {"archived": False}}))
         self.refresh()
 
         # Unarchive all challenge channels
@@ -367,10 +334,7 @@ class CtfTeam(object):
         # Update database
         fullname = f"{self.name}-{name}"
         chal = self.find_chal(name)
-        chk_upd(
-            fullname,
-            teams.update_one({"chan_id": cid}, {"$pull": {"chals": chal.chan_id}}),
-        )
+        chk_upd(fullname, teams.update_one({"chan_id": cid}, {"$pull": {"chals": chal.chan_id}}),)
         await chal._delete(catg_archive)
         self.refresh()
 
@@ -392,9 +356,7 @@ class CtfTeam(object):
             raise TaskFailed(f"{user.mention} has already joined {self.name}")
         await user.add_roles(role)
 
-        return [
-            (None, f'{author.mention} invited {user.mention} to the "{self.name}" team')
-        ]
+        return [(None, f'{author.mention} invited {user.mention} to the "{self.name}" team')]
 
     @chk_archive
     async def join(self, user):
@@ -439,7 +401,7 @@ class Challenge(object):
 
     @staticmethod
     def create(guild, ctf_id, chan_id, name):
-        chals = challdb[str(guild.id)]
+        chals = db.challdb[str(guild.id)]
         chals.insert_one(
             {
                 "name": name,
@@ -458,7 +420,7 @@ class Challenge(object):
     @staticmethod
     def fetch(guild, chan_id):
         if chan_id not in Challenge.__chals__:
-            chal = challdb[str(guild.id)].find_one({"chan_id": chan_id})
+            chal = db.challdb[str(guild.id)].find_one({"chan_id": chan_id})
             if not chal:
                 return None
             Challenge.__chals__[chan_id] = Challenge(guild, chan_id)
@@ -468,7 +430,7 @@ class Challenge(object):
 
     @staticmethod
     def find(guild, ctfid, name, err_on_fail=True):
-        chal = challdb[str(guild.id)].find_one({"name": name, "ctf_id": ctfid})
+        chal = db.challdb[str(guild.id)].find_one({"name": name, "ctf_id": ctfid})
         if chal:
             return Challenge.fetch(guild, chal["chan_id"])
         elif err_on_fail:
@@ -479,7 +441,7 @@ class Challenge(object):
     def __init__(self, guild, chan_id):
         self.__guild = guild
         self.__id = chan_id
-        self.__chals = challdb[str(guild.id)]
+        self.__chals = db.challdb[str(guild.id)]
         self.refresh()
 
     @property
@@ -585,7 +547,7 @@ class Challenge(object):
         cid = self.__id
         guild = self.__guild
 
-        catg_done = load_category(guild, "done")
+        catg_done = load_category(guild, config["categories"]["done"])
 
         # Create list of solvers
         owner = Challenge._uid(owner)
@@ -617,14 +579,8 @@ class Challenge(object):
         mentions = " ".join(mentions)
         self.refresh()
         return [
-            (
-                self.ctf_id,
-                trim_nl(
-                    f"""{self.team.mention} :tada: "{self.name}" has
-                been completed by {mentions}!"""
-                ),
-            ),
-            (None, f"Challenge moved to done!"),
+            (self.ctf_id, f'{self.team.mention} :tada: "{self.name}" has been completed by {mentions}!',),
+            (None, "Challenge moved to done!"),
         ]
 
     @chk_archive
@@ -642,12 +598,7 @@ class Challenge(object):
             overwrite=basic_allow,
             reason=f'{author.name} invited user to work on "{self.name}" challenge',
         )
-        return [
-            (
-                ccid,
-                f'{author.mention} invited {user.mention} to work on "{self.name}" challenge',
-            )
-        ]
+        return [(ccid, f'{author.mention} invited {user.mention} to work on "{self.name}" challenge',)]
 
     @chk_archive
     async def leave(self, user):
@@ -672,7 +623,7 @@ class Challenge(object):
         cid = self.__id
         guild = self.__guild
 
-        catg_working = load_category(guild, "working")
+        catg_working = load_category(guild, config["categories"]["working"])
 
         if not self.is_finished:
             raise TaskFailed("This ctf challenge has not been completed yet")
@@ -689,13 +640,7 @@ class Challenge(object):
         self.refresh()
         return [
             (None, f'Reopened "{self.name}" as not done'),
-            (
-                self.ctf_id,
-                trim_nl(
-                    f"""{self.team.mention} "{self.name}" is
-                now undone. :weary:"""
-                ),
-            ),
+            (self.ctf_id, f"""{self.team.mention} "{self.name}" is now undone. :weary:""",),
         ]
 
     @chk_archive
@@ -726,15 +671,10 @@ class Challenge(object):
 async def export(ctx, author):
     guild = ctx.guild
 
-    authors_name = str(author)
+    if not author.id in config["maintainers"]:
+        return [(None, f"Only maintainers can export CTFs.")]
 
-    #if not self.is_archived:
-    #    return [(None, f"You need to archive the CTF before exporting")]
-    # TODO superuser, cool_names or a quorum of users in the team that participated in a CTF
-    if not any((name in authors_name for name in cool_names)):
-        return [(None, f"Sorry you are not authorized at this time")]
-
-    CTF = {"channels":[]}
+    CTF = {"channels": []}
     main_chan = ctx.channel
 
     channels = [main_chan]
@@ -743,68 +683,53 @@ async def export(ctx, author):
             channels.append(chal)
 
     for channel in channels:
-        chan = {"name":channel.name, "topic":channel.topic, "messages": []}
+        chan = {"name": channel.name, "topic": channel.topic, "messages": []}
 
         async for m in channel.history(limit=None, oldest_first=True):
-            d = {"id":m.id , "created_at":m.created_at.isoformat(), "content":m.clean_content}
+            d = {"id": m.id, "created_at": m.created_at.isoformat(), "content": m.clean_content}
             d["author"] = userToDict(m.author)
-            d["attachments"] = [{"filename":a.filename, "url": str(a.url)} for a in m.attachments]
+            d["attachments"] = [{"filename": a.filename, "url": str(a.url)} for a in m.attachments]
             d["channel"] = {"name": m.channel.name}
             d["edited_at"] = m.edited_at.isoformat() if m.edited_at != None else m.edited_at
-            #used for URLs
-            d["embeds"] = [ e.to_dict() for e in m.embeds]
+            # used for URLs
+            d["embeds"] = [e.to_dict() for e in m.embeds]
             d["mentions"] = [userToDict(mention) for mention in m.mentions]
-            d["channel_mentions"] = [{"id":c.id,"name":c.name} for c in m.channel_mentions]
+            d["channel_mentions"] = [{"id": c.id, "name": c.name} for c in m.channel_mentions]
             d["mention_everyone"] = m.mention_everyone
-            d["reactions"] = [{"count":r.count,"emoji": r.emoji if type(r.emoji) == str else { "name":r.emoji.name, "url": str(r.emoji.url)}} for r in m.reactions]
+            d["reactions"] = [{"count": r.count, "emoji": r.emoji if type(r.emoji) == str else {"name": r.emoji.name, "url": str(r.emoji.url)}} for r in m.reactions]
             chan["messages"].append(d)
 
         CTF["channels"].append(chan)
 
+    if not os.path.exists("backups"):
+        os.mkdir("backups")
+
     json_file = f"backups/{guild.name} - {main_chan.name}.json"
     with open(json_file, "w") as w:
-        json.dump(CTF,w)
+        json.dump(CTF, w)
 
     bson_file = f"backups/{guild.name} - {main_chan.name}.bson"
     with open(bson_file, "wb") as w:
-        w.write(bson.BSON.encode(CTF))
+        w.write(bson.dumps(CTF))
 
     for chn in guild.text_channels:
-        if chn.name == "archive":
+        if chn.name == config["channels"]["export"]:
             await chn.send(files=[
                 discord.File(bson_file),
                 discord.File(json_file)
-                ])
+            ])
             break
     else:
-        return [(None, f"Saved JSON, but couldn't find a bot channel to upload the writeup to")]
+        return [(None, f"Saved JSON, but couldn't find a bot channel `{config['channels']['export']}` to upload the writeup to")]
 
     return [(None, f"{main_chan.name} CTF has been exported. Verify and issue the `!ctf deletectf` command")]
 
-    # Get all messages
-    # Export to JSON
-    # save on host system, upload to discord again, save blob to mongo and trigger backup
-    # Get role
-    # CONFIRMATION
-    # delete role
-    # delete channels
-    # delete category if category empty after deletion
-    #
-    ##Mongo db update
-    #chk_upd(
-    #    self.name, teams.update_one({"chan_id": cid}, {"$set": {"exported": True}})
-    #)
-    #self.refresh()
-    return [(None, f"{self.name} CTF has been exported.")]
 
 async def delete(ctx, author):
     guild = ctx.guild
 
-    authors_name = str(author)
-
-    # TODO superuser, cool_names or a quorum of users in the team that participated in a CTF
-    if not any((name in authors_name for name in cool_names)):
-        return [(None, f"Sorry you are not authorized at this time")]
+    if not author.id in config["maintainers"]:
+        return [(None, f"Only maintainers can delete CTFs.")]
 
     main_chan = ctx.channel
     channels = [main_chan]
