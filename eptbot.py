@@ -6,7 +6,6 @@ from discord.ext.commands import (
     BotMissingPermissions,
     DisabledCommand,
     CommandNotFound,
-#    CommandInvokeError,
     NoPrivateMessage,
     bot,
 )

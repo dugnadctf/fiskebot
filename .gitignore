@@ -1,25 +1,5 @@
-auth_token.py
-nullsig.pyc
-nullctf.pyc
-__pycache__/
-cogs/__pycache__/
-auth.py
-.venv
-**/*.sw?
-cogs/auth.py
-cogs/mongo.py
-env
+### Custom ###
 bot-variables.env
-.vscode
-.idea
-.venv
-**/*.sw?
-kube/key.txt
-kube/secret.yml
-venv/
-
-backups/*
-!backups/.gitkeep
 
 # Created by https://www.gitignore.io/api/visualstudiocode,linux,macos,jetbrains+all,python,windows
 # Edit at https://www.gitignore.io/?templates=visualstudiocode,linux,macos,jetbrains+all,python,windows

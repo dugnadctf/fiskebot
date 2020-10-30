@@ -78,9 +78,7 @@ class Ctftime(commands.Cog):
             }
             info.append(ctf)
 
-        for (
-            ctf
-        ) in info:  # If the document doesn't exist: add it, if it does: update it.
+        for ctf in info:  # If the document doesn't exist: add it, if it does: update it.
             print(f"Got {ctf['name']} from ctftime")
             query = ctf["name"]
             ctfs.update({"name": query}, {"$set": ctf}, upsert=True)
