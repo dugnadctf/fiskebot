@@ -12,6 +12,7 @@ from colorthief import ColorThief
 from lxml import html
 
 import db
+import eptbot
 from config import config
 
 
@@ -78,7 +79,20 @@ class Ctftime(commands.Cog):
     @commands.group()
     async def ctftime(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send("Invalid command passed.  Use !help.")
+            help = """
+`!ctftime <current/upcoming <number>>`
+Returns info on ongoing CTFs from ctftime.org, or displays the `number` of upcoming events.
+
+`!ctftime <countdown/timeleft>`
+Returns remaining time until an upcoming CTF begins, or ongoing event ends.
+
+`!ctftime top <year>`
+Display the leader boards from ctftimeorg for a specified `year`.
+
+`!ctftime team <team name>`
+Display the top 10 events this year for a team, sorted by rating points.
+"""
+            await eptbot.embed_help(ctx, "Help for CTFtime commands.", help)
 
     @ctftime.command()
     async def upcoming(self, ctx, params=None):
@@ -125,8 +139,8 @@ class Ctftime(commands.Cog):
                 embed.set_thumbnail(url=Ctftime.default_image)
 
             embed.add_field(name="Duration", value=((ctf_days + " days, ") + ctf_hours) + " hours", inline=True)
-            embed.add_field(name="Format", value=(ctf_place + " ") + ctf_format, inline=True)
-            embed.add_field(name="─" * 23, value=(ctf_start + " -> ") + ctf_end, inline=True)
+            embed.add_field(name="Format", value=ctf_place + " " + ctf_format, inline=True)
+            embed.add_field(name=ctf_start, value=ctf_end, inline=True)
             await ctx.channel.send(embed=embed)
 
     @ctftime.command()
@@ -145,11 +159,8 @@ class Ctftime(commands.Cog):
             teamname = data[params][team]["team_name"]
             score = data[params][team]["points"]
 
-            if team != 9:
-                leaderboards += f"[{rank}]    {teamname}: {score}\n"
-            else:
-                leaderboards += f"[{rank}]   {teamname}: {score}\n"
-        await ctx.send(f":triangular_flag_on_post:  **{params} CTFtime Leaderboards**```ini{leaderboards}```")
+            leaderboards += f"{f'[{rank}]':4}  {f'{teamname}:':20} {score:.3f}\n"
+        await ctx.send(f":triangular_flag_on_post:  **{params} CTFtime Leaderboards**```ini\n{leaderboards}```")
 
     @ctftime.command()
     async def team(self, ctx, team=None):
@@ -194,7 +205,7 @@ class Ctftime(commands.Cog):
 
                 embed.add_field(name="Duration", value=ctf["dur"], inline=True)
                 embed.add_field(name="Format", value=ctf["format"], inline=True)
-                embed.add_field(name="─" * 23, value=start + " -> " + end, inline=True)
+                embed.add_field(name=start, value=end, inline=True)
                 await ctx.channel.send(embed=embed)
 
         if not running:  # No ctfs were found to be running
@@ -219,7 +230,7 @@ class Ctftime(commands.Cog):
                 minutes = time // 60
                 time %= 60
                 seconds = time
-                await ctx.send(f"```ini\n{ctf['name']} ends in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{ctf['url']}")
+                await ctx.send(f"```ini\n{ctf['name']} ends in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```{ctf['url']}")
 
         if not running:
             await ctx.send("No ctfs are running! Use !ctftime upcoming or !ctftime countdown to see upcoming ctfs")
@@ -236,7 +247,7 @@ class Ctftime(commands.Cog):
                 if ctf["start"] > unix_now:
                     self.upcoming_l.append(ctf)
             for i, ctf in enumerate(self.upcoming_l):
-                index += f"\n[{i + 1}] {ctf['name']}\n"
+                index += f"[{i + 1}] {ctf['name']}\n"
 
             await ctx.send(f"Type !ctftime countdown <number> to select.\n```ini\n{index}```")
 
@@ -255,7 +266,7 @@ class Ctftime(commands.Cog):
                 target = self.upcoming_l[index]
                 seconds = target["start"] - unix_now
 
-                await ctx.send(f"```ini\n{target['name']} starts in: {format_seconds(seconds)}```\n{target['url']}")
+                await ctx.send(f"```ini\n{target['name']} starts in: {format_seconds(seconds)}```{target['url']}")
 
 
 def format_seconds(seconds):

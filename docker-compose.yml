@@ -5,11 +5,10 @@ services:
     image: ept/eptbot
     restart: always
     volumes:
-      - ./:/eptbot
+      - ./bot:/eptbot
     depends_on:
       - mongo
-    env_file:
-      - bot-variables.env
+    stop_signal: SIGKILL
   mongo:
     image: mongo
     restart: always

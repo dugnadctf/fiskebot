@@ -3,8 +3,18 @@ import requests
 
 from discord.ext import commands
 
+from config import config
 import db
 import ctf_model
+import eptbot
+
+
+def verify_owner():
+    def predicate(ctx):
+        chk_fetch_chal(ctx).check_done(ctx.author)
+        return True
+
+    return commands.check(predicate)
 
 
 class Ctfs(commands.Cog):
@@ -25,11 +35,32 @@ class Ctfs(commands.Cog):
     @commands.group()
     async def ctf(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send("Invalid command passed. Use !ctf help.")
+            await ctx.send("Invalid command passed. Use `!ctf help.`".replace("!", config["prefix"]))
 
     @ctf.command("help")
     async def ctf_help(self, ctx):
-        await embed_help(ctx, "CTF team help topic", ctf_help_text)
+        help = """
+These commands are callable from a main CTF channel.
+
+`!ctf add "<challenge>"`
+Add a `challenge` and a respective channel. Challenge names may be altered to meet Discord restrictions.
+(i.e. no special characters, less than 32 characters long, etc...)
+
+`!ctf invite <user>`
+Invites a user to CTF team - `user` is granted the CTF role.
+
+`!ctf delete "<challenge>"`
+Remove a challenge (this requires the bot has manage channels permissions).
+This will **not** automatically delete the respective private channel. Server staff can remove manually if required.
+
+`!ctf archive`
+Archives this ctf and all the respective challenges (this requires the bot has manage channels permissions).
+
+`!ctf unarchive`
+Unarchives this ctf and all the respective challenges (this requires the bot has manage channels permissions).
+
+""".replace("!", config["prefix"])
+        await eptbot.embed_help(ctx, "Help for CTF commands", help)
 
     @commands.bot_has_permissions(manage_channels=True)
     @ctf.command()
@@ -58,7 +89,9 @@ class Ctfs(commands.Cog):
 
     @commands.bot_has_permissions(manage_roles=True)
     @commands.command()
-    async def join(self, ctx, name):
+    async def join(self, ctx, name=None):
+        if name is None:
+            await ctx.send(f'Please specify a CTF to join:\n```{config["prefix"]}join <ctf name>```')
         await respond(ctx, chk_fetch_team_by_name(ctx, name).join, ctx.author)
 
     @ctf.command()
@@ -117,7 +150,7 @@ class Ctfs(commands.Cog):
     @commands.group()
     async def chal(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send("Invalid command passed.  Use !help.")
+            await ctx.send("Invalid command passed.  Use `!chal help`.".replace("!", config["prefix"]))
 
     @commands.bot_has_permissions(manage_channels=True)
     @chal.command("invite")
@@ -135,7 +168,20 @@ class Ctfs(commands.Cog):
 
     @chal.command("help")
     async def chal_help(self, ctx):
-        await embed_help(ctx, "Challenge help topic", chal_help_text)
+        help = """
+These commands are callable from a CTF **challenge** environment.
+
+`!chal done [<users>]`
+Marks this challenge as completed, and moves channel to "done" category. You may optionally include @'s of `users` that worked with you.
+Once a challenge is completed, **no one** except you (and admins) can alter the done list or change reset the status to "undone".
+
+`!chal invite <user>`
+Invites a `user` to a challenge channel.
+
+`!chal undone`
+Marks this challenge as **not** completed. This will move the channel back to the "working" category.
+""".replace("!", config["prefix"])
+        await eptbot.embed_help(ctx, "Challenge help topic", help)
 
     @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()
@@ -147,14 +193,6 @@ class Ctfs(commands.Cog):
     @chal.command("leave")
     async def leave_chal(self, ctx):
         await respond(ctx, chk_fetch_chal(ctx).leave, ctx.author)
-
-    @commands.command()
-    async def htb(self, ctx):
-        twitter_page = requests.get("https://twitter.com/hackthebox_eu")
-        all_content = str(twitter_page.text.encode("utf-8"))
-        tweet = re.search("\\w+ will go live \\d{2}/\\d{2}/\\d{4} at \\d{2}:\\d{2}:\\d{2} UTC", all_content)
-        match = tweet.group(0)
-        await ctx.send(match + "\nhttps://hackthebox.eu")
 
 
 async def respond(ctx, callback, *args):
@@ -232,13 +270,5 @@ def parse_user(guild, user):
     return ret
 
 
-def verify_owner():
-    def predicate(ctx):
-        chk_fetch_chal(ctx).check_done(ctx.author)
-        return True
-
-    return commands.check(predicate)
-
-
 def setup(bot):
-    bot.add_goc(Ctfs(bot))
+    bot.add_cog(Ctfs(bot))

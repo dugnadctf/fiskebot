@@ -246,7 +246,7 @@ class CtfTeam():
         chk_upd(fullname, teams.update_one({"chan_id": cid}, {"$push": {"chals": chan.id}}))
         self.refresh()
 
-        return[(None, 'Challenge"{name}"has been added! React to this message to work on <#{chan.id}>! Or type `!ctf working {name}`',)]
+        return[(None, f'Challenge"{name}"has been added! React to this message to work on <#{chan.id}>! Or type `!ctf working {name}`',)]
 
     @ chk_archive
     async def archive(self):
@@ -660,7 +660,7 @@ async def export(ctx, author):
 
     bson_file = f"backups/{guild.name} - {main_chan.name}.bson"
     with open(bson_file, "wb") as file:
-        file.write(bson.dumps(ctf))
+        file.write(bson.BSON.encode(ctf))
 
     for chn in guild.text_channels:
         if chn.name == config["channels"]["export"]:
