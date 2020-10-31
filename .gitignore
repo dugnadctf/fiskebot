@@ -1,5 +1,8 @@
 ### Custom ###
 bot-variables.env
+backups/
+config*.py
+.vscode/
 
 # Created by https://www.gitignore.io/api/visualstudiocode,linux,macos,jetbrains+all,python,windows
 # Edit at https://www.gitignore.io/?templates=visualstudiocode,linux,macos,jetbrains+all,python,windows
