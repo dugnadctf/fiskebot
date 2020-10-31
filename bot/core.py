@@ -15,9 +15,7 @@ from eptbot import bot, logging
 async def on_ready():
     print(("<" + bot.user.name) + " Online>")
     print(f"discord.py {discord.__version__}\n")
-    await bot.change_presence(
-        activity=discord.Game(name=f'{config["prefix"]}help / {config["prefix"]}report "issue"')
-    )
+    await bot.change_presence(activity=discord.Game(name=f'{config["prefix"]}help / {config["prefix"]}report "issue"'))
 
 
 @bot.event
@@ -36,15 +34,11 @@ async def on_error(evt_type, ctx):
 @bot.event
 async def on_command_error(ctx, err):
     logging.error(f"Ignoring exception in command {ctx.command}")
-    logging.error(
-        "".join(traceback.format_exception(type(err), err, err.__traceback__))
-    )
+    logging.error("".join(traceback.format_exception(type(err), err, err.__traceback__)))
     print(colorama.Style.BRIGHT + colorama.Fore.RED + f"Error occured with: {ctx.command}\n{err}\n")
     print(colorama.Style.RESET_ALL)
     if isinstance(err, commands.MissingPermissions):
-        await ctx.send(
-            "You do not have permission to do that! ¯\_(ツ)_/¯"
-        )  # pylint: disable=anomalous-backslash-in-string
+        await ctx.send("You do not have permission to do that! ¯\\_(ツ)_/¯")  # pylint: disable=anomalous-backslash-in-string
     elif isinstance(err, commands.BotMissingPermissions):
         await ctx.send(f""":cry: I can\'t do that. Please ask server ops
         to add all the permission for me!
@@ -118,12 +112,8 @@ async def report(ctx, error_report):
     for cid in config["maintainers"]:
         creator = bot.get_user(cid)
         authors_name = str(ctx.author)
-        await creator.send(
-            f""":triangular_flag_on_post: {authors_name}: {error_report}"""
-        )
-    await ctx.send(
-        f""":triangular_flag_on_post: Thanks for the help, "{error_report}" has been reported!"""
-    )
+        await creator.send(f""":triangular_flag_on_post: {authors_name}: {error_report}""")
+    await ctx.send(f""":triangular_flag_on_post: Thanks for the help, "{error_report}" has been reported!""")
 
 
 @bot.command()

@@ -5,11 +5,9 @@ from discord.ext import commands
 
 from config import config
 
-FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
+LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
 
-logging.basicConfig(format=FORMAT, level=logging.WARN)
-
-default_categories = ["working", "done"]
+logging.basicConfig(format=LOG_FORMAT, level=logging.WARN)
 
 client = discord.Client()
 bot = commands.Bot(command_prefix=config["prefix"])

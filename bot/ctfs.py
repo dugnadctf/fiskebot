@@ -4,7 +4,7 @@ import requests
 from discord.ext import commands
 
 import db
-import ctf as ctfmodel
+import ctf_model
 
 
 class Ctfs(commands.Cog):
@@ -18,10 +18,8 @@ class Ctfs(commands.Cog):
     @commands.command()
     async def create(self, ctx, name):
         emoji = '🏃'
-        messages = await respond_with_reaction(ctx, emoji, ctfmodel.CtfTeam.create, ctx.channel.guild, name)
-        db.teamdb[str(ctx.channel.guild.id)].update_one(
-            {"name": name}, {"$set": {"msg_id": messages[0].id}}
-        )
+        messages = await respond_with_reaction(ctx, emoji, ctf_model.CtfTeam.create, ctx.channel.guild, name)
+        db.teamdb[str(ctx.channel.guild.id)].update_one({"name": name}, {"$set": {"msg_id": messages[0].id}})
 
     @commands.guild_only()
     @commands.group()
@@ -66,7 +64,7 @@ class Ctfs(commands.Cog):
     @ctf.command()
     async def working(self, ctx, chalname):
         chk_fetch_team(ctx)
-        chal = ctfmodel.Challenge.find(ctx.channel.guild, ctx.channel.id, chalname)
+        chal = ctf_model.Challenge.find(ctx.channel.guild, ctx.channel.id, chalname)
         await respond(ctx, chal.working, ctx.author)
 
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
@@ -85,13 +83,13 @@ class Ctfs(commands.Cog):
     @commands.has_permissions(manage_channels=True)
     @ctf.command()
     async def export(self, ctx):
-        await respond(ctx, ctfmodel.export, ctx, ctx.author)
+        await respond(ctx, ctf_model.export, ctx, ctx.author)
 
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     @commands.has_permissions(manage_channels=True)
     @ctf.command()
     async def deletectf(self, ctx):
-        await respond(ctx, ctfmodel.delete, ctx, ctx.author)
+        await respond(ctx, ctf_model.delete, ctx, ctx.author)
 
     @ctf.command()
     async def list(self, ctx):
@@ -154,30 +152,27 @@ class Ctfs(commands.Cog):
     async def htb(self, ctx):
         twitter_page = requests.get("https://twitter.com/hackthebox_eu")
         all_content = str(twitter_page.text.encode("utf-8"))
-        tweet = re.search(
-            "\\w+ will go live \\d{2}/\\d{2}/\\d{4} at \\d{2}:\\d{2}:\\d{2} UTC",
-            all_content,
-        )
+        tweet = re.search("\\w+ will go live \\d{2}/\\d{2}/\\d{4} at \\d{2}:\\d{2}:\\d{2} UTC", all_content)
         match = tweet.group(0)
         await ctx.send(match + "\nhttps://hackthebox.eu")
 
 
-async def respond(ctx, fn, *args):
+async def respond(ctx, callback, *args):
     messages = []
     guild = ctx.channel.guild
     async with ctx.channel.typing():
-        for chan_id, msg in await fn(*args):
+        for chan_id, msg in await callback(*args):
             chan = guild.get_channel(chan_id) if chan_id else ctx.channel
             msg = await chan.send(msg)
             messages.append(msg)
     return messages
 
 
-async def respond_with_reaction(ctx, emoji, fn, *args):
+async def respond_with_reaction(ctx, emoji, callback, *args):
     messages = []
     guild = ctx.channel.guild
     async with ctx.channel.typing():
-        for chan_id, msg in await fn(*args):
+        for chan_id, msg in await callback(*args):
             chan = guild.get_channel(chan_id) if chan_id else ctx.channel
             msg = await chan.send(msg)
             await msg.add_reaction(emoji)
@@ -187,10 +182,10 @@ async def respond_with_reaction(ctx, emoji, fn, *args):
 
 def check_name(name):
     if len(name) > 32:
-        raise ctfmodel.TaskFailed("Challenge name is too long!")
+        raise ctf_model.TaskFailed("Challenge name is too long!")
 
     if not re.match(r"[-.!0-9A-Za-z ]+$", name):
-        raise ctfmodel.TaskFailed("Challenge contains invalid characters!")
+        raise ctf_model.TaskFailed("Challenge contains invalid characters!")
 
     # Replace spaces with a dash, because discord does it :/
     return re.sub(r" +", "-", name).lower()
@@ -199,32 +194,29 @@ def check_name(name):
 def chk_fetch_team_by_name(ctx, name):
     channels = ctx.guild.channels
     if len([channel.id for channel in channels if name == channel.name]) > 1:
-        raise ctfmodel.TaskFailed("Multiple channels with same name exists")
+        raise ctf_model.TaskFailed("Multiple channels with same name exists")
 
     found_channel_id = ""
     for channel in channels:
         if channel.name == name:
             found_channel_id = channel.id
-    team = ctfmodel.CtfTeam.fetch(ctx.channel.guild, found_channel_id)
+    team = ctf_model.CtfTeam.fetch(ctx.channel.guild, found_channel_id)
     if not team:
-        raise ctfmodel.TaskFailed("Failed to join CTF")
+        raise ctf_model.TaskFailed("Failed to join CTF")
     return team
 
 
 def chk_fetch_team(ctx):
-    team = ctfmodel.CtfTeam.fetch(ctx.channel.guild, ctx.channel.id)
+    team = ctf_model.CtfTeam.fetch(ctx.channel.guild, ctx.channel.id)
     if not team:
-        raise ctfmodel.TaskFailed("Please type this command in a ctf channel.")
+        raise ctf_model.TaskFailed("Please type this command in a ctf channel.")
     return team
 
 
 def chk_fetch_chal(ctx):
-    chal = ctfmodel.Challenge.fetch(ctx.channel.guild, ctx.channel.id)
+    chal = ctf_model.Challenge.fetch(ctx.channel.guild, ctx.channel.id)
     if not chal:
-        raise ctfmodel.TaskFailed(
-            "Please type this command in a challenge "
-            + "channel. You may need to join a challenge first."
-        )
+        raise ctf_model.TaskFailed("Please type this command in a challenge channel. You may need to join a challenge first.")
     return chal
 
 
@@ -236,7 +228,7 @@ def parse_user(guild, user):
         ret = guild.get_member_named(user)
 
     if not ret:
-        raise ctfmodel.TaskFailed(f'Invalid username: "{user}"')
+        raise ctf_model.TaskFailed(f'Invalid username: "{user}"')
     return ret
 
 

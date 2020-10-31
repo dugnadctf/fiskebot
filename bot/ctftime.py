@@ -2,8 +2,8 @@ import io
 import re
 from datetime import datetime, timezone
 
-from urllib.request import urlopen
-from dateutil.parser import parse
+import urllib.request
+import dateutil.parser
 
 import requests
 import discord
@@ -27,54 +27,46 @@ class Ctftime(commands.Cog):
     default_image = "https://pbs.twimg.com/profile_images/2189766987/ctftime-logo-avatar_400x400.png"
 
     @staticmethod
-    def rgb2hex(response, g, b):
-        tohex = "#{:02x}{:02x}{:02x}".format(response, g, b)
+    def rgb2hex(red, green, blue):
+        tohex = "#{:02x}{:02x}{:02x}".format(red, green, blue)
         return tohex
 
     @staticmethod
     def updatedb():
-        now = datetime.utcnow()
-        unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
+        unix_now = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
         limit = "5"  # Max amount I can grab the json data for
-        response = requests.get(
-            Ctftime.upcoming_url, headers=Ctftime.headers, params=limit
-        )
-        jdata = response.json()
+        response = requests.get(Ctftime.upcoming_url, headers=Ctftime.headers, params=limit)
 
-        info = []
-        for num, i in enumerate(jdata):  # Generate list of dicts of upcoming ctfs
-            ctf_title = jdata[num]["title"]
-            (ctf_start, ctf_end) = (
-                parse(jdata[num]["start"].replace("T", " ").split("+", 1)[0]),
-                parse(jdata[num]["finish"].replace("T", " ").split("+", 1)[0]),
-            )
-            (unix_start, unix_end) = (
-                int(ctf_start.replace(tzinfo=timezone.utc).timestamp()),
-                int(ctf_end.replace(tzinfo=timezone.utc).timestamp()),
-            )
-            dur_dict = jdata[num]["duration"]
-            (ctf_hours, ctf_days) = (str(dur_dict["hours"]), str(dur_dict["days"]))
-            ctf_link = jdata[num]["url"]
-            ctf_image = jdata[num]["logo"]
-            ctf_format = jdata[num]["format"]
-            ctf_place = jdata[num]["onsite"]
-            if ctf_place == False:
+        ctfs = []
+        for data in response.json():  # Generate list of dicts of upcoming ctfs
+            ctf_start = dateutil.parser.parse(data["start"].replace("T", " ").split("+", 1)[0])
+            ctf_end = dateutil.parser.parse(data["finish"].replace("T", " ").split("+", 1)[0])
+
+            unix_start = int(ctf_start.replace(tzinfo=timezone.utc).timestamp())
+            unix_end = int(ctf_end.replace(tzinfo=timezone.utc).timestamp())
+
+            dur_dict = data["duration"]
+            ctf_hours = str(dur_dict["hours"])
+            ctf_days = str(dur_dict["days"])
+
+            ctf_place = data["onsite"]
+            if not ctf_place:
                 ctf_place = "Online"
             else:
                 ctf_place = "Onsite"
 
             ctf = {
-                "name": ctf_title,
+                "name": data["title"],
                 "start": unix_start,
                 "end": unix_end,
                 "dur": ctf_days + " days, " + ctf_hours + " hours",
-                "url": ctf_link,
-                "img": ctf_image,
-                "format": ctf_place + " " + ctf_format,
+                "url": data["url"],
+                "img": data["logo"],
+                "format": ctf_place + " " + data["format"],
             }
-            info.append(ctf)
+            ctfs.append(ctf)
 
-        for ctf in info:  # If the document doesn't exist: add it, if it does: update it.
+        for ctf in ctfs:  # If the document doesn't exist: add it, if it does: update it.
             print(f"Got {ctf['name']} from ctftime")
             query = ctf["name"]
             db.ctfs.update({"name": query}, {"$set": ctf}, upsert=True)
@@ -90,41 +82,38 @@ class Ctftime(commands.Cog):
 
     @ctftime.command()
     async def upcoming(self, ctx, params=None):
-        if params == None:
+        if params is None:
             params = "3"
         else:
             pass
 
-        response = requests.get(
-            Ctftime.upcoming_url, headers=Ctftime.headers, params=params
-        )
+        response = requests.get(Ctftime.upcoming_url, headers=Ctftime.headers, params=params)
         data = response.json()
 
         for num in range(0, int(params)):
             ctf_title = data[num]["title"]
-            (ctf_start, ctf_end) = (
-                data[num]["start"].replace("T", " ").split("+", 1)[0] + " UTC",
-                data[num]["finish"].replace("T", " ").split("+", 1)[0] + " UTC",
-            )
-            (ctf_start, ctf_end) = (
-                re.sub(":00 ", " ", ctf_start),
-                re.sub(":00 ", " ", ctf_end),
-            )
+            ctf_start = data[num]["start"].replace("T", " ").split("+", 1)[0] + " UTC"
+            ctf_end = data[num]["finish"].replace("T", " ").split("+", 1)[0] + " UTC"
+
+            ctf_start = re.sub(":00 ", " ", ctf_start)
+            ctf_end = re.sub(":00 ", " ", ctf_end)
+
             dur_dict = data[num]["duration"]
-            (ctf_hours, ctf_days) = (str(dur_dict["hours"]), str(dur_dict["days"]))
+            ctf_hours = str(dur_dict["hours"])
+            ctf_days = str(dur_dict["days"])
             ctf_link = data[num]["url"]
             ctf_image = data[num]["logo"]
             ctf_format = data[num]["format"]
             ctf_place = data[num]["onsite"]
 
-            if ctf_place == False:
+            if not ctf_place:
                 ctf_place = "Online"
             else:
                 ctf_place = "Onsite"
 
-            fd = urlopen(Ctftime.default_image)
-            f = io.BytesIO(fd.read())
-            color_thief = ColorThief(f)
+            image = urllib.request.urlopen(Ctftime.default_image)
+            image = io.BytesIO(image.read())
+            color_thief = ColorThief(image)
             rgb_color = color_thief.get_color(quality=49)
             hexed = str(Ctftime.rgb2hex(*rgb_color[:3])).replace("#", "")
             f_color = int(hexed, 16)
@@ -135,17 +124,9 @@ class Ctftime(commands.Cog):
             else:
                 embed.set_thumbnail(url=Ctftime.default_image)
 
-            embed.add_field(
-                name="Duration",
-                value=((ctf_days + " days, ") + ctf_hours) + " hours",
-                inline=True,
-            )
-            embed.add_field(
-                name="Format", value=(ctf_place + " ") + ctf_format, inline=True
-            )
-            embed.add_field(
-                name="─" * 23, value=(ctf_start + " -> ") + ctf_end, inline=True
-            )
+            embed.add_field(name="Duration", value=((ctf_days + " days, ") + ctf_hours) + " hours", inline=True)
+            embed.add_field(name="Format", value=(ctf_place + " ") + ctf_format, inline=True)
+            embed.add_field(name="─" * 23, value=(ctf_start + " -> ") + ctf_end, inline=True)
             await ctx.channel.send(embed=embed)
 
     @ctftime.command()
@@ -154,7 +135,7 @@ class Ctftime(commands.Cog):
             params = str(datetime.now().year)
 
         params = str(params)
-        top_url = "https://ctftime.org/api/v1/top/" + params + "/"
+        top_url = f"https://ctftime.org/api/v1/top/{params}/"
         response = requests.get(top_url, headers=Ctftime.headers)
         data = response.json()
         leaderboards = ""
@@ -165,17 +146,10 @@ class Ctftime(commands.Cog):
             score = data[params][team]["points"]
 
             if team != 9:
-                leaderboards += f"""
-[{rank}]    {teamname}: {score}
-"""
+                leaderboards += f"[{rank}]    {teamname}: {score}\n"
             else:
-                leaderboards += f"""
-[{rank}]   {teamname}: {score}
-"""
-        await ctx.send(
-            f""":triangular_flag_on_post:  **{params} CTFtime Leaderboards**```ini
-{leaderboards}```"""
-        )
+                leaderboards += f"[{rank}]   {teamname}: {score}\n"
+        await ctx.send(f":triangular_flag_on_post:  **{params} CTFtime Leaderboards**```ini{leaderboards}```")
 
     @ctftime.command()
     async def team(self, ctx, team=None):
@@ -201,7 +175,7 @@ class Ctftime(commands.Cog):
         await ctx.send(out)
 
     @ctftime.command()
-    async def current(self, ctx, params=None):
+    async def current(self, ctx):
         Ctftime.updatedb()
         now = datetime.utcnow()
         unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
@@ -210,21 +184,9 @@ class Ctftime(commands.Cog):
         for ctf in db.ctfs.find():
             if (ctf["start"] < unix_now and unix_now < ctf["end"]):  # Check if the ctf is running
                 running = True
-                embed = discord.Embed(
-                    title=":red_circle: " + ctf["name"] + " IS LIVE",
-                    description=ctf["url"],
-                    color=15874645,
-                )
-                start = (
-                    datetime.utcfromtimestamp(ctf["start"]).strftime(
-                        "%Y-%m-%d %H:%M:%S"
-                    )
-                    + " UTC"
-                )
-                end = (
-                    datetime.utcfromtimestamp(ctf["end"]).strftime("%Y-%m-%d %H:%M:%S")
-                    + " UTC"
-                )
+                embed = discord.Embed(title=":red_circle: " + ctf["name"] + " IS LIVE", description=ctf["url"], color=15874645)
+                start = datetime.utcfromtimestamp(ctf["start"]).strftime("%Y-%m-%d %H:%M:%S") + " UTC"
+                end = datetime.utcfromtimestamp(ctf["end"]).strftime("%Y-%m-%d %H:%M:%S") + " UTC"
                 if ctf["img"] != "":
                     embed.set_thumbnail(url=ctf["img"])
                 else:
@@ -235,22 +197,19 @@ class Ctftime(commands.Cog):
                 embed.add_field(name="─" * 23, value=start + " -> " + end, inline=True)
                 await ctx.channel.send(embed=embed)
 
-        if running == False:  # No ctfs were found to be running
-            await ctx.send(
-                "No CTFs currently running! Check out !ctftime countdown, and !ctftime upcoming to see when ctfs will start!"
-            )
+        if not running:  # No ctfs were found to be running
+            await ctx.send("No CTFs currently running! Check out !ctftime countdown, and !ctftime upcoming to see when ctfs will start!")
 
     # Return the timeleft in the ctf in days, hours, minutes, seconds
+
     @ctftime.command()
-    async def timeleft(self, ctx, params=None):
+    async def timeleft(self, ctx):
         Ctftime.updatedb()
         now = datetime.utcnow()
         unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
         running = False
         for ctf in db.ctfs.find():
-            if (
-                ctf["start"] < unix_now and ctf["end"] > unix_now
-            ):  # Check if the ctf is running
+            if ctf["start"] < unix_now and unix_now < ctf["end"]:  # Check if the ctf is running
                 running = True
                 time = ctf["end"] - unix_now
                 days = time // (24 * 3600)
@@ -260,20 +219,15 @@ class Ctftime(commands.Cog):
                 minutes = time // 60
                 time %= 60
                 seconds = time
-                await ctx.send(
-                    f"```ini\n{ctf['name']} ends in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{ctf['url']}"
-                )
+                await ctx.send(f"```ini\n{ctf['name']} ends in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{ctf['url']}")
 
         if not running:
-            await ctx.send(
-                "No ctfs are running! Use !ctftime upcoming or !ctftime countdown to see upcoming ctfs"
-            )
+            await ctx.send("No ctfs are running! Use !ctftime upcoming or !ctftime countdown to see upcoming ctfs")
 
     @ctftime.command()
     async def countdown(self, ctx, params=None):
         Ctftime.updatedb()
-        now = datetime.utcnow()
-        unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
+        unix_now = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
 
         if params is None:
             self.upcoming_l = []
@@ -284,44 +238,34 @@ class Ctftime(commands.Cog):
             for i, ctf in enumerate(self.upcoming_l):
                 index += f"\n[{i + 1}] {ctf['name']}\n"
 
-            await ctx.send(
-                f"Type !ctftime countdown <number> to select.\n```ini\n{index}```"
-            )
+            await ctx.send(f"Type !ctftime countdown <number> to select.\n```ini\n{index}```")
 
         else:
             if self.upcoming_l != []:
-                x = int(params) - 1
+                index = int(params) - 1
+                target = self.upcoming_l[index]
+                seconds = target["start"] - unix_now
+                await ctx.send(f"```ini\n{target['name']} starts in: {format_seconds(seconds)}```\n{target['url']}")
 
-                time = self.upcoming_l[x]["start"] - unix_now
-                days = time // (24 * 3600)
-                time = time % (24 * 3600)
-                hours = time // 3600
-                time %= 3600
-                minutes = time // 60
-                time %= 60
-                seconds = time
-
-                await ctx.send(
-                    f"```ini\n{self.upcoming_l[x]['name']} starts in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{self.upcoming_l[x]['url']}"
-                )
-            else:  # TODO: make this a function, too much repeated code here.
+            else:
                 for ctf in db.ctfs.find():
                     if ctf["start"] > unix_now:
                         self.upcoming_l.append(ctf)
-                x = int(params) - 1
+                index = int(params) - 1
+                target = self.upcoming_l[index]
+                seconds = target["start"] - unix_now
 
-                time = self.upcoming_l[x]["start"] - unix_now
-                days = time // (24 * 3600)
-                time = time % (24 * 3600)
-                hours = time // 3600
-                time %= 3600
-                minutes = time // 60
-                time %= 60
-                seconds = time
+                await ctx.send(f"```ini\n{target['name']} starts in: {format_seconds(seconds)}```\n{target['url']}")
 
-                await ctx.send(
-                    f"```ini\n{self.upcoming_l[x]['name']} starts in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```\n{self.upcoming_l[x]['url']}"
-                )
+
+def format_seconds(seconds):
+    days = seconds // (24 * 3600)
+    seconds = seconds % (24 * 3600)
+    hours = seconds // 3600
+    seconds %= 3600
+    minutes = seconds // 60
+    seconds %= 60
+    return f'[{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]'
 
 
 def get_scores(team_id):
