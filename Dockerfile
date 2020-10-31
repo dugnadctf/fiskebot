@@ -14,6 +14,6 @@ WORKDIR ${APP_HOME}
 RUN chown ${NAME}:${NAME} ${APP_HOME}
 
 
-COPY --chown=eptbot:eptbot bot ${APP_HOME}/
+COPY --chown=eptbot:eptbot ./bot/* ${APP_HOME}/
 
 CMD ["python", "-u", "eptbot.py"]
