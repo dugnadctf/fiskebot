@@ -64,7 +64,6 @@ find_text_channel = functools.partial(_find_chan, "text_channels")
 
 
 def load_category(guild, catg):
-    gid = guild.id
     # TODO: change name based on guild-local configs
     return find_category(guild, catg)
 
@@ -120,7 +119,7 @@ def chk_archive(func):
     return wrapper
 
 
-def userToDict(user):
+def user_to_dict(user):
     try:
         return {"id": user.id, "nick": user.nick, "user": user.name, "avatar": user.avatar, "bot": user.bot}
     except AttributeError:
@@ -132,14 +131,12 @@ class TaskFailed(commands.UserInputError):
         super().__init__(msg)
 
 
-class CtfTeam(object):
+class CtfTeam():
     __teams__ = {}
 
     @staticmethod
     async def create(guild, name):
-        names = [role.name for role in guild.roles] + [
-            channel for channel in guild.channels
-        ]
+        names = [role.name for role in guild.roles] + guild.channels
         if name in names:
             return [(ValueError, f"`{name}` already exists :grimacing:")]
 
@@ -244,14 +241,12 @@ class CtfTeam(object):
             guild.me: basic_allow,
             role: basic_allow,
         }
-        chan = await catg_working.create_text_channel(
-            name=fullname, overwrites=overwrites
-        )
+        chan = await catg_working.create_text_channel(name=fullname, overwrites=overwrites)
         Challenge.create(guild, cid, chan.id, name)
         chk_upd(fullname, teams.update_one({"chan_id": cid}, {"$push": {"chals": chan.id}}))
         self.refresh()
 
-        return[(None, 'Challenge"{name}"hasbeenadded!Reacttothismessagetoworkon<#{chan.id}>!Ortype`!ctfworking{name}`',)]
+        return[(None, 'Challenge"{name}"has been added! React to this message to work on <#{chan.id}>! Or type `!ctf working {name}`',)]
 
     @ chk_archive
     async def archive(self):
@@ -264,7 +259,7 @@ class CtfTeam(object):
             raise TaskFailed(f'Failed to archive "{self.name}" as it has more than {CATEGORY_CHANNEL_LIMIT} channels in total')
 
         for i in range(100):
-            category = f"archive-{i}"
+            category = f"{config['categories']['archive-prefix']}-{i}"
             try:
                 catg_archive = [catg for catg in guild.categories if catg.name == category][0]
                 current_catg_channels = len(catg_archive.channels)
@@ -274,23 +269,16 @@ class CtfTeam(object):
                 catg_archive = await guild.create_category(category)
                 break
 
-        role = chk_get_role(guild, self.__teamdata["role_id"])
-
         # Update database
-        chk_upd(
-            self.name, teams.update_one({"chan_id": cid}, {"$set": {"archived": True}})
-        )
+        chk_upd(self.name, teams.update_one({"chan_id": cid}, {"$set": {"archived": True}}))
         self.refresh()
 
         # Archive all challenge channels
         main_chan = guild.get_channel(cid)
         await main_chan.edit(category=catg_archive)
-#        await main_chan.set_permissions(guild.default_role, overwrite=basic_read_send)
+        # await main_chan.set_permissions(guild.default_role, overwrite=basic_read_send)
         for chal in self.challenges:
             await chal._archive(catg_archive)
-
-        # Delete role
-        # await role.delete()
 
         return [(None, f"{self.name} CTF has been archived.")]
 
@@ -304,11 +292,6 @@ class CtfTeam(object):
 
         # if not self.is_archived:
         #    raise TaskFailed('This is already not archived!')
-
-        # Create role
-        role = chk_get_role(guild, self.__teamdata["role_id"])
-        # TODO: Store who was in the role
-        # role = await guild.create_role(name=f'{self.name}_team', mentionable=True)
 
         # Update database
         chk_upd(self.name, teams.update_one({"chan_id": cid}, {"$set": {"archived": False}}))
@@ -329,7 +312,7 @@ class CtfTeam(object):
         guild = self.__guild
         teams = self.__teams
 
-        catg_archive = load_category(guild, "archive")
+        catg_archive = load_category(guild, config["categories"]["archive-prefix"])
 
         # Update database
         fullname = f"{self.name}-{name}"
@@ -345,9 +328,7 @@ class CtfTeam(object):
 
     @chk_archive
     async def invite(self, author, user):
-        cid = self.__chan_id
         guild = self.__guild
-        teams = self.__teams
         team = self.__teamdata
 
         # Add role for user
@@ -362,7 +343,6 @@ class CtfTeam(object):
     async def join(self, user):
         cid = self.__chan_id
         guild = self.__guild
-        teams = self.__teams
         team = self.__teamdata
 
         # Add role for user
@@ -375,9 +355,7 @@ class CtfTeam(object):
 
     @chk_archive
     async def leave(self, user):
-        cid = self.__chan_id
         guild = self.__guild
-        teams = self.__teams
 
         team = self.__teamdata
 
@@ -396,7 +374,7 @@ class CtfTeam(object):
         self.__teamdata = team
 
 
-class Challenge(object):
+class Challenge():
     __chals__ = {}
 
     @staticmethod
@@ -495,29 +473,22 @@ class Challenge(object):
     async def _archive(self, catg_archive):
         cid = self.__id
         guild = self.__guild
-        chk_upd(
-            self.name,
-            self.__chals.update_one({"chan_id": cid}, {"$set": {"archived": True}}),
-        )
+        chk_upd(self.name, self.__chals.update_one({"chan_id": cid}, {"$set": {"archived": True}}))
         channel = guild.get_channel(cid)
-        if channel != None:
+        if channel is not None:
             await channel.edit(category=catg_archive)
-#            await channel.set_permissions(guild.default_role, overwrite=basic_read_send)
+            # await channel.set_permissions(guild.default_role, overwrite=basic_read_send)
             self.refresh()
         else:
-
             raise ValueError(f"Couldn't find channel {cid}")
 
     async def _unarchive(self, catg_working, catg_done):
         cid = self.__id
         guild = self.__guild
-        chk_upd(
-            self.name,
-            self.__chals.update_one({"chan_id": cid}, {"$set": {"archived": False}}),
-        )
+        chk_upd(self.name, self.__chals.update_one({"chan_id": cid}, {"$set": {"archived": False}}))
         channel = guild.get_channel(cid)
 
-        if channel != None:
+        if channel is not None:
             await channel.edit(category=(catg_working, catg_done)[self.is_finished])
             await channel.set_permissions(guild.default_role, overwrite=basic_disallow)
             self.refresh()
@@ -565,13 +536,7 @@ class Challenge(object):
                 raise TaskFailed("This task is already solved with same users")
 
         # Update database
-        chk_upd(
-            self.name,
-            self.__chals.update_one(
-                {"chan_id": cid},
-                {"$set": {"finished": True, "owner": owner, "solvers": users}},
-            ),
-        )
+        chk_upd(self.name, self.__chals.update_one({"chan_id": cid}, {"$set": {"finished": True, "owner": owner, "solvers": users}}))
 
         # Move channel to done
         await guild.get_channel(cid).edit(category=catg_done)
@@ -579,36 +544,28 @@ class Challenge(object):
         mentions = " ".join(mentions)
         self.refresh()
         return [
-            (self.ctf_id, f'{self.team.mention} :tada: "{self.name}" has been completed by {mentions}!',),
-            (None, "Challenge moved to done!"),
+            (self.ctf_id, f'{self.team.mention} :tada: "{self.name}" has been completed by {mentions}!'),
+            (None, "Challenge moved to done!")
         ]
 
     @chk_archive
     async def invite(self, author, user):
         ccid = self.team.chan_id
-        cid = self.__id
         guild = self.__guild
         chan = guild.get_channel(self.__id)
 
         if user in chan.overwrites:
             raise TaskFailed(f'{user.name} is already in the "{self.name}" challenge')
 
-        await chan.set_permissions(
-            user,
-            overwrite=basic_allow,
-            reason=f'{author.name} invited user to work on "{self.name}" challenge',
-        )
+        await chan.set_permissions(user, overwrite=basic_allow, reason=f'{author.name} invited user to work on "{self.name}" challenge',)
         return [(ccid, f'{author.mention} invited {user.mention} to work on "{self.name}" challenge',)]
 
     @chk_archive
     async def leave(self, user):
         ccid = self.team.chan_id
-        cid = self.__id
         guild = self.__guild
         chan = guild.get_channel(self.__id)
-        await chan.set_permissions(
-            user, overwrite=None, reason=f'Left "{self.name}" challenge'
-        )
+        await chan.set_permissions(user, overwrite=None, reason=f'Left "{self.name}" challenge')
         return [(ccid, f'{user.mention} has left "{self.name}" challenge')]
 
     def refresh(self):
@@ -629,10 +586,7 @@ class Challenge(object):
             raise TaskFailed("This ctf challenge has not been completed yet")
 
         # Update database
-        chk_upd(
-            self.name,
-            self.__chals.update_one({"chan_id": cid}, {"$set": {"finished": False}}),
-        )
+        chk_upd(self.name, self.__chals.update_one({"chan_id": cid}, {"$set": {"finished": False}}))
 
         # Move channel to working
         await guild.get_channel(cid).edit(category=catg_working)
@@ -646,35 +600,31 @@ class Challenge(object):
     @chk_archive
     async def working(self, user):
         ccid = self.team.chan_id
-        cid = self.__id
         guild = self.__guild
         chan = guild.get_channel(self.__id)
         if user in chan.overwrites:
             raise TaskFailed(f'{user.name} is already in the "{self.name}" challenge')
-        await chan.set_permissions(
-            user, overwrite=basic_allow, reason=f'Working on "{self.name}" challenge'
-        )
+        await chan.set_permissions(user, overwrite=basic_allow, reason=f'Working on "{self.name}" challenge')
         return [(ccid, f'{user.mention} is working on "{self.name}" challenge')]
 
     @staticmethod
     def _uid(user):
-        if type(user) is str:
+        if isinstance(user, str):
             return int(user)
-        elif type(user) is int:
+        if isinstance(user, int):
             return user
-        elif type(user) is discord.member.Member:
+        if isinstance(user, discord.member.Member):
             return user.id
-        else:
-            raise ValueError(f"Cannot convert to user: {user}")
+        raise ValueError(f"Cannot convert to user: {user}")
 
 
 async def export(ctx, author):
     guild = ctx.guild
 
     if not author.id in config["maintainers"]:
-        return [(None, f"Only maintainers can export CTFs.")]
+        return [(None, "Only maintainers can export CTFs.")]
 
-    CTF = {"channels": []}
+    ctf = {"channels": []}
     main_chan = ctx.channel
 
     channels = [main_chan]
@@ -685,32 +635,32 @@ async def export(ctx, author):
     for channel in channels:
         chan = {"name": channel.name, "topic": channel.topic, "messages": []}
 
-        async for m in channel.history(limit=None, oldest_first=True):
-            d = {"id": m.id, "created_at": m.created_at.isoformat(), "content": m.clean_content}
-            d["author"] = userToDict(m.author)
-            d["attachments"] = [{"filename": a.filename, "url": str(a.url)} for a in m.attachments]
-            d["channel"] = {"name": m.channel.name}
-            d["edited_at"] = m.edited_at.isoformat() if m.edited_at != None else m.edited_at
+        async for message in channel.history(limit=None, oldest_first=True):
+            entry = {"id": message.id, "created_at": message.created_at.isoformat(), "content": message.clean_content}
+            entry["author"] = user_to_dict(message.author)
+            entry["attachments"] = [{"filename": a.filename, "url": str(a.url)} for a in message.attachments]
+            entry["channel"] = {"name": message.channel.name}
+            entry["edited_at"] = message.edited_at.isoformat() if message.edited_at is not None else message.edited_at
             # used for URLs
-            d["embeds"] = [e.to_dict() for e in m.embeds]
-            d["mentions"] = [userToDict(mention) for mention in m.mentions]
-            d["channel_mentions"] = [{"id": c.id, "name": c.name} for c in m.channel_mentions]
-            d["mention_everyone"] = m.mention_everyone
-            d["reactions"] = [{"count": r.count, "emoji": r.emoji if type(r.emoji) == str else {"name": r.emoji.name, "url": str(r.emoji.url)}} for r in m.reactions]
-            chan["messages"].append(d)
+            entry["embeds"] = [e.to_dict() for e in message.embeds]
+            entry["mentions"] = [user_to_dict(mention) for mention in message.mentions]
+            entry["channel_mentions"] = [{"id": c.id, "name": c.name} for c in message.channel_mentions]
+            entry["mention_everyone"] = message.mention_everyone
+            entry["reactions"] = [{"count": r.count, "emoji": r.emoji if isinstance(r.emoji, str) else {"name": r.emoji.name, "url": str(r.emoji.url)}} for r in message.reactions]
+            chan["messages"].append(entry)
 
-        CTF["channels"].append(chan)
+        ctf["channels"].append(chan)
 
     if not os.path.exists("backups"):
         os.mkdir("backups")
 
     json_file = f"backups/{guild.name} - {main_chan.name}.json"
-    with open(json_file, "w") as w:
-        json.dump(CTF, w)
+    with open(json_file, "w") as file:
+        json.dump(ctf, file)
 
     bson_file = f"backups/{guild.name} - {main_chan.name}.bson"
-    with open(bson_file, "wb") as w:
-        w.write(bson.dumps(CTF))
+    with open(bson_file, "wb") as file:
+        file.write(bson.dumps(ctf))
 
     for chn in guild.text_channels:
         if chn.name == config["channels"]["export"]:
@@ -729,7 +679,7 @@ async def delete(ctx, author):
     guild = ctx.guild
 
     if not author.id in config["maintainers"]:
-        return [(None, f"Only maintainers can delete CTFs.")]
+        return [(None, "Only maintainers can delete CTFs.")]
 
     main_chan = ctx.channel
     channels = [main_chan]
