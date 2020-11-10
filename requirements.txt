@@ -1,6 +1,6 @@
 colorama==0.4.1
 colorthief==0.2.1
-python-dateutil=2.8.1
+python-dateutil==2.8.1
 discord==1.0.1
 dnspython==1.16.0
 mongo==0.2.0
