@@ -1,5 +1,4 @@
 import re
-import requests
 
 from discord.ext import commands
 
