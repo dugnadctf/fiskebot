@@ -73,27 +73,37 @@ async def on_command_error(ctx, err):
 
 @bot.event
 async def on_raw_reaction_add(payload):
+    print('added reaction:', payload)  # XXX: Temp debugging
     # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
     chan = bot.get_channel(payload.channel_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
     member = guild.get_member(payload.user_id)
+    if not member and payload.member and not payload.member.bot:
+        member = payload.member
+    print(f'guild: {guild}, chan: {chan}, team: {team}, member: {member}')  # XXX: Temp debugging
     if guild and member and chan:
         if team:
             role = guild.get_role(team["role_id"])
             await member.add_roles(role, reason="User wanted to join team")
+            print(f"added role {role} to use {member}")  # XXX: Temp debugging
 
 
 @bot.event
 async def on_raw_reaction_remove(payload):
+    print('removed reaction:', payload)  # XXX: Temp debugging
     # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
     member = guild.get_member(payload.user_id)
+    print(f'guild: {guild}, team: {team}, member: {member}')  # XXX: Temp debugging
+    if not member and payload.member and not payload.member.bot:
+        member = payload.member
     if guild and member:
         if team:
             role = guild.get_role(team["role_id"])
             await member.remove_roles(role, reason="User wanted to leave team")
+            print(f"removed role {role} to use {member}")  # XXX: Temp debugging
 
 
 async def embed_help(chan, help_topic, help_text):
