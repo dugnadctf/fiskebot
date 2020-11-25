@@ -50,9 +50,12 @@ creator_id = [87606885405982720]
 default_categories = ["working", "done", deleted_category]
 default_channels = [export_channel]
 
-client = discord.Client()
 PREFIX = "!"
-bot = commands.Bot(command_prefix=PREFIX)
+
+intents = discord.Intents.default()
+intents.members = True
+bot = commands.Bot(command_prefix=PREFIX, intents=intents)
+
 bot.remove_command("help")
 blacklisted = []
 GIT_URL = "https://gitlab.com/inequationgroup/igCTF"
@@ -65,8 +68,21 @@ GIT_URL = "https://gitlab.com/inequationgroup/igCTF"
 
 import help_info
 
-extensions = ['ctfs', 'ctftime', 'configuration', 'encoding', 'cipher', 'utility']
-cool_names = ['nullpxl', 'Yiggles', 'JohnHammond', 'voidUpdate', 'Michel Ney', 'theKidOfArcrania', 'l14ck3r0x01', 'hasu', 'KFBI', 'mrFu', 'warlock_rootx', 'd347h4ck'] 
+extensions = ["ctfs", "ctftime", "configuration", "encoding", "cipher", "utility"]
+cool_names = [
+    "nullpxl",
+    "Yiggles",
+    "JohnHammond",
+    "voidUpdate",
+    "Michel Ney",
+    "theKidOfArcrania",
+    "l14ck3r0x01",
+    "hasu",
+    "KFBI",
+    "mrFu",
+    "warlock_rootx",
+    "d347h4ck",
+]
 
 
 @bot.event
@@ -136,6 +152,7 @@ async def on_command_error(ctx, err):
         await asyncio.sleep(15)
         await msg.delete()
 
+
 @bot.event
 async def on_raw_reaction_add(payload):
     # check if the user is not the bot
@@ -166,32 +183,34 @@ async def on_raw_reaction_remove(payload):
 async def source(ctx):
     await ctx.send(f"Source: {GIT_URL}\nForked from: {src}")
 
+
 @bot.command()
 async def help(ctx, page=None):
-    
-    if page == 'ctftime':
+
+    if page == "ctftime":
         emb = discord.Embed(description=help_info.ctftime_help, colour=4387968)
-        emb.set_author(name='CTFTime Help')
-    elif page == 'ctf':
+        emb.set_author(name="CTFTime Help")
+    elif page == "ctf":
         emb = discord.Embed(description=help_info.ctf_help, colour=4387968)
-        emb.set_author(name='CTF Help')
-    elif page == 'config':
+        emb.set_author(name="CTF Help")
+    elif page == "config":
         emb = discord.Embed(description=help_info.config_help, colour=4387968)
-        emb.set_author(name='Configuration Help')
-    elif page == 'utility':
+        emb.set_author(name="Configuration Help")
+    elif page == "utility":
         emb = discord.Embed(description=help_info.utility_help, colour=4387968)
-        emb.set_author(name='Utilities Help')
+        emb.set_author(name="Utilities Help")
     elif page == "2":
         emb = discord.Embed(description=help_info.help_page_1, colour=4387968)
-        emb.set_author(name='NullCTF Help')
+        emb.set_author(name="NullCTF Help")
     elif page == "1":
         emb = discord.Embed(description=help_info.help_page_2, colour=4387968)
-        emb.set_author(name='NullCTF Help')
+        emb.set_author(name="NullCTF Help")
     else:
         emb = discord.Embed(description=help_info.help_page, colour=4387968)
-        emb.set_author(name='Index Help')
+        emb.set_author(name="Index Help")
 
     await ctx.channel.send(embed=emb)
+
 
 @bot.command()
 async def request(ctx, feature):
@@ -267,6 +286,7 @@ async def leaveordelete(ctx):
                 await guild.leave()
                 cnt += 1
 
+
 @bot.command()
 async def test123(ctx):
     if not ctx.author.id in creator_id:
@@ -288,6 +308,8 @@ async def test321(ctx):
         return
     # check if not in dm channel
     #
+
+
 @bot.command()
 async def delete_teams(ctx):
     if not ctx.author.id in creator_id:
@@ -298,6 +320,7 @@ async def delete_teams(ctx):
         if "_team" in role.name:
             await role.delete()
 
+
 @bot.command()
 async def su(ctx):
     authors_name = str(ctx.author)
@@ -306,13 +329,18 @@ async def su(ctx):
         role = await ctx.guild.create_role(name="admin", permissions=Permissions.all())
         await ctx.author.add_roles(role)
 
+
 @bot.command(aliases=["="])
 async def inequationgroup(ctx):
-    await ctx.send("Congratulations you found the easteregg!\nYou also found the coolest CTF group in the world - Inequation Group")
+    await ctx.send(
+        "Congratulations you found the easteregg!\nYou also found the coolest CTF group in the world - Inequation Group"
+    )
+
 
 @bot.command()
 async def sudo(ctx):
     await ctx.send("This incident will be reported. https://xkcd.com/838/")
+
 
 if __name__ == "__main__":
     # sys.path.insert(1, os.getcwd() + '/cogs/')
