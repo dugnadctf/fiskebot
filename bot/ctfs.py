@@ -70,7 +70,7 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
     @commands.bot_has_permissions(manage_channels=True)
     @ctf.command()
     async def add(self, ctx, *name):
-        name = ' '.join(name)
+        name = '_'.join(name)
         name = check_name(name)
         emoji = '🔨'
         await respond_with_reaction(ctx, emoji,  chk_fetch_team(ctx).add_chal, name)
