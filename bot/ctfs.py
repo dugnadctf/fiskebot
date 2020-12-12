@@ -26,7 +26,7 @@ class Ctfs(commands.Cog):
     @commands.guild_only()
     @commands.command()
     async def create(self, ctx, *name):
-        name = ' '.join(name)
+        name = '_'.join(name)
         emoji = '🏃'
         messages = await respond_with_reaction(ctx, emoji, ctf_model.CtfTeam.create, ctx.channel.guild, name)
         db.teamdb[str(ctx.channel.guild.id)].update_one({"name": name}, {"$set": {"msg_id": messages[0].id}})
