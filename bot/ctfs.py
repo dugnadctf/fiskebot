@@ -39,10 +39,10 @@ class Ctfs(commands.Cog):
 
     @ctf.command("help")
     async def ctf_help(self, ctx):
-        help = """
+        help_text = """
 These commands are callable from a main CTF channel.
 
-`!ctf add "<challenge>"`
+`!ctf add <challenge name>` || `!add <challenge name>`
 Add a `challenge` and a respective channel. Challenge names may be altered to meet Discord restrictions.
 (i.e. no special characters, less than 32 characters long, etc...)
 
@@ -60,7 +60,7 @@ Archives this ctf and all the respective challenges (this requires the bot has m
 Unarchives this ctf and all the respective challenges (this requires the bot has manage channels permissions).
 
 """.replace("!", config["prefix"])
-        await eptbot.embed_help(ctx, "Help for CTF commands", help)
+        await eptbot.embed_help(ctx, "Help for CTF commands", help_text)
 
     @commands.bot_has_permissions(manage_channels=True)
     @commands.command("add")
@@ -181,10 +181,10 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
 
     @chal.command("help")
     async def chal_help(self, ctx):
-        help = """
+        help_text = """
 These commands are callable from a CTF **challenge** environment.
 
-`!chal done [<users>]`
+`!chal done @user1 @user2 ...` || `!done @user1 @user2 ...`
 Marks this challenge as completed, and moves channel to "done" category. You may optionally include @'s of `users` that worked with you.
 Once a challenge is completed, **no one** except you (and admins) can alter the done list or change reset the status to "undone".
 
@@ -194,7 +194,7 @@ Invites a `user` to a challenge channel.
 `!chal undone`
 Marks this challenge as **not** completed. This will move the channel back to the "working" category.
 """.replace("!", config["prefix"])
-        await eptbot.embed_help(ctx, "Challenge help topic", help)
+        await eptbot.embed_help(ctx, "Challenge help topic", help_text)
 
     @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()

@@ -246,7 +246,7 @@ class CtfTeam():
         chk_upd(fullname, teams.update_one({"chan_id": cid}, {"$push": {"chals": chan.id}}))
         self.refresh()
 
-        return[(None, f'Challenge"{name}"has been added! React to this message to work on <#{chan.id}>! Or type `!ctf working {name}`',)]
+        return[(None, f'Challenge `{name}` has been added! React to this message to work on <#{chan.id}>! Or type `!ctf working {name}`',)]
 
     @chk_archive
     async def archive(self):

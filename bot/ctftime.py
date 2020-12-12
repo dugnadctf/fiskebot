@@ -80,20 +80,20 @@ class Ctftime(commands.Cog):
     @commands.group()
     async def ctftime(self, ctx):
         if ctx.invoked_subcommand is None:
-            help = """
+            help_text = """
 `!ctftime <current/upcoming <number>>`
 Returns info on ongoing CTFs from ctftime.org, or displays the `number` of upcoming events.
 
 `!ctftime <countdown/timeleft>`
 Returns remaining time until an upcoming CTF begins, or ongoing event ends.
 
-`!ctftime top <year>`
-Display the leader boards from ctftimeorg for a specified `year`.
+`!ctftime top <year/country>`
+Display top teams for a specified year `YYYY` or country `XX`.
 
 `!ctftime team <team name>`
 Display the top 10 events this year for a team, sorted by rating points.
 """
-            await eptbot.embed_help(ctx, "Help for CTFtime commands.", help)
+            await eptbot.embed_help(ctx, "Help for CTFtime commands.", help_text)
 
     @ctftime.command()
     async def upcoming(self, ctx, params=None):
