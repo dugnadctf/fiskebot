@@ -14,6 +14,7 @@ from lxml import html
 import db
 import eptbot
 from config import config
+import ctf_model
 
 
 class Ctftime(commands.Cog):
@@ -144,45 +145,89 @@ Display the top 10 events this year for a team, sorted by rating points.
             await ctx.channel.send(embed=embed)
 
     @ctftime.command()
-    async def top(self, ctx, params=None):
-        if not params:
-            params = str(datetime.now().year)
+    async def top(self, ctx, year=None):
+        if not year:
+            year = str(datetime.now().year)
 
-        params = str(params)
-        top_url = f"https://ctftime.org/api/v1/top/{params}/"
+        if not year.isnumeric():
+            await self.country(ctx, year)
+            return
+
+        year = str(year)
+        top_url = f"https://ctftime.org/api/v1/top/{year}/"
         response = requests.get(top_url, headers=Ctftime.headers)
         data = response.json()
         leaderboards = ""
 
         for team in range(10):
             rank = team + 1
-            teamname = data[params][team]["team_name"]
-            score = data[params][team]["points"]
+            teamname = data[year][team]["team_name"]
+            score = data[year][team]["points"]
 
-            leaderboards += f"{f'[{rank}]':4}  {f'{teamname}:':20} {score:.3f}\n"
-        await ctx.send(f":triangular_flag_on_post:  **{params} CTFtime Leaderboards**```ini\n{leaderboards}```")
+            leaderboards += f"{f'[{str(rank).zfill(2)}]':4}  {f'{teamname}:':20} {score:.3f}\n"
+        await ctx.send(f":triangular_flag_on_post:  **{year} CTFtime Leaderboards**```ini\n{leaderboards}```")
 
     @ctftime.command()
     async def team(self, ctx, team=None):
         team_id = config["team"]["id"]
+        msg = None
         if team:
             msg = await ctx.send(f"Looking id for team {team}...")
             team_id = get_team_id(team)
-            await msg.delete()
         else:
             team = config["team"]["name"]
         if team_id <= 0:
             ctx.send(f':warning: Unknown team `{team}`.')
             return
-        msg = await ctx.send(f"Looking up scores for {team} with id {team_id}...")
+        if msg:
+            await msg.edit(content=f"Looking up scores for {team} with id {team_id}...")
+        else:
+            msg = await ctx.send(f"Looking up scores for {team} with id {team_id}...")
         table = get_scores(team_id)
-        await msg.delete()
-        table = [line[:2] + line[3:] for line in table]  # remove CTF points column, not interesting
-        table = table[:11]  # top 10 scores, already sorted by rating points
-        out = f'Top 10 events for {team}'
-        out += '```'
-        out += format_table(table[:10])
-        out += '```'
+        table = [line[:2] + line[3:4] for line in table]  # remove CTF points column, not interesting
+
+        unscored = [l for l in table if l[2] == '0.000*']  # add unscored events to the bottom
+
+        table = [l for l in table if l[2] != '0.000*'][:11]  # get top 10 (+1 header)
+        score = round(sum([float(l[2]) for l in table[1:]]), 3)
+
+        if len(unscored) > 0:
+            table.append(['', '', ''])
+            table += unscored
+
+        table.append(['', '', '', ''])
+        table.append(['TOTAL', '', '', str(score)])  # add final line with total score
+
+        table[0].insert(0, 'Nr.')
+        count = 1
+        for line in table[1:-2]:  # add number column for easy counting
+            line.insert(0, f'[{str(count).zfill(2)}]' if line[0] else '')
+            if line[0]:
+                count += 1
+
+        out = f':triangular_flag_on_post:  **Top 10 events for {team}**'
+        out += '```glsl\n'
+        out += format_table(table)
+        out += '\n```'
+        await msg.edit(content=out)
+
+    async def country(self, ctx, country):
+        table, country_name = country_scores(country.upper())
+        if not table:
+            raise ctf_model.TaskFailed('Invalid year or country code. Should be `YYYY` or `XX`.')
+        out = f':flag_{country.lower()}:  **Top teams for {country_name}**'
+        out += '```glsl\n'
+        out += format_table(table)
+
+        cut = 0
+        suffix = '\n```'
+        while len(out) > 2000 - len(suffix):
+            out = '\n'.join(out.split('\n')[:-1])
+            cut += 1
+            suffix = f'\n\n+{cut} more teams\n```'
+
+        out += suffix
+
         await ctx.send(out)
 
     @ctftime.command()
@@ -279,6 +324,30 @@ def format_seconds(seconds):
     return f'[{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]'
 
 
+def country_scores(country):
+    url = f"https://ctftime.org/stats/{country}"
+
+    response = requests.get(url, headers=Ctftime.headers)
+    if response.status_code != 200:
+        return None, None
+    doc = html.fromstring(response.content)
+
+    country_name = doc.xpath('//ul[@class="breadcrumb"]//li[@class="active"]')[0].text_content()
+
+    lines = doc.xpath('//div[@class="container"]//table[@class="table table-striped"]//tr')
+    column_names = ['Worldwide', 'Country', 'Name', 'Points', 'Events']
+    lines = lines[1:]
+    table = []
+    for line in lines:
+        columns = line.xpath('.//td')
+        columns = [c.text_content().replace('\t', ' ') for c in columns]
+        columns = columns[0:1] + columns[2:3] + columns[4:]
+        table.append(columns)
+
+    table = [column_names] + table
+    return table, country_name
+
+
 def get_scores(team_id):
     url = f"https://ctftime.org/team/{team_id}"
 
@@ -286,6 +355,7 @@ def get_scores(team_id):
     doc = html.fromstring(data)
     lines = doc.xpath('//div[@id="rating_2020"]//table//tr')
     column_names = lines[0].xpath(".//th/text()")
+    column_names = ['Place', 'Event', 'CTF Points', 'Rating Points']
     lines = lines[1:]
     table = []
     for line in lines:
