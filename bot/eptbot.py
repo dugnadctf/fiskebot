@@ -3,10 +3,15 @@ import traceback
 import asyncio
 import colorama
 import discord
+from discord.ext import commands
+import os.path
+import shutil
+
+if not os.path.isfile('config.py'):
+    shutil.copyfile('config.py.default', 'config.py')
+
 import ctf_model
 import db
-
-from discord.ext import commands
 from config import config
 
 src_fork1 = "https://github.com/NullPxl/NullCTF"
