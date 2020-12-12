@@ -25,7 +25,8 @@ class Ctfs(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     @commands.guild_only()
     @commands.command()
-    async def create(self, ctx, name):
+    async def create(self, ctx, *name):
+        name = ' '.join(name)
         emoji = '🏃'
         messages = await respond_with_reaction(ctx, emoji, ctf_model.CtfTeam.create, ctx.channel.guild, name)
         db.teamdb[str(ctx.channel.guild.id)].update_one({"name": name}, {"$set": {"msg_id": messages[0].id}})
@@ -62,8 +63,14 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
         await eptbot.embed_help(ctx, "Help for CTF commands", help)
 
     @commands.bot_has_permissions(manage_channels=True)
+    @commands.command("add")
+    async def add_alias(self, ctx, *name):
+        await self.add(ctx, *name)
+
+    @commands.bot_has_permissions(manage_channels=True)
     @ctf.command()
-    async def add(self, ctx, name):
+    async def add(self, ctx, *name):
+        name = ' '.join(name)
         name = check_name(name)
         emoji = '🔨'
         await respond_with_reaction(ctx, emoji,  chk_fetch_team(ctx).add_chal, name)
@@ -159,6 +166,12 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
 
     @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()
+    @commands.command("done")
+    async def done_alias(self, ctx, *withlist):
+        await self.done(ctx, *withlist)
+
+    @commands.bot_has_permissions(manage_channels=True)
+    @verify_owner()
     @chal.command()
     async def done(self, ctx, *withlist):
         guild = ctx.channel.guild
@@ -222,7 +235,7 @@ def check_name(name):
     if len(name) > 32:
         raise ctf_model.TaskFailed("Challenge name is too long!")
 
-    if not re.match(r"[-.!0-9A-Za-z ]+$", name):
+    if not re.match(r"[-._!0-9A-Za-z æøåÆØÅ]+$", name):
         raise ctf_model.TaskFailed("Challenge contains invalid characters!")
 
     # Replace spaces with a dash, because discord does it :/
