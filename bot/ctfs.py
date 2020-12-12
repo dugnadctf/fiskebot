@@ -83,7 +83,7 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
     @commands.bot_has_permissions(manage_roles=True)
     @ctf.command("invite")
     async def invite_ctf(self, ctx, user):
-        user = parse_user(ctx.channel.guild, user)
+        user = await parse_user(ctx.channel.guild, user)
         await respond(ctx, chk_fetch_team(ctx).invite, ctx.author, user)
 
     @commands.bot_has_permissions(manage_roles=True)
@@ -133,7 +133,7 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
         msg_len = 50
         lines = []
         for chal in chals:
-            l = f"[{chal.team.name}] [{chal.name}] - {chal.status}"
+            l = f"[{chal.team.name}] [{chal.name}] - {await chal.status()}"
             msg_len += len(l) + 1
             if msg_len > 1000:  # Over limit
                 lines = "\n".join(lines)
@@ -154,7 +154,7 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
     @commands.bot_has_permissions(manage_channels=True)
     @chal.command("invite")
     async def invite_chal(self, ctx, user):
-        user = parse_user(ctx.channel.guild, user)
+        user = await parse_user(ctx.channel.guild, user)
         await respond(ctx, chk_fetch_chal(ctx).invite, ctx.author, user)
 
     @commands.bot_has_permissions(manage_channels=True)
@@ -162,7 +162,8 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
     @chal.command()
     async def done(self, ctx, *withlist):
         guild = ctx.channel.guild
-        users = [parse_user(guild, u) for u in withlist]
+        users = [await parse_user(guild, u) for u in withlist]
+        users = list(set(users))  # remove dups
         await respond(ctx, chk_fetch_chal(ctx).done, ctx.author, users)
 
     @chal.command("help")
@@ -257,15 +258,15 @@ def chk_fetch_chal(ctx):
     return chal
 
 
-def parse_user(guild, user):
-    mat = re.match(r"<@([0-9]+)>$", user)
+async def parse_user(guild, user):
+    print('parsinig user:', repr(user))  # XXX: Debug
+    mat = re.match(r"<@!{0,1}([0-9]+)>$", user)
+    ret = None
     if mat:
-        ret = guild.get_member(int(mat[1]))
-    else:
-        ret = guild.get_member_named(user)
+        ret = await guild.fetch_member(int(mat[1]))
 
     if not ret:
-        raise ctf_model.TaskFailed(f'Invalid username: "{user}"')
+        raise ctf_model.TaskFailed(f'Invalid username: `{user}`, use @username')
     return ret
 
 

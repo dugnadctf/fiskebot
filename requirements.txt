@@ -1,11 +1,7 @@
 colorama==0.4.1
 colorthief==0.2.1
 python-dateutil==2.8.1
-discord==1.0.1
-dnspython==1.16.0
-mongo==0.2.0
+discord.py==1.5.1
 pymongo==3.9.0
 requests==2.22.0
-typed-ast==1.4.0
-websockets==6.0
 lxml==4.5.2

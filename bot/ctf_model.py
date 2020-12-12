@@ -248,7 +248,7 @@ class CtfTeam():
 
         return[(None, f'Challenge"{name}"has been added! React to this message to work on <#{chan.id}>! Or type `!ctf working {name}`',)]
 
-    @ chk_archive
+    @chk_archive
     async def archive(self):
         cid = self.__chan_id
         guild = self.__guild
@@ -452,16 +452,14 @@ class Challenge():
             return
         return self.__chalinfo["solvers"]
 
-    @property
-    def solver_users(self):
+    async def solver_users(self):
         if not self.is_finished:
             return
-        return list(map(self.__guild.get_member, self.solver_ids))
+        return [await self.__guild.fetch_member(id) for id in self.solver_ids]
 
-    @property
-    def status(self):
+    async def status(self):
         if self.is_finished:
-            solvers = ", ".join(user.name for user in self.solver_users)
+            solvers = ", ".join(user.name for user in await self.solver_users())
             return f"Solved by {solvers}"
         else:
             return "Unsolved"

@@ -78,9 +78,7 @@ async def on_raw_reaction_add(payload):
     guild = bot.get_guild(payload.guild_id)
     chan = bot.get_channel(payload.channel_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
-    member = guild.get_member(payload.user_id)
-    if not member and payload.member and not payload.member.bot:
-        member = payload.member
+    member = await guild.fetch_member(payload.user_id)
     print(f'guild: {guild}, chan: {chan}, team: {team}, member: {member}')  # XXX: Temp debugging
     if guild and member and chan:
         if team:
@@ -95,10 +93,8 @@ async def on_raw_reaction_remove(payload):
     # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
-    member = guild.get_member(payload.user_id)
+    member = await guild.fetch_member(payload.user_id)
     print(f'guild: {guild}, team: {team}, member: {member}')  # XXX: Temp debugging
-    if not member and payload.member and not payload.member.bot:
-        member = payload.member
     if guild and member:
         if team:
             role = guild.get_role(team["role_id"])
