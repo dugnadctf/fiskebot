@@ -35,7 +35,7 @@ class Ctfs(commands.Cog):
     @commands.group()
     async def ctf(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send("Invalid command passed. Use `!ctf help.`".replace("!", config["prefix"]))
+            await self.ctf_help(ctx)
 
     @ctf.command("help")
     async def ctf_help(self, ctx):
@@ -156,7 +156,7 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
     @commands.group()
     async def chal(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send("Invalid command passed.  Use `!chal help`.".replace("!", config["prefix"]))
+            await self.chal_help(ctx)
 
     @commands.bot_has_permissions(manage_channels=True)
     @chal.command("invite")
