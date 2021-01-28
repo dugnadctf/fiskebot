@@ -25,11 +25,12 @@ docker-compose up # ctrl-c to stop and run up again to restart
 - `!help` Display the main help commands.
 
 - `!create "ctf name"` This is the command you'll use when you want to begin a new CTF. This command will make a text channel with your supplied name. The bot will also send a message in chat where members can react to join the CTF.
+![enter image description here](images/ept-create.PNG)
 
-- `!ctf add <challenge name>` This will create a new channel for a given challenge.
-
-- `!chal done [users ...]` Mark a challenge as done. Needs to be done inside the challenge channel. Optionally specify other users who also contributed to solving the challenge, space separated without the @s.
-
+- `!add <challenge name>` This will create a new channel for a given challenge.
+![enter image description here](images/ept-add.PNG)
+- `!done [@users ...]` Mark a challenge as done. Needs to be done inside the challenge channel. Optionally specify other users who also contributed to solving the challenge, space separated without the @s.
+![enter image description here](images/ept-done.PNG)
 - `!ctf archive` Mark the ctf as over and move it to the archive categories (specified in `/bot/config.py`).
 
 ---
@@ -37,18 +38,17 @@ docker-compose up # ctrl-c to stop and run up again to restart
 > The following commands use the api from [ctftime](https://ctftime.org/api)
 
 - `!ctftime countdown/timeleft` Countdown will return when a selected CTF starts, and timeleft will return when any currently running CTFs end in the form of days hours minutes and seconds.
-    ![enter image description here](https://i.imgur.com/LFSTr33.png)
-    ![enter image description here](https://i.imgur.com/AkBfp6E.png)
+    ![countdown](images/ctftime-countdown.png)
 
 - `!ctftime upcoming <number>` Uses the api mentioned to return an embed up to 5 upcoming CTFs. If no number is provided the default is 3.
-    ![enter image description here](https://i.imgur.com/UpouneO.png)
+    ![upcoming](images/ctftime-upcoming.png)
 
 - `!ctftime current` Displays any currently running CTFs in the same embed as previously mentioned.
-    ![enter image description here](https://i.imgur.com/RCh3xg6.png)
 
 - `!ctftime top <year>` Shows the ctftime leaderboards from a certain year _(dates back to 2011)_.
-    ![enter image description here](https://i.imgur.com/2npW7gM.png)
+    ![enter image description here](images/ctftime-top.png)
 
 - `!ctftime team [team name/id]` Display the top 10 events a team have gotten points for this year.
+![enter image description here](images/ctftime-team.png)
 
 > ### Have a feature request? Make a GitHub issue.
