@@ -503,14 +503,16 @@ class Ctfs(commands.Cog):
             for chal in ctf["chals"]:
                 ids.append(int(str(chal)))
             channels = [chn for chn in self.guild.channels if chn.id in ids]
-            print("ctf", ctf, len(channels))
+            print("channels", len(channels))
             if len(channels) == 0:
                 return
             print(len(channels))
             CTF = await exportChannels(channels)
             print("name", ctf["name"])
             await save(self.guild, self.guild.name, ctf["name"], CTF)
-            # await delete(self.guild, self.guild.name, channels)
+            print("saved")
+            await delete(self.guild, self.guild.name, channels)
+            print("deleted")
             break  # safety measure to take only one
 
     @cleanup.before_loop
