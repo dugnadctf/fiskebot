@@ -503,6 +503,7 @@ class Ctfs(commands.Cog):
             for chal in ctf["chals"]:
                 ids.append(int(str(chal)))
             channels = [chn for chn in self.guild.channels if chn.id in ids]
+            print("ctf", ctf)
             if len(channels) == 0:
                 return
             CTF = await exportChannels(channels)
