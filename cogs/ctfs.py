@@ -508,7 +508,7 @@ class Ctfs(commands.Cog):
             if len(channels) == 0:
                 return
             CTF = await exportChannels(channels)
-            await save(self.guild, self.guild.name, channels[0].name, CTF)
+            await save(self.guild, self.guild.name, ctf["name"], CTF)
             await delete(self.guild, self.guild.name, channels)
             break  # safety measure to take only one
 
