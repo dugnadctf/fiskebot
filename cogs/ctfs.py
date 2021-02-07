@@ -508,8 +508,9 @@ class Ctfs(commands.Cog):
             if len(channels) == 0:
                 return
             CTF = await exportChannels(channels)
-            await save(self.guild, self.guild.name, ctf["name"], CTF)
-            await delete(self.guild, self.guild.name, channels)
+            print(ctf["name"])
+            #await save(self.guild, self.guild.name, ctf["name"], CTF)
+            #await delete(self.guild, self.guild.name, channels)
             break  # safety measure to take only one
 
     @cleanup.before_loop
