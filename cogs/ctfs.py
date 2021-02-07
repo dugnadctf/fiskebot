@@ -493,7 +493,7 @@ class Ctfs(commands.Cog):
             ],
             reverse=True,
         )
-
+        print(len(archived))
         if len(archived) <= self.limit:
             return
         for time, ctf in archived[self.limit :]:
