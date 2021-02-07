@@ -55,6 +55,7 @@ CATEGORY_CHANNEL_LIMIT = 50
 
 # TODO changelog, showing the latest changes since latest release
 
+
 def _find_chan(chantype, group, name):
     name = name.casefold()
     for chan in getattr(group, chantype):
@@ -131,13 +132,24 @@ def chk_archive(func):
 
     return wrapper
 
+
 def userToDict(user):
     try:
-        return {"id":user.id,"nick":user.nick,"user":user.name, "avatar":user.avatar, "bot":user.bot}
+        return {
+            "id": user.id,
+            "nick": user.nick,
+            "user": user.name,
+            "avatar": user.avatar,
+            "bot": user.bot,
+        }
     except AttributeError:
-        return {"id":user.id,"nick":"<USER LEFT BOOTPLUG>","user":user.name, "avatar":user.avatar, "bot":user.bot}
-
-
+        return {
+            "id": user.id,
+            "nick": "<USER LEFT BOOTPLUG>",
+            "user": user.name,
+            "avatar": user.avatar,
+            "bot": user.bot,
+        }
 
 
 class TaskFailed(commands.UserInputError):
@@ -154,7 +166,7 @@ class CtfTeam(object):
             channel for channel in guild.channels
         ]
         if name in names:
-            return [(ValueError, f"`{name}` already exists :grimacing:")]
+            return [(ValueError, f"`{name}` already exists as a role :grimacing:")]
 
         # Create role
         role_name = f"{name}_team"
@@ -167,11 +179,15 @@ class CtfTeam(object):
             role: basic_allow,
         }
 
+        if discord.utils.get(guild.text_channels, name=name) is not None:
+            return [(ValueError, f"`{name}` already exists as a channel :grimacing:")]
+
         chan = await guild.create_text_channel(
             name=name,
             overwrites=overwrites,
             topic=f"General talk for {name} CTF event.",
         )
+
         # await chan.send(
         #    trim_nl(
         #        f"""Welcome to {name}. Here you can do
@@ -332,8 +348,6 @@ class CtfTeam(object):
 
         return [(None, f"{self.name} CTF has been archived.")]
 
-
-
     async def unarchive(self):
         cid = self.__chan_id
         guild = self.__guild
@@ -383,7 +397,12 @@ class CtfTeam(object):
         await chal._delete(catg_delete)
         self.refresh()
 
-        return [(None, f'Challenge <#{chal.chan_id}> is deleted, challenge channel archived in {deleted_category}.')]
+        return [
+            (
+                None,
+                f"Challenge <#{chal.chan_id}> is deleted, challenge channel archived in {deleted_category}.",
+            )
+        ]
 
     def find_chal(self, name, err_on_fail=True):
         return Challenge.find(self.__guild, self.__chan_id, name, err_on_fail)
@@ -636,7 +655,6 @@ class Challenge(object):
             (None, f"Challenge moved to done!"),
         ]
 
-
     @chk_archive
     async def invite(self, author, user):
         ccid = self.team.chan_id
@@ -738,13 +756,12 @@ async def export(ctx, author):
 
     authors_name = str(author)
 
-    #if not self.is_archived:
+    # if not self.is_archived:
     #    return [(None, f"You need to archive the CTF before exporting")]
     # TODO superuser, cool_names or a quorum of users in the team that participated in a CTF
     if not any((name in authors_name for name in cool_names)):
         return [(None, f"Sorry you are not authorized at this time")]
 
-    CTF = {"channels":[]}
     main_chan = ctx.channel
 
     channels = [main_chan]
@@ -752,44 +769,55 @@ async def export(ctx, author):
         if f"{main_chan.name}-" in chal.name:
             channels.append(chal)
 
+    CTF = await exportChannels(channels)
+
+    return await save(guild, guild.name, main_chan.name, CTF)
+
+
+async def exportChannels(channels):
+    CTF = {"channels": []}
     for channel in channels:
-        chan = {"name":channel.name, "topic":channel.topic, "messages":[], "pins":[m.id for m in await channel.pins()]}
+        chan = {
+            "name": channel.name,
+            "topic": channel.topic,
+            "messages": [],
+            "pins": [m.id for m in await channel.pins()],
+        }
 
         async for m in channel.history(limit=None, oldest_first=True):
-            d = {"id":m.id , "created_at":m.created_at.isoformat(), "content":m.clean_content}
+            d = {
+                "id": m.id,
+                "created_at": m.created_at.isoformat(),
+                "content": m.clean_content,
+            }
             d["author"] = userToDict(m.author)
-            d["attachments"] = [{"filename":a.filename, "url": str(a.url)} for a in m.attachments]
+            d["attachments"] = [
+                {"filename": a.filename, "url": str(a.url)} for a in m.attachments
+            ]
             d["channel"] = {"name": m.channel.name}
-            d["edited_at"] = m.edited_at.isoformat() if m.edited_at != None else m.edited_at
-            #used for URLs
-            d["embeds"] = [ e.to_dict() for e in m.embeds]
+            d["edited_at"] = (
+                m.edited_at.isoformat() if m.edited_at != None else m.edited_at
+            )
+            # used for URLs
+            d["embeds"] = [e.to_dict() for e in m.embeds]
             d["mentions"] = [userToDict(mention) for mention in m.mentions]
-            d["channel_mentions"] = [{"id":c.id,"name":c.name} for c in m.channel_mentions]
+            d["channel_mentions"] = [
+                {"id": c.id, "name": c.name} for c in m.channel_mentions
+            ]
             d["mention_everyone"] = m.mention_everyone
-            d["reactions"] = [{"count":r.count,"emoji": r.emoji if type(r.emoji) == str else { "name":r.emoji.name, "url": str(r.emoji.url)}} for r in m.reactions]
+            d["reactions"] = [
+                {
+                    "count": r.count,
+                    "emoji": r.emoji
+                    if type(r.emoji) == str
+                    else {"name": r.emoji.name, "url": str(r.emoji.url)},
+                }
+                for r in m.reactions
+            ]
             chan["messages"].append(d)
 
         CTF["channels"].append(chan)
-
-    json_file = f"backups/{guild.name} - {main_chan.name}.json"
-    with open(json_file, "w") as w:
-        json.dump(CTF,w)
-
-    bson_file = f"backups/{guild.name} - {main_chan.name}.bson"
-    with open(bson_file, "wb") as w:
-        w.write(bson.BSON.encode(CTF))
-
-    for chn in guild.text_channels:
-        if chn.name == export_channel:
-            await chn.send(files=[
-                discord.File(bson_file),
-                discord.File(json_file)
-                ])
-            break
-    else:
-        return [(None, f"Saved JSON, but couldn't find a bot channel to upload the writeup to")]
-
-    return [(None, f"{main_chan.name} CTF has been exported. Verify and issue the `!ctf deletectf` command")]
+    return CTF
 
     # Get all messages
     # Export to JSON
@@ -801,29 +829,45 @@ async def export(ctx, author):
     # delete category if category empty after deletion
     #
     ##Mongo db update
-    #chk_upd(
+    # chk_upd(
     #    self.name, teams.update_one({"chan_id": cid}, {"$set": {"exported": True}})
-    #)
-    #self.refresh()
-    return [(None, f"{self.name} CTF has been exported.")]
+    # )
+    # self.refresh()
 
-async def delete(ctx, author):
-    guild = ctx.guild
 
-    authors_name = str(author)
+async def save(guild, guild_name, ctf_name, CTF):
+    json_file = f"backups/{guild_name} - {ctf_name}.json"
+    with open(json_file, "w") as w:
+        json.dump(CTF, w)
 
-    # TODO superuser, cool_names or a quorum of users in the team that participated in a CTF
-    if not any((name in authors_name for name in cool_names)):
-        return [(None, f"Sorry you are not authorized at this time")]
+    bson_file = f"backups/{guild_name} - {ctf_name}.bson"
+    with open(bson_file, "wb") as w:
+        w.write(bson.BSON.encode(CTF))
 
-    main_chan = ctx.channel
-    channels = [main_chan]
-    for chal in guild.text_channels:
-        if f"{main_chan.name}-" in chal.name:
-            channels.append(chal)
+    for chn in guild.text_channels:
+        if chn.name == export_channel:
+            await chn.send(files=[discord.File(bson_file), discord.File(json_file)])
+            break
+    else:
+        return [
+            (
+                None,
+                f"Saved JSON, but couldn't find a bot channel to upload the writeup to",
+            )
+        ]
+
+    return [
+        (
+            None,
+            f"{ctf_name} CTF has been exported. Verify and issue the `!ctf deletectf` command",
+        )
+    ]
+
+
+async def delete(guild, ctf_name, channels):
 
     for role in guild.roles:
-        if f"{main_chan.name}_" in role.name.lower():
+        if f"{ctf_name}_" in role.name.lower():
             await role.delete(reason="exporting CTF")
             break
 
