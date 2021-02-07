@@ -459,7 +459,7 @@ class Ctfs(commands.Cog):
         self.challenges = {}
         self.ctfname = ""
 
-        self.limit = 20
+        self.limit = 19
         self.guild = ""
         self.guild_id = 604992563199606784
         self.cleanup.start()
@@ -493,8 +493,7 @@ class Ctfs(commands.Cog):
             ],
             reverse=True,
         )
-        print(archived)
-        print(len(archived))
+
         if len(archived) <= self.limit:
             return
         for time, ctf in archived[self.limit :]:
