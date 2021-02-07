@@ -459,9 +459,9 @@ class Ctfs(commands.Cog):
         self.challenges = {}
         self.ctfname = ""
 
-        self.limit = 1
+        self.limit = 20
         self.guild = ""
-        self.guild_id = 807790266877870080
+        self.guild_id = 604992563199606784
         self.cleanup.start()
 
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
