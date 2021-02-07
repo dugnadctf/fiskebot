@@ -506,6 +506,7 @@ class Ctfs(commands.Cog):
             print("ctf", ctf, len(channels))
             if len(channels) == 0:
                 return
+            print(len(channels))
             CTF = await exportChannels(channels)
             print("name",ctf["name"])
             #await save(self.guild, self.guild.name, ctf["name"], CTF)
