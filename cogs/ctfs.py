@@ -11,6 +11,7 @@ import urllib.parse
 from urllib.request import urlopen
 import io
 import time
+import discord
 from pprint import pprint
 from random import randint
 from datetime import *
@@ -513,6 +514,9 @@ class Ctfs(commands.Cog):
             print("saved")
             await delete(self.guild, self.guild.name, channels)
             print("deleted")
+            role = discord.utils.get(self.guild.roles, name=ctf["name"] + "_team")
+            print("role", role)
+            await role.delete(reason="exporting & delete CTF")
             break  # safety measure to take only one
 
     @cleanup.before_loop
