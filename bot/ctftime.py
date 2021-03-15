@@ -168,7 +168,7 @@ Display the top 10 events this year for a team, sorted by rating points.
         await ctx.send(f":triangular_flag_on_post:  **{year} CTFtime Leaderboards**```ini\n{leaderboards}```")
 
     @ctftime.command()
-    async def team(self, ctx, team=None):
+    async def team(self, ctx, team=None, year=None):
         team_id = config["team"]["id"]
         msg = None
         if team:
@@ -183,7 +183,7 @@ Display the top 10 events this year for a team, sorted by rating points.
             await msg.edit(content=f"Looking up scores for {team} with id {team_id}...")
         else:
             msg = await ctx.send(f"Looking up scores for {team} with id {team_id}...")
-        table = get_scores(team_id)
+        table = get_scores(team_id, year)
         table = [line[:2] + line[3:4] for line in table]  # remove CTF points column, not interesting
 
         unscored = [l for l in table if l[2] == '0.000*']  # add unscored events to the bottom
@@ -348,12 +348,15 @@ def country_scores(country):
     return table, country_name
 
 
-def get_scores(team_id):
+def get_scores(team_id, year=None):
     url = f"https://ctftime.org/team/{team_id}"
 
     data = requests.get(url, headers=Ctftime.headers).content
     doc = html.fromstring(data)
-    lines = doc.xpath('//div[@id="rating_2020"]//table//tr')
+    if not year:
+        now = datetime.now()
+        year = now.year
+    lines = doc.xpath(f'//div[@id="rating_{str(now.year)}"]//table//tr')
     column_names = lines[0].xpath(".//th/text()")
     column_names = ['Place', 'Event', 'CTF Points', 'Rating Points']
     lines = lines[1:]
