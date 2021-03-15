@@ -356,7 +356,7 @@ def get_scores(team_id, year=None):
     if not year:
         now = datetime.now()
         year = now.year
-    lines = doc.xpath(f'//div[@id="rating_{str(now.year)}"]//table//tr')
+    lines = doc.xpath(f'//div[@id="rating_{str(year)}"]//table//tr')
     column_names = lines[0].xpath(".//th/text()")
     column_names = ['Place', 'Event', 'CTF Points', 'Rating Points']
     lines = lines[1:]
