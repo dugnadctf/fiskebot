@@ -2,9 +2,10 @@ import re
 
 import ctf_model
 import db
-import eptbot
 from config import config
 from discord.ext import commands
+
+import fiskebot
 
 
 def verify_owner():
@@ -65,7 +66,7 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
 """.replace(
             "!", config["prefix"]
         )
-        await eptbot.embed_help(ctx, "Help for CTF commands", help_text)
+        await fiskebot.embed_help(ctx, "Help for CTF commands", help_text)
 
     @commands.bot_has_permissions(manage_channels=True)
     @commands.command("add")
@@ -203,7 +204,7 @@ Marks this challenge as **not** completed. This will move the channel back to th
 """.replace(
             "!", config["prefix"]
         )
-        await eptbot.embed_help(ctx, "Challenge help topic", help_text)
+        await fiskebot.embed_help(ctx, "Challenge help topic", help_text)
 
     @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()

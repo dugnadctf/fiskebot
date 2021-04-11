@@ -2,10 +2,10 @@ version: "2"
 services:
   bot:
     build: .
-    image: ept/eptbot
+    image: ekofiskctf/fiskebot
     restart: always
     volumes:
-      - ./bot:/eptbot
+      - ./bot:/fiskebot
     depends_on:
       - mongo
     stop_signal: SIGKILL

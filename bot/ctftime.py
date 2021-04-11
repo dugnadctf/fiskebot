@@ -7,12 +7,13 @@ import ctf_model
 import dateutil.parser
 import db
 import discord
-import eptbot
 import requests
 from colorthief import ColorThief
 from config import config
 from discord.ext import commands
 from lxml import html
+
+import fiskebot
 
 
 class Ctftime(commands.Cog):
@@ -99,7 +100,7 @@ Display top teams for a specified year `YYYY` or country `XX`.
 `!ctftime team <team name>`
 Display the top 10 events this year for a team, sorted by rating points.
 """
-            await eptbot.embed_help(ctx, "Help for CTFtime commands.", help_text)
+            await fiskebot.embed_help(ctx, "Help for CTFtime commands.", help_text)
 
     @ctftime.command()
     async def upcoming(self, ctx, params=None):

@@ -17,7 +17,7 @@ from config import config
 
 src_fork1 = "https://github.com/NullPxl/NullCTF"
 src_fork2 = "https://gitlab.com/inequationgroup/igCTF"
-
+src_fork3 = "https://github.com/ept-team/eptbot"
 
 LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
 
@@ -129,14 +129,15 @@ async def embed_help(chan, help_topic, help_text):
 @bot.command()
 async def source(ctx):
     await ctx.send(
-        f"Source: https://github.com/ept-team/eptbot\nForked from: {src_fork2}\nWho again forked from: {src_fork1}"
+        f"Source: https://github.com/ekofiskctf/fiskebot\nForked from: {src_fork3}\nWho again forked from: {src_fork2}\nWho again forked from: {src_fork1}"
     )
 
 
 @bot.command()
 async def help(ctx, page=None):
     help = f"""
-Fork from: {src_fork2}
+Fork from: {src_fork3}
+Who again forked from {src_fork2}
 Who again forked from {src_fork1}
 
 `!create <ctf name>`

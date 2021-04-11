@@ -1,6 +1,6 @@
-# EPTbot
+# Fiskebot
 
-This bot is still work in process. It is a fork of [igCTF](https://gitlab.com/inequationgroup/igCTF), which is again a fork of [NullCTF](https://github.com/NullPxl/NullCTF).
+This bot is still work in process. It is a fork of [eptbot}(https://github.com/ept-team/eptbot), which is again a fork of [igCTF](https://gitlab.com/inequationgroup/igCTF), which is again a fork of [NullCTF](https://github.com/NullPxl/NullCTF).
 
 ## Install
 
@@ -20,7 +20,7 @@ docker-compose up # ctrl-c to stop and run up again to restart
 
 ## How to Use
 
-> The main use for eptbot is to easily set up a CTF for your discord server to play as a team. The following commands listed are probably going to be used the most.
+> The main use for fiskebot is to easily set up a CTF for your discord server to play as a team. The following commands listed are probably going to be used the most.
 
 - `!help` Display the main help commands.
 

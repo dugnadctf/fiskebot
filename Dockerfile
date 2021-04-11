@@ -1,7 +1,7 @@
 FROM python:3.7
 
-ENV NAME eptbot
-ENV APP_HOME /eptbot
+ENV NAME fiskebot
+ENV APP_HOME /fiskebot
 
 RUN groupadd -r ${NAME} && useradd -r -g ${NAME} ${NAME}
 
@@ -14,6 +14,6 @@ WORKDIR ${APP_HOME}
 RUN chown ${NAME}:${NAME} ${APP_HOME}
 
 
-COPY --chown=eptbot:eptbot ./bot/* ${APP_HOME}/
+COPY --chown=fiskebot:fiskebot ./bot/* ${APP_HOME}/
 
-CMD ["python", "-u", "eptbot.py"]
+CMD ["python", "-u", "fiskebot.py"]
