@@ -1,11 +1,10 @@
 import re
 
-from discord.ext import commands
-
-from config import config
-import db
 import ctf_model
+import db
 import eptbot
+from config import config
+from discord.ext import commands
 
 
 def verify_owner():
@@ -26,10 +25,14 @@ class Ctfs(commands.Cog):
     @commands.guild_only()
     @commands.command()
     async def create(self, ctx, *name):
-        name = '_'.join(name)
-        emoji = '🏃'
-        messages = await respond_with_reaction(ctx, emoji, ctf_model.CtfTeam.create, ctx.channel.guild, name)
-        db.teamdb[str(ctx.channel.guild.id)].update_one({"name": name}, {"$set": {"msg_id": messages[0].id}})
+        name = "_".join(name)
+        emoji = "🏃"
+        messages = await respond_with_reaction(
+            ctx, emoji, ctf_model.CtfTeam.create, ctx.channel.guild, name
+        )
+        db.teamdb[str(ctx.channel.guild.id)].update_one(
+            {"name": name}, {"$set": {"msg_id": messages[0].id}}
+        )
 
     @commands.guild_only()
     @commands.group()
@@ -59,7 +62,9 @@ Archives this ctf and all the respective challenges (this requires the bot has m
 `!ctf unarchive`
 Unarchives this ctf and all the respective challenges (this requires the bot has manage channels permissions).
 
-""".replace("!", config["prefix"])
+""".replace(
+            "!", config["prefix"]
+        )
         await eptbot.embed_help(ctx, "Help for CTF commands", help_text)
 
     @commands.bot_has_permissions(manage_channels=True)
@@ -70,10 +75,10 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
     @commands.bot_has_permissions(manage_channels=True)
     @ctf.command()
     async def add(self, ctx, *name):
-        name = '_'.join(name)
+        name = "_".join(name)
         name = check_name(name)
-        emoji = '🔨'
-        await respond_with_reaction(ctx, emoji,  chk_fetch_team(ctx).add_chal, name)
+        emoji = "🔨"
+        await respond_with_reaction(ctx, emoji, chk_fetch_team(ctx).add_chal, name)
 
     @commands.bot_has_permissions(manage_channels=True)
     @commands.has_permissions(manage_channels=True)
@@ -97,7 +102,9 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
     @commands.command()
     async def join(self, ctx, name=None):
         if name is None:
-            await ctx.send(f'Please specify a CTF to join:\n```{config["prefix"]}join <ctf name>```')
+            await ctx.send(
+                f'Please specify a CTF to join:\n```{config["prefix"]}join <ctf name>```'
+            )
         await respond(ctx, chk_fetch_team_by_name(ctx, name).join, ctx.author)
 
     @ctf.command()
@@ -140,14 +147,14 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
         msg_len = 50
         lines = []
         for chal in chals:
-            l = f"[{chal.team.name}] [{chal.name}] - {await chal.status()}"
-            msg_len += len(l) + 1
+            chall_line = f"[{chal.team.name}] [{chal.name}] - {await chal.status()}"
+            msg_len += len(chall_line) + 1
             if msg_len > 1000:  # Over limit
                 lines = "\n".join(lines)
                 await ctx.send(f"```ini\n{lines}```")
                 lines = []
-                msg_len = len(l) + 51
-            lines.append(l)
+                msg_len = len(chall_line) + 51
+            lines.append(chall_line)
 
         lines = "\n".join(lines)
         await ctx.send(f"```ini\n{lines}```")
@@ -193,7 +200,9 @@ Invites a `user` to a challenge channel.
 
 `!chal undone`
 Marks this challenge as **not** completed. This will move the channel back to the "working" category.
-""".replace("!", config["prefix"])
+""".replace(
+            "!", config["prefix"]
+        )
         await eptbot.embed_help(ctx, "Challenge help topic", help_text)
 
     @commands.bot_has_permissions(manage_channels=True)
@@ -267,19 +276,21 @@ def chk_fetch_team(ctx):
 def chk_fetch_chal(ctx):
     chal = ctf_model.Challenge.fetch(ctx.channel.guild, ctx.channel.id)
     if not chal:
-        raise ctf_model.TaskFailed("Please type this command in a challenge channel. You may need to join a challenge first.")
+        raise ctf_model.TaskFailed(
+            "Please type this command in a challenge channel. You may need to join a challenge first."
+        )
     return chal
 
 
 async def parse_user(guild, user):
-    print('parsinig user:', repr(user))  # XXX: Debug
+    print("parsinig user:", repr(user))  # XXX: Debug
     mat = re.match(r"<@!{0,1}([0-9]+)>$", user)
     ret = None
     if mat:
         ret = await guild.fetch_member(int(mat[1]))
 
     if not ret:
-        raise ctf_model.TaskFailed(f'Invalid username: `{user}`, use @username')
+        raise ctf_model.TaskFailed(f"Invalid username: `{user}`, use @username")
     return ret
 
 

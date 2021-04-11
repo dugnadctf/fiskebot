@@ -5,7 +5,7 @@ ENV APP_HOME /eptbot
 
 RUN groupadd -r ${NAME} && useradd -r -g ${NAME} ${NAME}
 
-COPY requirements.txt requirements.txt
+COPY requirements/base.txt requirements.txt
 
 RUN pip install -r requirements.txt
 
