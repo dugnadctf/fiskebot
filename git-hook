@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+# Simple hook script to automatically lint code before pushing
+#
+# To enable this hook, rename this file to "pre-commit" and move it to ".git/hooks/pre-commit"
+
+make fixme

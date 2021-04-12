@@ -1,7 +1,16 @@
 help:
 	@echo 'fixme                  - fix code formatting'
+	@echo 'check                  - check code formatting'
+
 
 fixme:
-	docker run --rm -v "${PWD}:/code" -it python:3.9-slim "bash" "-c" "cd /code && pip install -r requirements/black.txt -r requirements/isort.txt && isort bot && black bot"
+	echo "Starting linting"
+	docker run --rm -v "${PWD}:/fiskebot" -i fiskebot-tester "bash" "-c" "cd /fiskebot && isort bot && black bot"
+	echo "Linting done!"
 
-.PHONY: help fixme
+check:
+	echo "Checking linting"
+	docker run --rm -v "${PWD}:/fiskebot" -i fiskebot-tester "bash" "-c" "cd /fiskebot && tox -e isort -e flake8 -e black"
+
+
+.PHONY: help fixme check

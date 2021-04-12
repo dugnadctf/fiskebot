@@ -1,10 +1,14 @@
 # Fiskebot
 
-This bot is still work in process. It is a fork of [eptbot}(https://github.com/ept-team/eptbot), which is again a fork of [igCTF](https://gitlab.com/inequationgroup/igCTF), which is again a fork of [NullCTF](https://github.com/NullPxl/NullCTF).
+This bot is still work in process. It is a fork of [eptbot](https://github.com/ept-team/eptbot), which is again a fork of [igCTF](https://gitlab.com/inequationgroup/igCTF), which is again a fork of [NullCTF](https://github.com/NullPxl/NullCTF).
 
 ## Install
 
 Firstly, edit the `/bot/config.py`. Most important is to fill inn the bot token.
+
+### start
+
+`docker-compose up --build -d`
 
 ### develop
 
@@ -14,9 +18,31 @@ docker-compose build
 docker-compose up # ctrl-c to stop and run up again to restart
 ```
 
-### start
+### linting
 
-`docker-compose up --build -d`
+This codebase uses the PEP 8 code style. We enforce this with isort, black & flake8. In addition to the standards outlined in PEP 8, we have a few guidelines (see setup.cfg for more info):
+
+First build the tester Docker image
+```
+$ docker build . -f Dockerfile.tester -t fiskebot-tester
+```
+
+Format the code with black & isort
+
+```shell
+$ make fixme
+```
+
+To check if it is formatted properly, run:
+
+```shell
+$ make check
+```
+
+A git `pre-commit` hook for automatically linting before comitting can be found in [git-hook](./git-hook), to install it:
+```shell
+$ cp git-hook .git/hooks/pre-commit
+```
 
 ## How to Use
 
