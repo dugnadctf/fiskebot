@@ -1,0 +1,7 @@
+FROM python:3.9-slim
+
+WORKDIR /fiskebot
+
+COPY requirements /requirements
+
+RUN pip install tox --no-cache-dir -r /requirements/black.txt -r /requirements/isort.txt -r /requirements/flake8.txt
