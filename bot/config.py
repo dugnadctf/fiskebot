@@ -41,7 +41,7 @@ config = {
     },
     # CTFtime id for the default team to lookup using the `!ctftime team` command
     "team": {
-        "id": os.getenv("CTFTIME_TEAM_ID", None),
+        "id": os.getenv("CTFTIME_TEAM_ID", -1),
         "name": os.getenv("CTFTIME_TEAM_NAME", None),
     },
 }
