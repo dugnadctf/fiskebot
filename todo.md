@@ -12,3 +12,11 @@
 * [ ] Reply if a command is incomplete/command is invalid
 * [ ] Should we only allow ctfbot be used in a bot-spam channel
 * [ ] Syscall command, assembler handler
+* [ ] setcreds command 
+* [ ] mannage_channel permissions for ctf channels
+  - @commands.has_permissions(manage_channels=True)
+* env variables
+   -     env_file:
+      - bot-variables.env
+* !sudo and !exit merge
+* better permission system act on behalf of the user or lax mode where it just let's the user do pretty much anything
