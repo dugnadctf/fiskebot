@@ -5,11 +5,12 @@ services:
     image: kfbi/igctf:latest
     restart: always
     volumes:
-      - ./:/igctf
+      - ./bot:/eptbot
     depends_on:
       - mongo
     env_file:
       - bot-variables.env
+    stop_signal: SIGKILL
   mongo:
     image: mongo:latest
     restart: always
