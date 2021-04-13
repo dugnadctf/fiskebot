@@ -4,7 +4,22 @@ This bot is still work in process. It is a fork of [eptbot](https://github.com/e
 
 ## Install
 
-Firstly, edit the `/bot/config.py`. Most important is to fill inn the bot token.
+Configuration is done through environment variables. They can be defined in an `.env` file, or used directly, see [here](https://docs.docker.com/compose/environment-variables/) for more information.
+
+The only required variable is `DISCORD_TOKEN`, the rest will use the default values as specified in the table below. See [`config.py`](./bot/config.py) for more information. 
+
+| Name | Default | Comment |
+| ---- | ------- | ------- |
+| `DISCORD_TOKEN` |  | **Required!** Bot token, see [`config.py`](./bot/config.py) for more information |
+| `MONGODB_URI` | `mongodb://mongo:27017` | URI for the MongoDB instance |
+| `COMMAND_PREFIX` | `!` | Prefix for all the bot commands (i.e. `!done`) |
+| `MAINTAINERS` |  | Comma-separated list with profile IDs of the bot maintainers, these users have permission to export and delete CTFs |
+| `CATEGORY_WORKING` | `working` | Category where channels for challenges that are currently being worked on during a CTF |
+| `CATEGORY_DONE` | `done` | Category where channels for challenges that are marked as done during a CTF |
+| `CATEGORY_ARCHIVE_PREFIX` | `archive` | Category to move channels to when the CTF is over. There is a max limit on 50 channels per category. The bot wil automatically move channels to new categories when needed |
+| `CHANNEL_EXPORT` | `export` | The channel to upload exports to |
+| `CTFTIME_TEAM_ID` |  | CTFtime ID for the `!ctftime team` command |
+| `CTFTIME_TEAM_NAME` |  | CTFtime name for the `!ctftime team` command |
 
 ### start
 

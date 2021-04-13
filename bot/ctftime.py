@@ -195,7 +195,7 @@ Display the top 10 events this year for a team, sorted by rating points.
             team_id = get_team_id(team)
         else:
             team = config["team"]["name"]
-        if team_id <= 0:
+        if not team_id or team_id <= 0:
             ctx.send(f":warning: Unknown team `{team}`.")
             return
         if msg:

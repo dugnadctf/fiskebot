@@ -5,15 +5,11 @@ import shutil
 import traceback
 
 import colorama
-import discord
-from discord.ext import commands
-
-if not os.path.isfile("config.py"):
-    shutil.copyfile("config.py.default", "config.py")
-
 import ctf_model
 import db
+import discord
 from config import config
+from discord.ext import commands
 
 src_fork1 = "https://github.com/NullPxl/NullCTF"
 src_fork2 = "https://gitlab.com/inequationgroup/igCTF"

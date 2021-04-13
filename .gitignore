@@ -1,7 +1,6 @@
 ### Custom ###
 bot-variables.env
 backups/
-config*.py
 .vscode/
 
 # Created by https://www.gitignore.io/api/visualstudiocode,linux,macos,jetbrains+all,python,windows
