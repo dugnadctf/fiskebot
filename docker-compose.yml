@@ -5,7 +5,8 @@ services:
     image: kfbi/igctf:latest
     restart: always
     volumes:
-      - ./bot:/eptbot
+      - ./bot:/bot
+      - ./backups:/home/bot/backups
     depends_on:
       - mongo
     env_file:

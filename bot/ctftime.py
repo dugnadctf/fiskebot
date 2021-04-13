@@ -12,7 +12,7 @@ from colorthief import ColorThief
 from lxml import html
 
 import db
-import eptbot
+from bot import embed_help
 from config import config
 import ctf_model
 
@@ -36,7 +36,8 @@ class Ctftime(commands.Cog):
     @staticmethod
     def updatedb():
         unix_now = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
-        limit = "5"  # Max amount I can grab the json data for
+        limit = "5"  # Max amount I can grab the jso
+        # n data for
         response = requests.get(Ctftime.upcoming_url, headers=Ctftime.headers, params=limit)
 
         ctfs = []
@@ -93,7 +94,7 @@ Display top teams for a specified year `YYYY` or country `XX`.
 `!ctftime team <team name>`
 Display the top 10 events this year for a team, sorted by rating points.
 """
-            await eptbot.embed_help(ctx, "Help for CTFtime commands.", help_text)
+            await embed_help(ctx, "Help for CTFtime commands.", help_text)
 
     @ctftime.command()
     async def upcoming(self, ctx, params=None):
@@ -240,7 +241,8 @@ Display the top 10 events this year for a team, sorted by rating points.
         for ctf in db.ctfs.find():
             if (ctf["start"] < unix_now and unix_now < ctf["end"]):  # Check if the ctf is running
                 running = True
-                embed = discord.Embed(title=":red_circle: " + ctf["name"] + " IS LIVE", description=ctf["url"], color=15874645)
+                embed = discord.Embed(title=":red_circle: " + ctf["name"] + " IS LIVE", description=ctf["url"],
+                                      color=15874645)
                 start = datetime.utcfromtimestamp(ctf["start"]).strftime("%Y-%m-%d %H:%M:%S") + " UTC"
                 end = datetime.utcfromtimestamp(ctf["end"]).strftime("%Y-%m-%d %H:%M:%S") + " UTC"
                 if ctf["img"] != "":
@@ -254,7 +256,8 @@ Display the top 10 events this year for a team, sorted by rating points.
                 await ctx.channel.send(embed=embed)
 
         if not running:  # No ctfs were found to be running
-            await ctx.send("No CTFs currently running! Check out !ctftime countdown, and !ctftime upcoming to see when ctfs will start!")
+            await ctx.send(
+                "No CTFs currently running! Check out !ctftime countdown, and !ctftime upcoming to see when ctfs will start!")
 
     # Return the timeleft in the ctf in days, hours, minutes, seconds
 
@@ -275,7 +278,8 @@ Display the top 10 events this year for a team, sorted by rating points.
                 minutes = time // 60
                 time %= 60
                 seconds = time
-                await ctx.send(f"```ini\n{ctf['name']} ends in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```{ctf['url']}")
+                await ctx.send(
+                    f"```ini\n{ctf['name']} ends in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```{ctf['url']}")
 
         if not running:
             await ctx.send("No ctfs are running! Use !ctftime upcoming or !ctftime countdown to see upcoming ctfs")

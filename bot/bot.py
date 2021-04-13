@@ -3,20 +3,27 @@ import traceback
 import asyncio
 import colorama
 import discord
+from discord import Permissions
+from discord.ext.commands import (
+    bot,
+)
 from discord.ext import commands
 import os.path
-import shutil
+import sys
+from ctf_model import only_read
 
-if not os.path.isfile('config.py'):
-    shutil.copyfile('config.py.default', 'config.py')
+try:
+    from config import config
+except ModuleNotFoundError:
+    if not os.path.isfile('config.py'):
+        print("create a config file, feel free to copy config.py.default")
+        sys.exit(1)
 
-import ctf_model
 import db
-from config import config
+import ctf_model
 
 src_fork1 = "https://github.com/NullPxl/NullCTF"
 src_fork2 = "https://gitlab.com/inequationgroup/igCTF"
-
 
 LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
 
@@ -24,7 +31,14 @@ logging.basicConfig(format=LOG_FORMAT, level=logging.WARN)
 
 client = discord.Client()
 bot = commands.Bot(command_prefix=config["prefix"])
+
+intents = discord.Intents.default()
+intents.members = True
+
 bot.remove_command("help")
+
+ADMIN_ROLE_NAME = "tmp-admin"
+
 
 # -------------------
 
@@ -56,7 +70,8 @@ async def on_command_error(ctx, err):
     print(colorama.Style.BRIGHT + colorama.Fore.RED + f"Error occured with: {ctx.command}\n{err}\n")
     print(colorama.Style.RESET_ALL)
     if isinstance(err, commands.MissingPermissions):
-        await ctx.send("You do not have permission to do that! ¯\\_(ツ)_/¯")  # pylint: disable=anomalous-backslash-in-string
+        await ctx.send(
+            "You do not have permission to do that! ¯\\_(ツ)_/¯")  # pylint: disable=anomalous-backslash-in-string
     elif isinstance(err, commands.BotMissingPermissions):
         await ctx.send(f""":cry: I can\'t do that. Please ask server ops
         to add all the permission for me!
@@ -78,33 +93,27 @@ async def on_command_error(ctx, err):
 
 @bot.event
 async def on_raw_reaction_add(payload):
-    print('added reaction:', payload)  # XXX: Temp debugging
     # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
     chan = bot.get_channel(payload.channel_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
     member = await guild.fetch_member(payload.user_id)
-    print(f'guild: {guild}, chan: {chan}, team: {team}, member: {member}')  # XXX: Temp debugging
     if guild and member and chan:
         if team:
             role = guild.get_role(team["role_id"])
             await member.add_roles(role, reason="User wanted to join team")
-            print(f"added role {role} to use {member}")  # XXX: Temp debugging
 
 
 @bot.event
 async def on_raw_reaction_remove(payload):
-    print('removed reaction:', payload)  # XXX: Temp debugging
     # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
     member = await guild.fetch_member(payload.user_id)
-    print(f'guild: {guild}, team: {team}, member: {member}')  # XXX: Temp debugging
     if guild and member:
         if team:
             role = guild.get_role(team["role_id"])
             await member.remove_roles(role, reason="User wanted to leave team")
-            print(f"removed role {role} to use {member}")  # XXX: Temp debugging
 
 
 async def embed_help(chan, help_topic, help_text):
@@ -115,7 +124,8 @@ async def embed_help(chan, help_topic, help_text):
 
 @bot.command()
 async def source(ctx):
-    await ctx.send(f"Source: https://github.com/ept-team/eptbot\nForked from: {src_fork2}\nWho again forked from: {src_fork1}")
+    await ctx.send(
+        f"Source: https://github.com/ept-team/eptbot\nForked from: {src_fork2}\nWho again forked from: {src_fork1}")
 
 
 @bot.command()
@@ -170,10 +180,10 @@ async def report(ctx, error_report):
 
 
 @bot.command()
-async def setup(ctx, author):
+async def setup(ctx):
     guild = ctx.guild
 
-    if not author.id in config["maintainers"]:
+    if not ctx.author.id in config["maintainers"]:
         return [(None, "Only maintainers can run the setup process.")]
 
     overwrites = {guild.default_role: ctf_model.basic_disallow, guild.me: ctf_model.basic_allow}
@@ -182,7 +192,65 @@ async def setup(ctx, author):
         if category not in existing_categories:
             await ctx.guild.create_category(category, overwrites=overwrites)
 
+    await ctx.guild.create_role(name=ADMIN_ROLE_NAME, permissions=Permissions.all(),
+                                reason="tmp privesc role for some bot commands")
+
+    await ctx.guild.create_text_channel(config['channels']['export'], overwrites={
+        guild.default_role: only_read,
+    })
+
     await ctx.send("Setup successfull! :tada:")
+
+
+@bot.command()
+async def leaveordelete(ctx):
+    cnt = 0
+    for guild in bot.guilds:
+        try:
+            await guild.delete()
+            cnt += 1
+        except:
+            if guild.member_count <= 2:
+                await guild.leave()
+                cnt += 1
+
+
+@bot.command()
+async def test123(ctx):
+    if not ctx.author.id in config["maintainers"]:
+        await ctx.send("Sorry you're not allowed to test")
+        return
+
+    guild = await bot.create_guild("Test igCTF bot")
+    channel = await guild.create_text_channel("test")
+    invite = await channel.create_invite(max_age=0, max_uses=1)
+    await ctx.send(f"{invite.url}")
+    await asyncio.sleep(300)
+    await guild.delete()
+
+
+@bot.command()
+async def su(ctx):
+    for role in ctx.guild.roles:
+        if str(role) == ADMIN_ROLE_NAME:
+            await ctx.author.add_roles(role)
+            await asyncio.sleep(300)
+            await ctx.author.remove_roles([role])
+    else:
+        await ctx.send("Couldn't find temporary admin role, have you run !setup")
+
+
+@bot.command(aliases=["="])
+async def inequationgroup(ctx):
+    await ctx.send(
+        "Congratulations you found the easteregg!\nYou also found the coolest CTF group in the world - Inequation Group"
+    )
+
+
+@bot.command()
+async def sudo(ctx):
+    await ctx.send("This incident will be reported. https://xkcd.com/838/")
+
 
 # -------------------
 

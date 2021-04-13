@@ -20,3 +20,4 @@
       - bot-variables.env
 * !sudo and !exit merge
 * better permission system act on behalf of the user or lax mode where it just let's the user do pretty much anything
+* only use !create outside of ctf channels

@@ -1,9 +1,9 @@
-FROM python:3.7
+FROM python:latest
 
-ENV NAME eptbot
-ENV APP_HOME /eptbot
+ENV NAME bot
+ENV APP_HOME /home/bot
 
-RUN groupadd -r ${NAME} && useradd -r -g ${NAME} ${NAME}
+RUN groupadd -g 1000 -r ${NAME} && useradd -r -g ${NAME} -u 1000 ${NAME}
 
 COPY requirements.txt requirements.txt
 
@@ -11,9 +11,10 @@ RUN pip install -r requirements.txt
 
 WORKDIR ${APP_HOME}
 
-RUN chown ${NAME}:${NAME} ${APP_HOME}
+RUN mkdir ${APP_HOME}/backups && chown ${NAME}:${NAME} ${APP_HOME}
 
+USER ${NAME}
 
-COPY --chown=eptbot:eptbot ./bot/* ${APP_HOME}/
+COPY --chown=${NAME}:${NAME} ./bot/* ${APP_HOME}/
 
-CMD ["python", "-u", "eptbot.py"]
+CMD ["python", "-u", "bot.py"]

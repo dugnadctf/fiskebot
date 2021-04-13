@@ -1,6 +1,7 @@
 ### Custom ###
 bot-variables.env
 backups/
+dump
 config*.py
 .vscode/
 
