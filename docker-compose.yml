@@ -4,6 +4,17 @@ services:
     build: .
     image: ekofiskctf/fiskebot
     restart: always
+    environment:
+      - "DISCORD_TOKEN=${DISCORD_TOKEN}"
+      - "MONGODB_URI=${MONGODB_URI:-mongodb://mongo:27017}"
+      - "COMMAND_PREFIX=${COMMAND_PREFIX:-!}"
+      - "MAINTAINERS=${MAINTAINERS}"
+      - "CATEGORY_WORKING=${CATEGORY_WORKING:-working}"
+      - "CATEGORY_DONE=${CATEGORY_DONE:-done}"
+      - "CATEGORY_ARCHIVE_PREFIX=${CATEGORY_ARCHIVE_PREFIX:-archive}"
+      - "CHANNEL_EXPORT=${CHANNEL_EXPORT:-export}"
+      - "CTFTIME_TEAM_ID=${CTFTIME_TEAM_ID}"
+      - "CTFTIME_TEAM_NAME=${CTFTIME_TEAM_NAME}"
     volumes:
       - ./bot:/fiskebot
     depends_on:
