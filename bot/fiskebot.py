@@ -191,15 +191,13 @@ async def report(ctx, error_report):
 
 
 @bot.command()
-async def setup(ctx, author):
-    guild = ctx.guild
-
-    if author.id not in config["maintainers"]:
+async def setup(ctx):
+    if ctx.author.id not in config["maintainers"]:
         return [(None, "Only maintainers can run the setup process.")]
 
     overwrites = {
-        guild.default_role: ctf_model.basic_disallow,
-        guild.me: ctf_model.basic_allow,
+        ctx.guild.default_role: ctf_model.basic_disallow,
+        ctx.guild.me: ctf_model.basic_allow,
     }
     existing_categories = [category.name for category in ctx.guild.categories]
     for category in [config["categories"]["working"], config["categories"]["done"]]:
