@@ -271,11 +271,13 @@ async def su(ctx):
     else:
         await ctx.send("Couldn't find temporary admin role, have you run !setup")
 
+
 @bot.command()
 async def exit(ctx):
     for role in ctx.guild.roles:
         if str(role) == ADMIN_ROLE_NAME:
             await ctx.author.remove_roles(role)
+
 
 @bot.command(aliases=["="])
 async def inequationgroup(ctx):

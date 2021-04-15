@@ -64,7 +64,7 @@ class Ctfs(commands.Cog):
             print(len(archived))
             if len(archived) <= self.limit:
                 return
-            for time, ctf in archived[self.limit:]:
+            for time, ctf in archived[self.limit :]:
                 ids = []
                 print(time, ctf)
                 ids.append(ctf["chan_id"])

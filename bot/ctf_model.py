@@ -1,11 +1,11 @@
 import functools
 import json
+import os
 
 import bson
 import db
 import discord
 import discord.member
-import os
 from config import config
 from discord.ext import commands
 
