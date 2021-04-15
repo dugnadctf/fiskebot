@@ -1,4 +1,4 @@
-colorama==0.4.1
+colorama==0.4.4
 colorthief==0.2.1
 python-dateutil==2.8.1
 discord.py==1.5.1
