@@ -18,6 +18,17 @@ config = {
     # To invite the bot, use a link similar to:
     # https://discord.com/oauth2/authorize?&client_id=000000000000000001&scope=bot&permissions=8
     # Replace the client_id with your client id. permissions=8 means the manage permission which this bot needs to manage the channels.
+    #
+    # The level of logging for alerting, etc. Uses the logging levels specified here: https://docs.python.org/3/library/logging.html
+    "logging_level": os.getenv("LOGGING_LEVEL", "INFO"),
+    # Logging format, see https://docs.python.org/3/library/logging.html#formatter-objects
+    "logging_format": os.getenv(
+        "LOGGING_FORMAT", "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
+    ),
+    # If enabled, will send logging to this file
+    "logging_file": os.getenv("LOGGING_FILE", None),
+    # The minimum level for logging into the logging channel (`CHANNEL_LOGGING`)
+    "logging_discord_level": os.getenv("LOGGING_DISCORD_LEVEL", "ERROR"),
     # Prefix for all the bot commands
     "prefix": os.getenv("COMMAND_PREFIX", "!"),
     # Profile ids of the maintainers of your installation. These will be messaged when running `!report "issue"` or `!request "feature"`
@@ -38,6 +49,8 @@ config = {
     "channels": {
         # The channel to upload exports to
         "export": os.getenv("CHANNEL_EXPORT", "export"),
+        # If enabled, will send logging to this channel, based on the `LOGGING_DISCORD_LEVEL` logging level
+        "logging": os.getenv("CHANNEL_LOGGING", None),
     },
     # CTFtime id for the default team to lookup using the `!ctftime team` command
     "team": {
