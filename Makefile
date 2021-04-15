@@ -5,12 +5,12 @@ help:
 
 fixme:
 	echo "Starting linting"
-	docker run --rm -v "${PWD}:/fiskebot" -i fiskebot-tester "bash" "-c" "cd /fiskebot && isort bot && black bot"
+	docker run --rm -v "${PWD}:/home/bot" -i fiskebot-tester "bash" "-c" "cd /fiskebot && isort bot && black bot"
 	echo "Linting done!"
 
 check:
 	echo "Checking linting"
-	docker run --rm -v "${PWD}:/fiskebot" -i fiskebot-tester "bash" "-c" "cd /fiskebot && tox -e isort -e flake8 -e black"
+	docker run --rm -v "${PWD}:/home/bot" -i fiskebot-tester "bash" "-c" "cd /fiskebot && tox -e isort -e flake8 -e black"
 
 
 .PHONY: help fixme check

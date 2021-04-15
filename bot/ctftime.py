@@ -9,12 +9,13 @@ import db
 import discord
 import requests
 from colorthief import ColorThief
-from config import config
-from discord.ext import commands
 from lxml import html
 
-import fiskebot
+from bot import embed_help
+from config import config
 
+from discord.ext import commands
+from lxml import html
 
 class Ctftime(commands.Cog):
     def __init__(self, bot):
@@ -36,18 +37,12 @@ class Ctftime(commands.Cog):
     def updatedb():
         unix_now = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
         limit = "5"  # Max amount I can grab the json data for
-        response = requests.get(
-            Ctftime.upcoming_url, headers=Ctftime.headers, params=limit
-        )
+        response = requests.get(Ctftime.upcoming_url, headers=Ctftime.headers, params=limit)
 
         ctfs = []
         for data in response.json():  # Generate list of dicts of upcoming ctfs
-            ctf_start = dateutil.parser.parse(
-                data["start"].replace("T", " ").split("+", 1)[0]
-            )
-            ctf_end = dateutil.parser.parse(
-                data["finish"].replace("T", " ").split("+", 1)[0]
-            )
+            ctf_start = dateutil.parser.parse(data["start"].replace("T", " ").split("+", 1)[0])
+            ctf_end = dateutil.parser.parse(data["finish"].replace("T", " ").split("+", 1)[0])
 
             unix_start = int(ctf_start.replace(tzinfo=timezone.utc).timestamp())
             unix_end = int(ctf_end.replace(tzinfo=timezone.utc).timestamp())
@@ -73,9 +68,7 @@ class Ctftime(commands.Cog):
             }
             ctfs.append(ctf)
 
-        for (
-            ctf
-        ) in ctfs:  # If the document doesn't exist: add it, if it does: update it.
+        for ctf in ctfs:  # If the document doesn't exist: add it, if it does: update it.
             print(f"Got {ctf['name']} from ctftime")
             query = ctf["name"]
             db.ctfs.update({"name": query}, {"$set": ctf}, upsert=True)
@@ -100,7 +93,7 @@ Display top teams for a specified year `YYYY` or country `XX`.
 `!ctftime team <team name>`
 Display the top 10 events this year for a team, sorted by rating points.
 """
-            await fiskebot.embed_help(ctx, "Help for CTFtime commands.", help_text)
+            await embed_help(ctx, "Help for CTFtime commands.", help_text)
 
     @ctftime.command()
     async def upcoming(self, ctx, params=None):
@@ -109,9 +102,7 @@ Display the top 10 events this year for a team, sorted by rating points.
         else:
             pass
 
-        response = requests.get(
-            Ctftime.upcoming_url, headers=Ctftime.headers, params=params
-        )
+        response = requests.get(Ctftime.upcoming_url, headers=Ctftime.headers, params=params)
         data = response.json()
 
         for num in range(0, int(params)):
@@ -148,14 +139,8 @@ Display the top 10 events this year for a team, sorted by rating points.
             else:
                 embed.set_thumbnail(url=Ctftime.default_image)
 
-            embed.add_field(
-                name="Duration",
-                value=((ctf_days + " days, ") + ctf_hours) + " hours",
-                inline=True,
-            )
-            embed.add_field(
-                name="Format", value=ctf_place + " " + ctf_format, inline=True
-            )
+            embed.add_field(name="Duration", value=((ctf_days + " days, ") + ctf_hours) + " hours", inline=True)
+            embed.add_field(name="Format", value=ctf_place + " " + ctf_format, inline=True)
             embed.add_field(name=ctf_start, value=ctf_end, inline=True)
             await ctx.channel.send(embed=embed)
 
@@ -179,12 +164,8 @@ Display the top 10 events this year for a team, sorted by rating points.
             teamname = data[year][team]["team_name"]
             score = data[year][team]["points"]
 
-            leaderboards += (
-                f"{f'[{str(rank).zfill(2)}]':4}  {f'{teamname}:':20} {score:.3f}\n"
-            )
-        await ctx.send(
-            f":triangular_flag_on_post:  **{year} CTFtime Leaderboards**```ini\n{leaderboards}```"
-        )
+            leaderboards += f"{f'[{str(rank).zfill(2)}]':4}  {f'{teamname}:':20} {score:.3f}\n"
+        await ctx.send(f":triangular_flag_on_post:  **{year} CTFtime Leaderboards**```ini\n{leaderboards}```")
 
     @ctftime.command()
     async def team(self, ctx, team=None, year=None):
@@ -203,55 +184,47 @@ Display the top 10 events this year for a team, sorted by rating points.
         else:
             msg = await ctx.send(f"Looking up scores for {team} with id {team_id}...")
         table = get_scores(team_id, year)
-        table = [
-            line[:2] + line[3:4] for line in table
-        ]  # remove CTF points column, not interesting
+        table = [line[:2] + line[3:4] for line in table]  # remove CTF points column, not interesting
 
-        unscored = [
-            line for line in table if line[2] == "0.000*"
-        ]  # add unscored events to the bottom
+        unscored = [l for l in table if l[2] == '0.000*']  # add unscored events to the bottom
 
-        table = [line for line in table if line[2] != "0.000*"][
-            :11
-        ]  # get top 10 (+1 header)
-        score = round(sum([float(line[2]) for line in table[1:]]), 3)
+        table = [l for l in table if l[2] != '0.000*'][:11]  # get top 10 (+1 header)
+        score = round(sum([float(l[2]) for l in table[1:]]), 3)
 
         if len(unscored) > 0:
-            table.append(["", "", ""])
+            table.append(['', '', ''])
             table += unscored
 
-        table.append(["", "", "", ""])
-        table.append(["TOTAL", "", "", str(score)])  # add final line with total score
+        table.append(['', '', '', ''])
+        table.append(['TOTAL', '', '', str(score)])  # add final line with total score
 
-        table[0].insert(0, "Nr.")
+        table[0].insert(0, 'Nr.')
         count = 1
         for line in table[1:-2]:  # add number column for easy counting
-            line.insert(0, f"[{str(count).zfill(2)}]" if line[0] else "")
+            line.insert(0, f'[{str(count).zfill(2)}]' if line[0] else '')
             if line[0]:
                 count += 1
 
-        out = f":triangular_flag_on_post:  **Top 10 events for {team}**"
-        out += "```glsl\n"
+        out = f':triangular_flag_on_post:  **Top 10 events for {team}**'
+        out += '```glsl\n'
         out += format_table(table)
-        out += "\n```"
+        out += '\n```'
         await msg.edit(content=out)
 
     async def country(self, ctx, country):
         table, country_name = country_scores(country.upper())
         if not table:
-            raise ctf_model.TaskFailed(
-                "Invalid year or country code. Should be `YYYY` or `XX`."
-            )
-        out = f":flag_{country.lower()}:  **Top teams for {country_name}**"
-        out += "```glsl\n"
+            raise ctf_model.TaskFailed('Invalid year or country code. Should be `YYYY` or `XX`.')
+        out = f':flag_{country.lower()}:  **Top teams for {country_name}**'
+        out += '```glsl\n'
         out += format_table(table)
 
         cut = 0
-        suffix = "\n```"
+        suffix = '\n```'
         while len(out) > 2000 - len(suffix):
-            out = "\n".join(out.split("\n")[:-1])
+            out = '\n'.join(out.split('\n')[:-1])
             cut += 1
-            suffix = f"\n\n+{cut} more teams\n```"
+            suffix = f'\n\n+{cut} more teams\n```'
 
         out += suffix
 
@@ -265,25 +238,11 @@ Display the top 10 events this year for a team, sorted by rating points.
         running = False
 
         for ctf in db.ctfs.find():
-            if (
-                ctf["start"] < unix_now and unix_now < ctf["end"]
-            ):  # Check if the ctf is running
+            if (ctf["start"] < unix_now and unix_now < ctf["end"]):  # Check if the ctf is running
                 running = True
-                embed = discord.Embed(
-                    title=":red_circle: " + ctf["name"] + " IS LIVE",
-                    description=ctf["url"],
-                    color=15874645,
-                )
-                start = (
-                    datetime.utcfromtimestamp(ctf["start"]).strftime(
-                        "%Y-%m-%d %H:%M:%S"
-                    )
-                    + " UTC"
-                )
-                end = (
-                    datetime.utcfromtimestamp(ctf["end"]).strftime("%Y-%m-%d %H:%M:%S")
-                    + " UTC"
-                )
+                embed = discord.Embed(title=":red_circle: " + ctf["name"] + " IS LIVE", description=ctf["url"], color=15874645)
+                start = datetime.utcfromtimestamp(ctf["start"]).strftime("%Y-%m-%d %H:%M:%S") + " UTC"
+                end = datetime.utcfromtimestamp(ctf["end"]).strftime("%Y-%m-%d %H:%M:%S") + " UTC"
                 if ctf["img"] != "":
                     embed.set_thumbnail(url=ctf["img"])
                 else:
@@ -295,9 +254,7 @@ Display the top 10 events this year for a team, sorted by rating points.
                 await ctx.channel.send(embed=embed)
 
         if not running:  # No ctfs were found to be running
-            await ctx.send(
-                "No CTFs currently running! Check out !ctftime countdown, and !ctftime upcoming to see when ctfs will start!"
-            )
+            await ctx.send("No CTFs currently running! Check out !ctftime countdown, and !ctftime upcoming to see when ctfs will start!")
 
     # Return the timeleft in the ctf in days, hours, minutes, seconds
 
@@ -308,9 +265,7 @@ Display the top 10 events this year for a team, sorted by rating points.
         unix_now = int(now.replace(tzinfo=timezone.utc).timestamp())
         running = False
         for ctf in db.ctfs.find():
-            if (
-                ctf["start"] < unix_now and unix_now < ctf["end"]
-            ):  # Check if the ctf is running
+            if ctf["start"] < unix_now and unix_now < ctf["end"]:  # Check if the ctf is running
                 running = True
                 time = ctf["end"] - unix_now
                 days = time // (24 * 3600)
@@ -320,14 +275,10 @@ Display the top 10 events this year for a team, sorted by rating points.
                 minutes = time // 60
                 time %= 60
                 seconds = time
-                await ctx.send(
-                    f"```ini\n{ctf['name']} ends in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```{ctf['url']}"
-                )
+                await ctx.send(f"```ini\n{ctf['name']} ends in: [{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]```{ctf['url']}")
 
         if not running:
-            await ctx.send(
-                "No ctfs are running! Use !ctftime upcoming or !ctftime countdown to see upcoming ctfs"
-            )
+            await ctx.send("No ctfs are running! Use !ctftime upcoming or !ctftime countdown to see upcoming ctfs")
 
     @ctftime.command()
     async def countdown(self, ctx, params=None):
@@ -343,18 +294,14 @@ Display the top 10 events this year for a team, sorted by rating points.
             for i, ctf in enumerate(self.upcoming_l):
                 index += f"[{i + 1}] {ctf['name']}\n"
 
-            await ctx.send(
-                f"Type !ctftime countdown <number> to select.\n```ini\n{index}```"
-            )
+            await ctx.send(f"Type !ctftime countdown <number> to select.\n```ini\n{index}```")
 
         else:
             if self.upcoming_l != []:
                 index = int(params) - 1
                 target = self.upcoming_l[index]
                 seconds = target["start"] - unix_now
-                await ctx.send(
-                    f"```ini\n{target['name']} starts in: {format_seconds(seconds)}```\n{target['url']}"
-                )
+                await ctx.send(f"```ini\n{target['name']} starts in: {format_seconds(seconds)}```\n{target['url']}")
 
             else:
                 for ctf in db.ctfs.find():
@@ -364,9 +311,7 @@ Display the top 10 events this year for a team, sorted by rating points.
                 target = self.upcoming_l[index]
                 seconds = target["start"] - unix_now
 
-                await ctx.send(
-                    f"```ini\n{target['name']} starts in: {format_seconds(seconds)}```{target['url']}"
-                )
+                await ctx.send(f"```ini\n{target['name']} starts in: {format_seconds(seconds)}```{target['url']}")
 
 
 def format_seconds(seconds):
@@ -376,7 +321,7 @@ def format_seconds(seconds):
     seconds %= 3600
     minutes = seconds // 60
     seconds %= 60
-    return f"[{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]"
+    return f'[{days} days], [{hours} hours], [{minutes} minutes], [{seconds} seconds]'
 
 
 def country_scores(country):
@@ -387,19 +332,15 @@ def country_scores(country):
         return None, None
     doc = html.fromstring(response.content)
 
-    country_name = doc.xpath('//ul[@class="breadcrumb"]//li[@class="active"]')[
-        0
-    ].text_content()
+    country_name = doc.xpath('//ul[@class="breadcrumb"]//li[@class="active"]')[0].text_content()
 
-    lines = doc.xpath(
-        '//div[@class="container"]//table[@class="table table-striped"]//tr'
-    )
-    column_names = ["Worldwide", "Country", "Name", "Points", "Events"]
+    lines = doc.xpath('//div[@class="container"]//table[@class="table table-striped"]//tr')
+    column_names = ['Worldwide', 'Country', 'Name', 'Points', 'Events']
     lines = lines[1:]
     table = []
     for line in lines:
-        columns = line.xpath(".//td")
-        columns = [c.text_content().replace("\t", " ") for c in columns]
+        columns = line.xpath('.//td')
+        columns = [c.text_content().replace('\t', ' ') for c in columns]
         columns = columns[0:1] + columns[2:3] + columns[4:]
         table.append(columns)
 
@@ -417,12 +358,12 @@ def get_scores(team_id, year=None):
         year = now.year
     lines = doc.xpath(f'//div[@id="rating_{str(year)}"]//table//tr')
     column_names = lines[0].xpath(".//th/text()")
-    column_names = ["Place", "Event", "CTF Points", "Rating Points"]
+    column_names = ['Place', 'Event', 'CTF Points', 'Rating Points']
     lines = lines[1:]
     table = []
     for line in lines:
-        columns = line.xpath(".//td")
-        columns = [c.text_content().replace("\t", " ") for c in columns[1:]]
+        columns = line.xpath('.//td')
+        columns = [c.text_content().replace('\t', ' ') for c in columns[1:]]
         table.append(columns)
 
     table.sort(key=lambda l: float(l[3].replace("*", "")), reverse=True)
@@ -432,30 +373,24 @@ def get_scores(team_id, year=None):
 
 def get_team_id(team_name):
     ses = requests.Session()
-    url = "https://ctftime.org/stats/"
+    url = 'https://ctftime.org/stats/'
     response = ses.get(url, headers=Ctftime.headers)
     doc = html.fromstring(response.content)
     token = doc.xpath('//input[@name="csrfmiddlewaretoken"]')[0]
 
     url = "https://ctftime.org/team/list/"
-    headers = {"Referer": "https://ctftime.org/stats/"}
+    headers = {'Referer': 'https://ctftime.org/stats/'}
     headers.update(Ctftime.headers)
-    response = ses.post(
-        url,
-        data={"team_name": team_name, "csrfmiddlewaretoken": token.value},
-        headers=headers,
-    )
+    response = ses.post(url, data={'team_name': team_name, 'csrfmiddlewaretoken': token.value}, headers=headers)
     team_id = response.url.split("/")[-1]
     if team_id.isnumeric():
         return int(team_id)
     return -1
 
 
-def format_table(table, seperator="      "):
+def format_table(table, seperator='      '):
     widths = [max(len(line[i]) for line in table) for i in range(len(table[0]))]
-    return "\n".join(
-        [seperator.join([c.ljust(w) for w, c in zip(widths, line)]) for line in table]
-    )
+    return '\n'.join([seperator.join([c.ljust(w) for w, c in zip(widths, line)]) for line in table])
 
 
 def setup(bot):

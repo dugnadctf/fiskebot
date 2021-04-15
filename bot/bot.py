@@ -1,30 +1,54 @@
-import asyncio
 import logging
-import os.path
-import shutil
 import traceback
-
-import ctf_model
-import db
+import asyncio
 import discord
-from config import config
+from discord import Permissions
+from discord.ext.commands import (
+    bot,
+)
 from discord.ext import commands
+import os.path
+import sys
+from ctf_model import only_read
 from logger import BotLogger
 
-logger = BotLogger("fiskebot")
+import db
+import ctf_model
+
+
+logger = BotLogger("bot")
+
+try:
+    from config import config
+except ModuleNotFoundError:
+    if not os.path.isfile('config.py'):
+        logger.error("create a config file, feel free to copy config.py.default")
+        sys.exit(1)
 
 if not config["token"]:
     logger.error("DISCORD_TOKEN has not been set")
     exit(1)
 
+
+
 src_fork1 = "https://github.com/NullPxl/NullCTF"
 src_fork2 = "https://gitlab.com/inequationgroup/igCTF"
 src_fork3 = "https://github.com/ept-team/eptbot"
 
-client = discord.Client()
+LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
 
+logging.basicConfig(format=LOG_FORMAT, level=logging.WARN)
+
+client = discord.Client()
 bot = commands.Bot(command_prefix=config["prefix"])
+
+intents = discord.Intents.default()
+intents.members = True
+
 bot.remove_command("help")
+
+ADMIN_ROLE_NAME = "tmp-admin"
+
 
 # -------------------
 
@@ -59,15 +83,12 @@ async def on_command_error(ctx, err):
     logger.info(f"Error occured with: {ctx.command}\n{err}\n")
     if isinstance(err, commands.MissingPermissions):
         await ctx.send(
-            "You do not have permission to do that! ¯\\_(ツ)_/¯"
-        )  # pylint: disable=anomalous-backslash-in-string
+            "You do not have permission to do that! ¯\\_(ツ)_/¯")  # pylint: disable=anomalous-backslash-in-string
     elif isinstance(err, commands.BotMissingPermissions):
-        await ctx.send(
-            f""":cry: I can\'t do that. Please ask server ops
+        await ctx.send(f""":cry: I can\'t do that. Please ask server ops
         to add all the permission for me!
 
-        ```{str(err)}```"""
-        )
+        ```{str(err)}```""")
     elif isinstance(err, commands.DisabledCommand):
         await ctx.send(":skull: Command has been disabled!")
     elif isinstance(err, commands.CommandNotFound):
@@ -156,9 +177,7 @@ request a new feature from the maintainers
 
 `!source`
 display source information
-""".replace(
-        "!", config["prefix"]
-    )
+""".replace("!", config["prefix"])
     await embed_help(ctx, "Help for core commands", help)
 
 
@@ -176,12 +195,8 @@ async def report(ctx, error_report):
     for cid in config["maintainers"]:
         creator = bot.get_user(cid)
         authors_name = str(ctx.author)
-        await creator.send(
-            f""":triangular_flag_on_post: {authors_name}: {error_report}"""
-        )
-    await ctx.send(
-        f""":triangular_flag_on_post: Thanks for the help, "{error_report}" has been reported!"""
-    )
+        await creator.send(f""":triangular_flag_on_post: {authors_name}: {error_report}""")
+    await ctx.send(f""":triangular_flag_on_post: Thanks for the help, "{error_report}" has been reported!""")
 
 
 @bot.command()
@@ -189,16 +204,70 @@ async def setup(ctx):
     if ctx.author.id not in config["maintainers"]:
         return [(None, "Only maintainers can run the setup process.")]
 
-    overwrites = {
-        ctx.guild.default_role: ctf_model.basic_disallow,
-        ctx.guild.me: ctf_model.basic_allow,
-    }
+    overwrites = {guild.default_role: ctf_model.basic_disallow, guild.me: ctf_model.basic_allow}
     existing_categories = [category.name for category in ctx.guild.categories]
     for category in [config["categories"]["working"], config["categories"]["done"]]:
         if category not in existing_categories:
             await ctx.guild.create_category(category, overwrites=overwrites)
 
+    await ctx.guild.create_role(name=ADMIN_ROLE_NAME, permissions=Permissions.all(),
+                                reason="tmp privesc role for some bot commands")
+
+    await ctx.guild.create_text_channel(config['channels']['export'], overwrites={
+        guild.default_role: only_read,
+    })
+
     await ctx.send("Setup successfull! :tada:")
+
+
+@bot.command()
+async def leaveordelete(ctx):
+    cnt = 0
+    for guild in bot.guilds:
+        try:
+            await guild.delete()
+            cnt += 1
+        except:
+            if guild.member_count <= 2:
+                await guild.leave()
+                cnt += 1
+
+
+@bot.command()
+async def test123(ctx):
+    if not ctx.author.id in config["maintainers"]:
+        await ctx.send("Sorry you're not allowed to test")
+        return
+
+    guild = await bot.create_guild("Test igCTF bot")
+    channel = await guild.create_text_channel("test")
+    invite = await channel.create_invite(max_age=0, max_uses=1)
+    await ctx.send(f"{invite.url}")
+    await asyncio.sleep(300)
+    await guild.delete()
+
+
+@bot.command()
+async def su(ctx):
+    for role in ctx.guild.roles:
+        if str(role) == ADMIN_ROLE_NAME:
+            await ctx.author.add_roles(role)
+            await asyncio.sleep(300)
+            await ctx.author.remove_roles([role])
+    else:
+        await ctx.send("Couldn't find temporary admin role, have you run !setup")
+
+
+@bot.command(aliases=["="])
+async def inequationgroup(ctx):
+    await ctx.send(
+        "Congratulations you found the easteregg!\nYou also found the coolest CTF group in the world - Inequation Group"
+    )
+
+
+@bot.command()
+async def sudo(ctx):
+    await ctx.send("This incident will be reported. https://xkcd.com/838/")
 
 
 # -------------------

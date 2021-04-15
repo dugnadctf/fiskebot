@@ -21,12 +21,14 @@ services:
       - "CTFTIME_TEAM_ID=${CTFTIME_TEAM_ID}"
       - "CTFTIME_TEAM_NAME=${CTFTIME_TEAM_NAME}"
     volumes:
-      - ./bot:/fiskebot
+      - ./backups:/home/bot/backups
     depends_on:
       - mongo
+    env_file:
+      - bot-variables.env
     stop_signal: SIGKILL
   mongo:
-    image: mongo
+    image: mongo:latest
     restart: always
     ports:
       - "127.0.0.1:27017:27017"
