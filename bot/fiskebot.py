@@ -4,7 +4,6 @@ import os.path
 import shutil
 import traceback
 
-import colorama
 import ctf_model
 import db
 import discord
@@ -57,12 +56,7 @@ async def on_command_error(ctx, err):
         f"Ignoring exception in command {ctx.command}\n"
         + "".join(traceback.format_exception(type(err), err, err.__traceback__))
     )
-    logger.info(
-        colorama.Style.BRIGHT
-        + colorama.Fore.RED
-        + f"Error occured with: {ctx.command}\n{err}\n"
-    )
-    print(colorama.Style.RESET_ALL)
+    logger.info(f"Error occured with: {ctx.command}\n{err}\n")
     if isinstance(err, commands.MissingPermissions):
         await ctx.send(
             "You do not have permission to do that! ¯\\_(ツ)_/¯"
