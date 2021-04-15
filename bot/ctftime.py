@@ -196,7 +196,7 @@ Display the top 10 events this year for a team, sorted by rating points.
         else:
             team = config["team"]["name"]
         if not team_id or team_id <= 0:
-            ctx.send(f":warning: Unknown team `{team}`.")
+            await ctx.send(f":warning: Unknown team `{team}`.")
             return
         if msg:
             await msg.edit(content=f"Looking up scores for {team} with id {team_id}...")
