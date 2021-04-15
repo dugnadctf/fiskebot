@@ -44,7 +44,7 @@ This codebase uses the PEP 8 code style. We enforce this with isort, black & fla
 
 First build the tester Docker image
 ```
-$ docker build . -f Dockerfile.tester -t fiskebot-tester
+$ make build
 ```
 
 Format the code with black & isort

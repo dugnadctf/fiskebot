@@ -1,14 +1,15 @@
 import re
 
+import ctf_model
+import db
+from bson import ObjectId
+from config import config
+from ctf_model import delete, exportChannels, save
 from discord.ext import commands
 from discord.ext.tasks import loop
 from discord.utils import get
-from bson import ObjectId
-from config import config
-import db
-import ctf_model
+
 from bot import embed_help
-from ctf_model import exportChannels, save, delete
 
 
 def verify_owner():
@@ -25,19 +26,22 @@ class Ctfs(commands.Cog):
         self.challenges = {}
         self.ctfname = ""
 
-        self.limit = 19
-        self.guild = ""
-        self.guild_ids = [604992563199606784]
+        self.limit = 20
+        self.guilds = {}
         self.cleanup.start()
 
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     @commands.guild_only()
     @commands.command()
     async def create(self, ctx, *name):
-        name = '_'.join(name)
-        emoji = '🏃'
-        messages = await respond_with_reaction(ctx, emoji, ctf_model.CtfTeam.create, ctx.channel.guild, name)
-        db.teamdb[str(ctx.channel.guild.id)].update_one({"name": name}, {"$set": {"msg_id": messages[0].id}})
+        name = "_".join(name)
+        emoji = "🏃"
+        messages = await respond_with_reaction(
+            ctx, emoji, ctf_model.CtfTeam.create, ctx.channel.guild, name
+        )
+        db.teamdb[str(ctx.channel.guild.id)].update_one(
+            {"name": name}, {"$set": {"msg_id": messages[0].id}}
+        )
 
     @commands.guild_only()
     @commands.group(aliases=["ct", "cf", "tf"])
@@ -47,13 +51,13 @@ class Ctfs(commands.Cog):
 
     @loop(minutes=30)
     async def cleanup(self):
-        for guild_id in self.guild_ids:
+        for guild_id, guild in self.guilds.items():
+            print(guild)
             archived = sorted(
                 [
                     (ObjectId(ctf["_id"]).generation_time, ctf)
                     for ctf in db.teamdb[str(guild_id)].find({"archived": True})
-                    if get(self.guild.text_channels, name=ctf["name"])
-                       is not None
+                    if get(guild.text_channels, name=ctf["name"]) is not None
                 ],
                 reverse=True,
             )
@@ -66,26 +70,27 @@ class Ctfs(commands.Cog):
                 ids.append(ctf["chan_id"])
                 for chal in ctf["chals"]:
                     ids.append(int(str(chal)))
-                channels = [chn for chn in self.guild.channels if chn.id in ids]
+                channels = [chn for chn in guild.channels if chn.id in ids]
                 print("channels", len(channels))
                 if len(channels) == 0:
                     return
                 print(len(channels))
                 CTF = await exportChannels(channels)
                 print("name", ctf["name"])
-                await save(self.guild, self.guild.name, ctf["name"], CTF)
+                await save(guild, guild.name, ctf["name"], CTF)
                 print("saved")
-                await delete(self.guild, self.guild.name, channels)
+                await delete(guild, channels)
                 print("deleted")
-                role = get(self.guild.roles, name=ctf["name"] + "_team")
-                print("role", role)
-                await role.delete(reason="exporting & delete CTF")
                 break  # safety measure to take only one
 
     @cleanup.before_loop
     async def cleanup_before(self):
         await self.bot.wait_until_ready()
-        self.guild = self.bot.get_guild(self.guild_id)
+        print(config["guild_ids"])
+        for guild_id in config["guild_ids"]:
+            print(guild_id)
+            self.guilds[guild_id] = self.bot.get_guild(guild_id)
+            print(self.guilds[guild_id])
 
     @ctf.command("help", aliases=["h", "man"])
     async def ctf_help(self, ctx):
@@ -109,15 +114,17 @@ Archives this ctf and all the respective challenges (this requires the bot has m
 `!ctf unarchive`
 Unarchives this ctf and all the respective challenges (this requires the bot has manage channels permissions).
 
-""".replace("!", config["prefix"])
+""".replace(
+            "!", config["prefix"]
+        )
         await embed_help(ctx, "Help for CTF commands", help_text)
 
     @commands.bot_has_permissions(manage_channels=True)
     @ctf.command(aliases=["a", "new", "touch"])
     async def add(self, ctx, *words):
-        name = '_'.join(*words)
+        name = "_".join(*words)
         name = check_name(name)
-        emoji = '🔨'
+        emoji = "🔨"
         await respond_with_reaction(ctx, emoji, chk_fetch_team(ctx).add_chal, name)
 
     @commands.bot_has_permissions(manage_channels=True)
@@ -147,7 +154,9 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
     @commands.command()
     async def join(self, ctx, name=None):
         if name is None:
-            await ctx.send(f'Please specify a CTF to join:\n```{config["prefix"]}join <ctf name>```')
+            await ctx.send(
+                f'Please specify a CTF to join:\n```{config["prefix"]}join <ctf name>```'
+            )
         await respond(ctx, chk_fetch_team_by_name(ctx, name).join, ctx.author)
 
     @ctf.command()
@@ -174,13 +183,9 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
     async def export(self, ctx):
         await respond(ctx, ctf_model.export, ctx, ctx.author)
 
-    @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
-    @commands.has_permissions(manage_channels=True)
-    @ctf.command()
-    async def deletectf(self, ctx):
-        await respond(ctx, ctf_model.delete, ctx, ctx.author)
-
-    @ctf.command(aliases=["ls", "dir", "l", "challenges", "chals", "challs", "s", "status"])
+    @ctf.command(
+        aliases=["ls", "dir", "l", "challenges", "chals", "challs", "s", "status"]
+    )
     async def list(self, ctx):
         chals = chk_fetch_team(ctx).challenges
         if len(chals) == 0:
@@ -202,7 +207,19 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
         lines = "\n".join(lines)
         await ctx.send(f"```ini\n{lines}```")
 
-    @commands.command(aliases=["ls", "list", "dir", "l", "challenges", "chals", "challs", "s", "status"])
+    @commands.command(
+        aliases=[
+            "ls",
+            "list",
+            "dir",
+            "l",
+            "challenges",
+            "chals",
+            "challs",
+            "s",
+            "status",
+        ]
+    )
     async def list_shortcut(self, ctx):
         await self.list(ctx)
 
@@ -220,13 +237,18 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
 
     @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()
-    @commands.command("done", aliases=["solve", "finish", "complete", "solved", "finished", "completed"])
+    @commands.command(
+        "done",
+        aliases=["solve", "finish", "complete", "solved", "finished", "completed"],
+    )
     async def done_alias(self, ctx, *withlist):
         await self.done(ctx, *withlist)
 
     @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()
-    @chal.command(aliases=["solve", "finish", "complete", "solved", "finished", "completed"])
+    @chal.command(
+        aliases=["solve", "finish", "complete", "solved", "finished", "completed"]
+    )
     async def done(self, ctx, *withlist):
         guild = ctx.channel.guild
         users = [await parse_user(guild, u) for u in withlist]
@@ -247,19 +269,40 @@ Invites a `user` to a challenge channel.
 
 `!chal undone`
 Marks this challenge as **not** completed. This will move the channel back to the "working" category.
-""".replace("!", config["prefix"])
+""".replace(
+            "!", config["prefix"]
+        )
         await embed_help(ctx, "Challenge help topic", help_text)
 
     @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()
-    @chal.command(aliases=["unsolve","unfinish","incomplete","unsolved","unfinished","incompleted"])
+    @chal.command(
+        aliases=[
+            "unsolve",
+            "unfinish",
+            "incomplete",
+            "unsolved",
+            "unfinished",
+            "incompleted",
+        ]
+    )
     async def undone(self, ctx):
         await respond(ctx, chk_fetch_chal(ctx).undone)
 
     @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()
     @commands.guild_only()
-    @commands.command(aliases=["undone","unsolve","unfinish","incomplete","unsolved","unfinished","incompleted"])
+    @commands.command(
+        aliases=[
+            "undone",
+            "unsolve",
+            "unfinish",
+            "incomplete",
+            "unsolved",
+            "unfinished",
+            "incompleted",
+        ]
+    )
     async def undone_shortcut(self, ctx):
         await respond(ctx, chk_fetch_chal(ctx).undone)
 
@@ -328,7 +371,9 @@ def chk_fetch_team(ctx):
 def chk_fetch_chal(ctx):
     chal = ctf_model.Challenge.fetch(ctx.channel.guild, ctx.channel.id)
     if not chal:
-        raise ctf_model.TaskFailed("Please type this command in a challenge channel. You may need to join a challenge first.")
+        raise ctf_model.TaskFailed(
+            "Please type this command in a challenge channel. You may need to join a challenge first."
+        )
     return chal
 
 
@@ -337,9 +382,8 @@ async def parse_user(guild, user):
     ret = None
     if mat:
         ret = await guild.fetch_member(int(mat[1]))
-
-    if not ret:
-    return ret
+    else:
+        return ret
 
 
 def setup(bot):

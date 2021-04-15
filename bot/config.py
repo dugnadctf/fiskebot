@@ -14,7 +14,7 @@ config = {
     # On the same site you can change the name and profile picture of the bot
     # -
     # The token should have a similar format to the one bellow
-    "token": os.getenv("DISCORD_TOKEN"),
+    "token": "NjM3NTU5ODU2NTA4OTYwODA2.XbP77Q.WOqjqQsMH8El_8peRQq4izdnI3A",
     # To invite the bot, use a link similar to:
     # https://discord.com/oauth2/authorize?&client_id=000000000000000001&scope=bot&permissions=8
     # Replace the client_id with your client id. permissions=8 means the manage permission which this bot needs to manage the channels.
@@ -37,6 +37,11 @@ config = {
         int(maintainer)
         for maintainer in os.getenv("MAINTAINERS", "").replace(" ", "").split(",")
         if maintainer.isdigit()
+    ],
+    "guild_ids": [
+        int(guild_id)
+        for guild_id in os.getenv("GUILD_IDS","").replace(" ", "").split(",")
+        if guild_id.isdigit()
     ],
     "categories": {
         # Category where channels for challenges that are currently being worked on during a CTF
