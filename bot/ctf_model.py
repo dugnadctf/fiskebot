@@ -78,7 +78,7 @@ basic_allow = discord.PermissionOverwrite(
     read_messages=True,
     send_messages=True,
     read_message_history=True,
-    #    manage_channels=True, # If the use actually starts managing/changing the channel, then it will probably fuck up the bot
+    manage_channels=True,
 )
 
 basic_disallow = discord.PermissionOverwrite(
@@ -86,6 +86,13 @@ basic_disallow = discord.PermissionOverwrite(
     read_messages=False,
     send_messages=False,
     read_message_history=False,
+)
+
+only_read = discord.PermissionOverwrite(
+    add_reactions=False,
+    read_messages=True,
+    send_messages=False,
+    read_message_history=True,
 )
 
 
@@ -149,7 +156,7 @@ class CtfTeam:
     async def create(guild, name):
         names = [role.name for role in guild.roles] + guild.channels
         if name in names:
-            return [(ValueError, f"`{name}` already exists :grimacing:")]
+            return [(ValueError, f"`{name}` already exists as a role :grimacing:")]
 
         # Create role
         role_name = f"{name}_team"
@@ -162,14 +169,14 @@ class CtfTeam:
             role: basic_allow,
         }
 
+        if discord.utils.get(guild.text_channels, name=name) is not None:
+            return [(ValueError, f"`{name}` already exists as a channel :grimacing:")]
+
         chan = await guild.create_text_channel(
             name=name,
             overwrites=overwrites,
             topic=f"General talk for {name} CTF event.",
         )
-        # await chan.send(f"Welcome to {name}. Here you can do general discussion about this event. Also use this this place to type `ctf` related commands. Here is a list of commands just for reference:\n\n")
-        # await (await embed_help(chan, "CTF team help topic", ctf_help_text)).pin()
-        # await (await embed_help(chan, "Challenge help topic", chal_help_text)).pin()
 
         # Update database
         db.teamdb[str(guild.id)].insert_one(
@@ -694,7 +701,6 @@ async def export(ctx, author):
     if author.id not in config["maintainers"]:
         return [(None, "Only maintainers can export CTFs.")]
 
-    ctf = {"channels": []}
     main_chan = ctx.channel
 
     channels = [main_chan]
@@ -702,8 +708,20 @@ async def export(ctx, author):
         if f"{main_chan.name}-" in chal.name:
             channels.append(chal)
 
+    CTF = await exportChannels(channels)
+
+    return await save(guild, guild.name, main_chan.name, CTF)
+
+
+async def exportChannels(channels):
+    CTF = {"channels": []}
     for channel in channels:
-        chan = {"name": channel.name, "topic": channel.topic, "messages": []}
+        chan = {
+            "name": channel.name,
+            "topic": channel.topic,
+            "messages": [],
+            "pins": [m.id for m in await channel.pins()],
+        }
 
         async for message in channel.history(limit=None, oldest_first=True):
             entry = {
@@ -739,18 +757,21 @@ async def export(ctx, author):
             ]
             chan["messages"].append(entry)
 
-        ctf["channels"].append(chan)
+        CTF["channels"].append(chan)
+    return CTF
 
+
+async def save(guild, guild_name, ctf_name, CTF):
     if not os.path.exists("backups"):
         os.mkdir("backups")
 
-    json_file = f"backups/{guild.name} - {main_chan.name}.json"
-    with open(json_file, "w") as file:
-        json.dump(ctf, file)
+    json_file = f"backups/{guild_name} - {ctf_name}.json"
+    with open(json_file, "w") as w:
+        json.dump(CTF, w)
 
-    bson_file = f"backups/{guild.name} - {main_chan.name}.bson"
-    with open(bson_file, "wb") as file:
-        file.write(bson.BSON.encode(ctf))
+    bson_file = f"backups/{guild_name} - {ctf_name}.bson"
+    with open(bson_file, "wb") as w:
+        w.write(bson.BSON.encode(CTF))
 
     for chn in guild.text_channels:
         if chn.name == config["channels"]["export"]:
@@ -767,25 +788,14 @@ async def export(ctx, author):
     return [
         (
             None,
-            f"{main_chan.name} CTF has been exported. Verify and issue the `!ctf deletectf` command",
+            f"{ctf_name} CTF has been exported. Verify and issue the `!ctf deletectf` command",
         )
     ]
 
 
-async def delete(ctx, author):
-    guild = ctx.guild
-
-    if author.id not in config["maintainers"]:
-        return [(None, "Only maintainers can delete CTFs.")]
-
-    main_chan = ctx.channel
-    channels = [main_chan]
-    for chal in guild.text_channels:
-        if f"{main_chan.name}-" in chal.name:
-            channels.append(chal)
-
+async def delete(guild, channels):
     for role in guild.roles:
-        if f"{main_chan.name}_" in role.name.lower():
+        if f"{channels[0].name}_" in role.name.lower():
             await role.delete(reason="exporting CTF")
             break
 

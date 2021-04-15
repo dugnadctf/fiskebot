@@ -1,4 +1,4 @@
-# Fiskebot
+# bot
 
 This bot is still work in process. It is a fork of [eptbot](https://github.com/ept-team/eptbot), which is again a fork of [igCTF](https://gitlab.com/inequationgroup/igCTF), which is again a fork of [NullCTF](https://github.com/NullPxl/NullCTF).
 
@@ -44,7 +44,7 @@ This codebase uses the PEP 8 code style. We enforce this with isort, black & fla
 
 First build the tester Docker image
 ```
-$ docker build . -f Dockerfile.tester -t fiskebot-tester
+$ make build
 ```
 
 Format the code with black & isort
