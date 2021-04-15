@@ -10,7 +10,6 @@ import discord
 from ctf_model import only_read
 from discord import Permissions
 from discord.ext import commands
-from discord.ext.commands import bot
 from logger import BotLogger
 
 logger = BotLogger("bot")
@@ -206,6 +205,8 @@ async def report(ctx, error_report):
 
 @bot.command()
 async def setup(ctx):
+    guild = ctx.guild
+
     if ctx.author.id not in config["maintainers"]:
         return [(None, "Only maintainers can run the setup process.")]
 
@@ -235,21 +236,8 @@ async def setup(ctx):
 
 
 @bot.command()
-async def leaveordelete(ctx):
-    cnt = 0
-    for guild in bot.guilds:
-        try:
-            await guild.delete()
-            cnt += 1
-        except:
-            if guild.member_count <= 2:
-                await guild.leave()
-                cnt += 1
-
-
-@bot.command()
 async def test123(ctx):
-    if not ctx.author.id in config["maintainers"]:
+    if ctx.author.id not in config["maintainers"]:
         await ctx.send("Sorry you're not allowed to test")
         return
 

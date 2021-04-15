@@ -208,11 +208,13 @@ Display the top 10 events this year for a team, sorted by rating points.
         ]  # remove CTF points column, not interesting
 
         unscored = [
-            l for l in table if l[2] == "0.000*"
+            line for line in table if line[2] == "0.000*"
         ]  # add unscored events to the bottom
 
-        table = [l for l in table if l[2] != "0.000*"][:11]  # get top 10 (+1 header)
-        score = round(sum([float(l[2]) for l in table[1:]]), 3)
+        table = [line for line in table if line[2] != "0.000*"][
+            :11
+        ]  # get top 10 (+1 header)
+        score = round(sum([float(line[2]) for line in table[1:]]), 3)
 
         if len(unscored) > 0:
             table.append(["", "", ""])
