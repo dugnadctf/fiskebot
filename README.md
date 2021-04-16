@@ -18,6 +18,7 @@ The only required variable is `DISCORD_TOKEN`, the rest will use the default val
 | `LOGGING_DISCORD_LEVEL` | `ERROR` | The minimum level for logging into the logging channel (`CHANNEL_LOGGING_ID`) |
 | `COMMAND_PREFIX` | `!` | Prefix for all the bot commands (i.e. `!done`) |
 | `MAINTAINERS` |  | Comma-separated list with profile IDs of the bot maintainers, these users have permission to export and delete CTFs |
+| `GUILD_IDS` |  | Comma-separated list with guild IDs of where the bot should run. Used for executing CTF channel cleanup manually |
 | `CATEGORY_WORKING` | `working` | Category where channels for challenges that are currently being worked on during a CTF |
 | `CATEGORY_DONE` | `done` | Category where channels for challenges that are marked as done during a CTF |
 | `CATEGORY_ARCHIVE_PREFIX` | `archive` | Category to move channels to when the CTF is over. There is a max limit on 50 channels per category. The bot wil automatically move channels to new categories when needed |
