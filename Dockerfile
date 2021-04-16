@@ -5,9 +5,13 @@ ENV APP_HOME /home/bot
 
 RUN groupadd -g 1000 -r ${NAME} && useradd -r -g ${NAME} -u 1000 ${NAME}
 
+RUN apt update && apt install -y \
+    gcc \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY requirements/base.txt requirements.txt
 
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 WORKDIR ${APP_HOME}
 
