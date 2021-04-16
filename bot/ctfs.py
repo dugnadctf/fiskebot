@@ -5,9 +5,9 @@ import db
 from bson import ObjectId
 from config import config
 from ctf_model import delete, exportChannels, save
-from discord.member import Member
 from discord.ext import commands
 from discord.ext.tasks import loop
+from discord.member import Member
 from discord.utils import get
 
 from bot import embed_help
