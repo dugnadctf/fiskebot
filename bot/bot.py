@@ -14,13 +14,6 @@ from logger import BotLogger
 
 logger = BotLogger("bot")
 
-try:
-    from config import config
-except ModuleNotFoundError:
-    if not os.path.isfile("config.py"):
-        logger.error("create a config file, feel free to copy config.py.default")
-        sys.exit(1)
-
 if not config["token"]:
     logger.error("DISCORD_TOKEN has not been set")
     exit(1)
