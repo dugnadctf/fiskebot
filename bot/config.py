@@ -9,6 +9,14 @@ def parse_variable(variable, default=None):
         return value if value and value != "" else default
 
 
+def parse_int_list(variable):
+    return [
+        int(item)
+        for item in parse_variable(variable, "").replace(" ", "").split(",")
+        if item.isdigit()
+    ]
+
+
 config = {
     # Connection to mongo backend database
     "db": parse_variable("MONGODB_URI", "mongodb://mongo:27017"),
@@ -42,11 +50,10 @@ config = {
     "prefix": parse_variable("COMMAND_PREFIX", "!"),
     # Profile ids of the maintainers of your installation. These will be messaged when running `!report "issue"` or `!request "feature"`
     # These people also have permission to export and delete ctfs.
-    "maintainers": [
-        int(maintainer)
-        for maintainer in parse_variable("MAINTAINERS", "").replace(" ", "").split(",")
-        if maintainer.isdigit()
-    ],
+    "maintainers": parse_int_list("MAINTAINERS"),
+    # The guild IDs where the bot is running, used for executing CTF channel cleanup manually
+    "guild_ids": parse_int_list("GUILD_IDS"),
+    # Channel categories
     "categories": {
         # Category where channels for challenges that are currently being worked on during a CTF
         "working": parse_variable("CATEGORY_WORKING", "working"),
