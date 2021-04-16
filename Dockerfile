@@ -1,4 +1,4 @@
-FROM python:latest
+FROM python:3.9.4-slim
 
 ENV NAME bot
 ENV APP_HOME /home/bot
