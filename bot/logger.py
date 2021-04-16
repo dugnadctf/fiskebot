@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import traceback
 
@@ -45,11 +44,9 @@ class BotLogger(logging.getLoggerClass()):
         )
 
         # Find the channel for logging
-        for channel in bot.get_all_channels():
-            if channel_name == channel.name:
-                logging_channel = channel
-                break
-        else:
+        logging_channel = bot.get_channel(config["channels"]["logging"])
+
+        if logging_channel is None:
             self.error(
                 f"Discord logging will not be enabled even though it is set, could not find channel with name: {channel_name}"
             )
@@ -58,23 +55,22 @@ class BotLogger(logging.getLoggerClass()):
         self.debug(f"Discord logging to channel: {repr(logging_channel)}")
 
         # Setup the custom Discord logging handler
-        discord_handler = DiscordHandler(logging_channel)
+        discord_handler = DiscordHandler(bot, logging_channel)
         discord_handler.setLevel(config["logging_discord_level"])
         discord_handler.setFormatter(self.bot_formatter)
         self.addHandler(discord_handler)
 
 
 class DiscordHandler(logging.Handler):
-    def __init__(self, channel):
+    def __init__(self, bot, channel):
         super(DiscordHandler, self).__init__()
         self.channel = channel
+        self.bot = bot
 
     def emit(self, record):
         try:
             message = f"```\n{self.format(record)}\n```"
-            loop = asyncio.get_event_loop()
-            # needed for await
-            loop.create_task(self.channel.send(message))
+            self.bot.loop.create_task(self.channel.send(message))
         except Exception as e:
             print("Unable to send log message to Discord")
             print(traceback.format_exc())

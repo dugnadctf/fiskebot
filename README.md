@@ -15,14 +15,14 @@ The only required variable is `DISCORD_TOKEN`, the rest will use the default val
 | `LOGGING_LEVEL` | `INFO` | The level of logging for alerting, etc. Uses the logging levels specified [here](https://docs.python.org/3/library/logging.html) |
 | `LOGGING_FORMAT` | `%(asctime)s:%(levelname)s:%(name)s: %(message)s` | Logging format, see [here](https://docs.python.org/3/library/logging.html#formatter-objects) |
 | `LOGGING_FILE` |  | If enabled, will send logging to this file |
-| `LOGGING_DISCORD_LEVEL` | `ERROR` | The minimum level for logging into the logging channel (`CHANNEL_LOGGING`) |
+| `LOGGING_DISCORD_LEVEL` | `ERROR` | The minimum level for logging into the logging channel (`CHANNEL_LOGGING_ID`) |
 | `COMMAND_PREFIX` | `!` | Prefix for all the bot commands (i.e. `!done`) |
 | `MAINTAINERS` |  | Comma-separated list with profile IDs of the bot maintainers, these users have permission to export and delete CTFs |
 | `CATEGORY_WORKING` | `working` | Category where channels for challenges that are currently being worked on during a CTF |
 | `CATEGORY_DONE` | `done` | Category where channels for challenges that are marked as done during a CTF |
 | `CATEGORY_ARCHIVE_PREFIX` | `archive` | Category to move channels to when the CTF is over. There is a max limit on 50 channels per category. The bot wil automatically move channels to new categories when needed |
 | `CHANNEL_EXPORT` | `export` | The channel to upload exports to |
-| `CHANNEL_LOGGING` |  | If enabled, will send logging to this channel, based on the `LOGGING_DISCORD_LEVEL` logging level |
+| `CHANNEL_LOGGING_ID` |  | If enabled, will send logging to this channel, based on the `LOGGING_DISCORD_LEVEL` logging level |
 | `CTFTIME_TEAM_ID` |  | CTFtime ID for the `!ctftime team` command |
 | `CTFTIME_TEAM_NAME` |  | CTFtime name for the `!ctftime team` command |
 
