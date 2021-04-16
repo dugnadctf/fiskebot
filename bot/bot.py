@@ -206,7 +206,7 @@ async def report(ctx, error_report):
 @bot.command()
 async def setup(ctx):
     if ctx.author.id not in config["maintainers"]:
-        return [(None, "Only maintainers can run the setup process.")]
+        return ctx.send("Only maintainers can run the setup process.")
 
     overwrites = {
         ctx.guild.default_role: ctf_model.basic_disallow,

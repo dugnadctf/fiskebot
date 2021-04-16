@@ -36,7 +36,7 @@ config = {
     ),
     # If enabled, will send logging to this file
     "logging_file": parse_variable("LOGGING_FILE"),
-    # The minimum level for logging into the logging channel (`CHANNEL_LOGGING`)
+    # The minimum level for logging into the logging channel (`CHANNEL_LOGGING_ID`)
     "logging_discord_level": parse_variable("LOGGING_DISCORD_LEVEL", "ERROR"),
     # Prefix for all the bot commands
     "prefix": parse_variable("COMMAND_PREFIX", "!"),
@@ -59,7 +59,7 @@ config = {
         # The channel to upload exports to
         "export": parse_variable("CHANNEL_EXPORT", "export"),
         # If enabled, will send logging to this channel, based on the `LOGGING_DISCORD_LEVEL` logging level
-        "logging": parse_variable("CHANNEL_LOGGING"),
+        "logging": parse_variable("CHANNEL_LOGGING_ID", 0),
     },
     # CTFtime id for the default team to lookup using the `!ctftime team` command
     "team": {
