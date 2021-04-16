@@ -223,20 +223,6 @@ async def setup(ctx):
 
 
 @bot.command()
-async def test123(ctx):
-    if ctx.author.id not in config["maintainers"]:
-        await ctx.send("Sorry you're not allowed to test")
-        return
-
-    guild = await bot.create_guild("Test igCTF bot")
-    channel = await guild.create_text_channel("test")
-    invite = await channel.create_invite(max_age=0, max_uses=1)
-    await ctx.send(f"{invite.url}")
-    await asyncio.sleep(300)
-    await guild.delete()
-
-
-@bot.command()
 async def su(ctx):
     for role in ctx.guild.roles:
         if str(role) == ADMIN_ROLE_NAME:
@@ -252,18 +238,6 @@ async def exit(ctx):
     for role in ctx.guild.roles:
         if str(role) == ADMIN_ROLE_NAME:
             await ctx.author.remove_roles(role)
-
-
-@bot.command(aliases=["="])
-async def inequationgroup(ctx):
-    await ctx.send(
-        "Congratulations you found the easteregg!\nYou also found the coolest CTF group in the world - Inequation Group"
-    )
-
-
-@bot.command()
-async def sudo(ctx):
-    await ctx.send("This incident will be reported. https://xkcd.com/838/")
 
 
 # -------------------
