@@ -205,14 +205,12 @@ async def report(ctx, error_report):
 
 @bot.command()
 async def setup(ctx):
-    guild = ctx.guild
-
     if ctx.author.id not in config["maintainers"]:
         return [(None, "Only maintainers can run the setup process.")]
 
     overwrites = {
-        guild.default_role: ctf_model.basic_disallow,
-        guild.me: ctf_model.basic_allow,
+        ctx.guild.default_role: ctf_model.basic_disallow,
+        ctx.guild.me: ctf_model.basic_allow,
     }
     existing_categories = [category.name for category in ctx.guild.categories]
     for category in [config["categories"]["working"], config["categories"]["done"]]:
@@ -228,7 +226,7 @@ async def setup(ctx):
     await ctx.guild.create_text_channel(
         config["channels"]["export"],
         overwrites={
-            guild.default_role: only_read,
+            ctx.guild.default_role: only_read,
         },
     )
 
