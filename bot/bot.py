@@ -93,6 +93,7 @@ async def on_command_error(ctx, err):
 
 @bot.event
 async def on_raw_reaction_add(payload):
+    logger.debug(f"Added reaction: {payload}")
     # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
     chan = bot.get_channel(payload.channel_id)
