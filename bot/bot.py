@@ -7,6 +7,7 @@ import traceback
 import ctf_model
 import db
 import discord
+from config import config
 from ctf_model import only_read
 from discord import Permissions
 from discord.ext import commands
