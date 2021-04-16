@@ -52,7 +52,6 @@ class Ctfs(commands.Cog):
     @loop(minutes=30)
     async def cleanup(self):
         for guild_id, guild in self.guilds.items():
-            print(guild)
             archived = sorted(
                 [
                     (ObjectId(ctf["_id"]).generation_time, ctf)
@@ -61,36 +60,26 @@ class Ctfs(commands.Cog):
                 ],
                 reverse=True,
             )
-            print(len(archived))
             if len(archived) <= self.limit:
                 return
             for time, ctf in archived[self.limit :]:
                 ids = []
-                print(time, ctf)
                 ids.append(ctf["chan_id"])
                 for chal in ctf["chals"]:
                     ids.append(int(str(chal)))
                 channels = [chn for chn in guild.channels if chn.id in ids]
-                print("channels", len(channels))
                 if len(channels) == 0:
                     return
-                print(len(channels))
                 CTF = await exportChannels(channels)
-                print("name", ctf["name"])
                 await save(guild, guild.name, ctf["name"], CTF)
-                print("saved")
                 await delete(guild, channels)
-                print("deleted")
                 break  # safety measure to take only one
 
     @cleanup.before_loop
     async def cleanup_before(self):
         await self.bot.wait_until_ready()
-        print(config["guild_ids"])
         for guild_id in config["guild_ids"]:
-            print(guild_id)
             self.guilds[guild_id] = self.bot.get_guild(guild_id)
-            print(self.guilds[guild_id])
 
     @ctf.command("help", aliases=["h", "man"])
     async def ctf_help(self, ctx):
@@ -378,12 +367,14 @@ def chk_fetch_chal(ctx):
 
 
 async def parse_user(guild, user):
+    # Only matches users because of "!", bots have "&", i.e. <@&
     mat = re.match(r"<@!{0,1}([0-9]+)>$", user)
     ret = None
     if mat:
         ret = await guild.fetch_member(int(mat[1]))
-    else:
-        return ret
+    if not ret:
+        raise ctf_model.TaskFailed(f"Invalid username: `{user}`, use @username")
+    return ret
 
 
 def setup(bot):
