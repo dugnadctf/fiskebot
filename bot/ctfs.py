@@ -238,7 +238,6 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
         aliases=["solve", "finish", "complete", "solved", "finished", "completed"]
     )
     async def done(self, ctx, *withlist: Member):
-        guild = ctx.channel.guild
         users = list(set(withlist))  # remove dups
         await respond(ctx, chk_fetch_chal(ctx).done, ctx.author, users)
 
