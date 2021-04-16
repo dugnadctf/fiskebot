@@ -5,6 +5,7 @@ import db
 from bson import ObjectId
 from config import config
 from ctf_model import delete, exportChannels, save
+from discord.member import Member
 from discord.ext import commands
 from discord.ext.tasks import loop
 from discord.utils import get
@@ -135,8 +136,7 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
 
     @commands.bot_has_permissions(manage_roles=True)
     @ctf.command("invite")
-    async def invite_ctf(self, ctx, user):
-        user = await parse_user(ctx.channel.guild, user)
+    async def invite_ctf(self, ctx, user: Member):
         await respond(ctx, chk_fetch_team(ctx).invite, ctx.author, user)
 
     @commands.bot_has_permissions(manage_roles=True)
@@ -220,8 +220,7 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
 
     @commands.bot_has_permissions(manage_channels=True)
     @chal.command("invite", aliases=["inv"])
-    async def invite_chal(self, ctx, user):
-        user = await parse_user(ctx.channel.guild, user)
+    async def invite_chal(self, ctx, user: Member):
         await respond(ctx, chk_fetch_chal(ctx).invite, ctx.author, user)
 
     @commands.bot_has_permissions(manage_channels=True)
@@ -230,7 +229,7 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
         "done",
         aliases=["solve", "finish", "complete", "solved", "finished", "completed"],
     )
-    async def done_alias(self, ctx, *withlist):
+    async def done_alias(self, ctx, *withlist: Member):
         await self.done(ctx, *withlist)
 
     @commands.bot_has_permissions(manage_channels=True)
@@ -238,10 +237,9 @@ Unarchives this ctf and all the respective challenges (this requires the bot has
     @chal.command(
         aliases=["solve", "finish", "complete", "solved", "finished", "completed"]
     )
-    async def done(self, ctx, *withlist):
+    async def done(self, ctx, *withlist: Member):
         guild = ctx.channel.guild
-        users = [await parse_user(guild, u) for u in withlist]
-        users = list(set(users))  # remove dups
+        users = list(set(withlist))  # remove dups
         await respond(ctx, chk_fetch_chal(ctx).done, ctx.author, users)
 
     @chal.command("help")
@@ -364,17 +362,6 @@ def chk_fetch_chal(ctx):
             "Please type this command in a challenge channel. You may need to join a challenge first."
         )
     return chal
-
-
-async def parse_user(guild, user):
-    # Only matches users because of "!", bots have "&", i.e. <@&
-    mat = re.match(r"<@!{0,1}([0-9]+)>$", user)
-    ret = None
-    if mat:
-        ret = await guild.fetch_member(int(mat[1]))
-    if not ret:
-        raise ctf_model.TaskFailed(f"Invalid username: `{user}`, use @username")
-    return ret
 
 
 def setup(bot):
