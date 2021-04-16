@@ -23,10 +23,6 @@ src_fork1 = "https://github.com/NullPxl/NullCTF"
 src_fork2 = "https://gitlab.com/inequationgroup/igCTF"
 src_fork3 = "https://github.com/ept-team/eptbot"
 
-LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s: %(message)s"
-
-logging.basicConfig(format=LOG_FORMAT, level=logging.WARN)
-
 client = discord.Client()
 bot = commands.Bot(command_prefix=config["prefix"])
 
