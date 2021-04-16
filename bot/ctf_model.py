@@ -377,7 +377,7 @@ class CtfTeam:
         # Add role for user
         role = chk_get_role(guild, team["role_id"])
         if role in user.roles:
-            raise TaskFailed(f"{user.mention} has already joined {self.name}")
+            raise TaskFailed(f"{user.name} has already joined {self.name}")
         await user.add_roles(role)
 
         return [
