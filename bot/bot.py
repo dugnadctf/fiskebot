@@ -93,14 +93,14 @@ async def on_command_error(ctx, err):
 
 @bot.event
 async def on_raw_reaction_add(payload):
-    # logger.debug("Added reaction: {payload}")
     # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
     chan = bot.get_channel(payload.channel_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
     member = await guild.fetch_member(payload.user_id)
-    # logger.debug(f"Guild: {guild}, Channel: {chan}, Team: {team}, Member: {member}")
     if guild and member and chan:
+        logger.debug(f"Added reaction: {payload}")
+        logger.debug(f"Guild: {guild}, Channel: {chan}, Team: {team}, Member: {member}")
         if team:
             role = guild.get_role(team["role_id"])
             await member.add_roles(role, reason="User wanted to join team")
@@ -109,13 +109,13 @@ async def on_raw_reaction_add(payload):
 
 @bot.event
 async def on_raw_reaction_remove(payload):
-    logger.debug(f"Removed reaction: {payload}")
     # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
     member = await guild.fetch_member(payload.user_id)
-    logger.debug(f"Guild: {guild}, Team: {team}, Member: {member}")
     if guild and member:
+        logger.debug(f"Removed reaction: {payload}")
+        logger.debug(f"Guild: {guild}, Team: {team}, Member: {member}")
         if team:
             role = guild.get_role(team["role_id"])
             await member.remove_roles(role, reason="User wanted to leave team")
