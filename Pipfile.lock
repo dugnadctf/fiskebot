@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "4d46d5e3762f5108f4016c02ef99210bcdda3bc3b855d728de5429c61f4dc9c5"
+            "sha256": "d26d0801f6936e828a159f415f8ae0bc006be8acdab8fc7e814951804939ce0f"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -300,11 +300,11 @@
         },
         "pylint": {
             "hashes": [
-                "sha256:5d77031694a5fb97ea95e828c8d10fc770a1df6eb3906067aaed42201a8a6a09",
-                "sha256:723e3db49555abaf9bf79dc474c6b9e2935ad82230b10c1138a71ea41ac0fff1"
+                "sha256:209d712ec870a0182df034ae19f347e725c1e615b2269519ab58a35b3fcbbe7a",
+                "sha256:bd38914c7731cdc518634a8d3c5585951302b6e2b6de60fbb3f7a0220e21eeee"
             ],
             "index": "pypi",
-            "version": "==2.3.1"
+            "version": "==2.7.4"
         },
         "pymongo": {
             "hashes": [
@@ -397,6 +397,13 @@
                 "sha256:8b74bedcbbbaca38ff6d7491d76f2b06b3592611af620f8426e82dddb04a5ced"
             ],
             "version": "==1.15.0"
+        },
+        "toml": {
+            "hashes": [
+                "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b",
+                "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"
+            ],
+            "version": "==0.10.2"
         },
         "urllib3": {
             "hashes": [
