@@ -58,6 +58,25 @@ def _find_chan(chantype, group, name):
     raise ValueError(f"Cannot find category {name}")
 
 
+async def _find_available_archive_channel(guild, current_channel_count):
+    for i in range(100):
+        category_name = f"{config['categories']['archive-prefix']}-{i}"
+        try:
+            category_archive = [
+                category
+                for category in guild.categories
+                if category.name == category_name
+            ][0]
+            current_category_channels = len(category_archive.channels)
+            if CATEGORY_CHANNEL_LIMIT - current_category_channels >= (
+                current_channel_count + 1
+            ):
+                break
+        except IndexError:
+            category_archive = await guild.create_category(category_name)
+    return category_archive
+
+
 find_category = functools.partial(_find_chan, "categories")
 find_text_channel = functools.partial(_find_chan, "text_channels")
 
@@ -194,7 +213,7 @@ class CtfTeam:
         return [
             (
                 None,
-                f"{name} ctf has been created! :tada: react to this message to join.",
+                f"{name} ctf has been created! :tada:! React to this message to join.",
             )
         ]
 
@@ -276,7 +295,7 @@ class CtfTeam:
         return [
             (
                 None,
-                f"Challenge `{name}` has been added! React to this message to work on <#{chan.id}>!`",
+                f"Challenge `{name}` has been added! React to this message to work on <#{chan.id}>!",
             )
         ]
 
@@ -292,18 +311,9 @@ class CtfTeam:
                 f'Failed to archive "{self.name}" as it has more than {CATEGORY_CHANNEL_LIMIT} channels in total'
             )
 
-        for i in range(100):
-            category = f"{config['categories']['archive-prefix']}-{i}"
-            try:
-                catg_archive = [
-                    catg for catg in guild.categories if catg.name == category
-                ][0]
-                current_catg_channels = len(catg_archive.channels)
-                if CATEGORY_CHANNEL_LIMIT - current_catg_channels >= total_channels:
-                    break
-            except IndexError:
-                catg_archive = await guild.create_category(category)
-                break
+        category_archive = await _find_available_archive_channel(
+            guild, len(self.challenges)
+        )
 
         # Update database
         chk_upd(
@@ -313,10 +323,10 @@ class CtfTeam:
 
         # Archive all challenge channels
         main_chan = guild.get_channel(cid)
-        await main_chan.edit(category=catg_archive)
+        await main_chan.edit(category=category_archive)
         # await main_chan.set_permissions(guild.default_role, overwrite=basic_read_send)
         for chal in self.challenges:
-            await chal._archive(catg_archive)
+            await chal._archive(category_archive)
 
         return [(None, f"{self.name} CTF has been archived.")]
 
@@ -352,7 +362,9 @@ class CtfTeam:
         guild = self.__guild
         teams = self.__teams
 
-        catg_archive = load_category(guild, config["categories"]["archive-prefix"])
+        category_archive = await _find_available_archive_channel(
+            guild, len(self.challenges)
+        )
 
         # Update database
         fullname = f"{self.name}-{name}"
@@ -361,7 +373,7 @@ class CtfTeam:
             fullname,
             teams.update_one({"chan_id": cid}, {"$pull": {"chals": chal.chan_id}}),
         )
-        await chal._delete(catg_archive)
+        await chal._delete(category_archive)
         self.refresh()
 
         return [(None, f'Challenge "{name}" is deleted, challenge channel archived.')]
