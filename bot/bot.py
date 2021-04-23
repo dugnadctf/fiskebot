@@ -8,9 +8,11 @@ import ctf_model
 import db
 import discord
 from config import config
+from constants import ADMIN_ROLE_NAME, SOURCES_TEXT
 from ctf_model import only_read
 from discord import Permissions
 from discord.ext import commands
+from helpers import helpers
 from logger import BotLogger
 
 logger = BotLogger("bot")
@@ -19,11 +21,6 @@ if not config["token"]:
     logger.error("DISCORD_TOKEN has not been set")
     exit(1)
 
-
-src_fork1 = "https://github.com/NullPxl/NullCTF"
-src_fork2 = "https://gitlab.com/inequationgroup/igCTF"
-src_fork3 = "https://github.com/ept-team/eptbot"
-
 client = discord.Client()
 bot = commands.Bot(command_prefix=config["prefix"])
 
@@ -31,11 +28,6 @@ intents = discord.Intents.default()
 intents.members = True
 
 bot.remove_command("help")
-
-ADMIN_ROLE_NAME = "tmp-admin"
-
-
-# -------------------
 
 
 @bot.event
@@ -130,45 +122,19 @@ async def embed_help(chan, help_topic, help_text):
 
 @bot.command()
 async def source(ctx):
-    await ctx.send(
-        f"Source: https://github.com/ekofiskctf/fiskebot\nForked from: {src_fork3}\nWho again forked from: {src_fork2}\nWho again forked from: {src_fork1}"
-    )
+    await ctx.send(SOURCES_TEXT)
 
 
 @bot.command()
-async def help(ctx, page=None):
-    help = f"""
-Fork from: {src_fork3}
-Who again forked from {src_fork2}
-Who again forked from {src_fork1}
-
-`!create <ctf name>`
-Create a text channel and role in the CTF category for a specified `ctf name`.
-(This requires the bot has manage channels permissions)
-
-`!ctf <action>...`
-You can only issue these commands in a channel that was created by the `!create` command.
-See `!ctf help` for more details.
-
-`!chal <action>...`
-You can only issue these commands in a channel that was created by the `!ctf add` command.
-See `!chal help` for more details.
-
-`!ctftime`
-List CTFtime commands.
-
-`!report <issue...>`
-report an issue to the maintainers
-
-`!request <request...>`
-request a new feature from the maintainers
-
-`!source`
-display source information
-""".replace(
-        "!", config["prefix"]
-    )
-    await embed_help(ctx, "Help for core commands", help)
+async def help(ctx, category=None):
+    helper = helpers["core"]
+    if category:
+        category = category.lower()
+        if category[:3] == "ctf":
+            helper = helpers["ctf"]
+        elif category[:4] == "chal":
+            helper = helpers["challenge"]
+    await embed_help(ctx, helper["title"], helper["text"])
 
 
 @bot.command()

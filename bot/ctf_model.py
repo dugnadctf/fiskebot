@@ -276,7 +276,7 @@ class CtfTeam:
         return [
             (
                 None,
-                f"Challenge `{name}` has been added! React to this message to work on <#{chan.id}>! Or type `!ctf working {name}`",
+                f"Challenge `{name}` has been added! React to this message to work on <#{chan.id}>!`",
             )
         ]
 
