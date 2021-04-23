@@ -1,9 +1,11 @@
 import os
 
 
-def parse_variable(variable, default=None):
+def parse_variable(variable, default=None, valid=None):
     value = os.getenv(variable, None)
-    if isinstance(default, int):
+    if default and valid and variable not in valid:
+        return default
+    elif isinstance(default, int):
         return int(value) if value and value.isdigit() else default
     else:
         return value if value and value != "" else default
@@ -68,6 +70,10 @@ config = {
         # If enabled, will send logging to this channel, based on the `LOGGING_DISCORD_LEVEL` logging level
         "logging": parse_variable("CHANNEL_LOGGING_ID", 0),
     },
+    # The delimiter for the channel names, must be one of "-" or "_". i.e. "-": "#ctf-challenge-name", "_": "#ctf_challenge_name"
+    "challenge_name_delimiter": parse_variable(
+        "CHALLENGE_NAME_DELIMITER", "-", valid=["-", "_"]
+    ),
     # CTFtime id for the default team to lookup using the `!ctftime team` command
     "team": {
         "id": parse_variable("CTFTIME_TEAM_ID", -1),
