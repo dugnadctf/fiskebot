@@ -38,7 +38,7 @@ class Ctfs(commands.Cog):
     @commands.guild_only()
     @commands.command()
     async def create(self, ctx, *name):
-        name = "_".join(name)
+        name = config["challenge_name_delimiter"].join(name)
         emoji = "🏃"
         messages = await respond_with_reaction(
             ctx, emoji, ctf_model.CtfTeam.create, ctx.channel.guild, name
@@ -53,7 +53,7 @@ class Ctfs(commands.Cog):
     @commands.bot_has_permissions(manage_channels=True)
     @commands.command()
     async def add(self, ctx, *words):
-        name = "_".join(words)
+        name = config["challenge_name_delimiter"].join(words)
         name = check_name(name)
         emoji = "🔨"
         await respond_with_reaction(ctx, emoji, chk_fetch_team(ctx).add_chal, name)
@@ -215,8 +215,8 @@ def check_name(name):
     if not re.match(r"[-._!0-9A-Za-z æøåÆØÅ]+$", name):
         raise ctf_model.TaskFailed("Challenge contains invalid characters!")
 
-    # Replace spaces with a dash, because discord does it :/
-    return re.sub(r" +", "-", name).lower()
+    # Replace spaces with a dash with a configured delimiter
+    return re.sub(r" +", config["challenge_name_delimiter"], name).lower()
 
 
 def chk_fetch_team_by_name(ctx, name):
