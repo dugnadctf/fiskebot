@@ -11,6 +11,7 @@ from discord.ext import commands
 
 CATEGORY_CHANNEL_LIMIT = 50
 
+
 # Globals
 # > done_id
 # > archive_id > working_id
@@ -58,9 +59,11 @@ def _find_chan(chantype, group, name):
     raise ValueError(f"Cannot find category {name}")
 
 
-async def _find_available_archive_channel(guild, current_channel_count):
-    for i in range(100):
+async def _find_available_archive_category(guild, current_channel_count, start):
+    archive_number = 0
+    for i in range(start, 15):
         category_name = f"{config['categories']['archive-prefix']}-{i}"
+        archive_number = i
         try:
             category_archive = [
                 category
@@ -69,12 +72,13 @@ async def _find_available_archive_channel(guild, current_channel_count):
             ][0]
             current_category_channels = len(category_archive.channels)
             if CATEGORY_CHANNEL_LIMIT - current_category_channels >= (
-                current_channel_count + 1
+                current_channel_count
             ):
                 break
         except IndexError:
             category_archive = await guild.create_category(category_name)
-    return category_archive
+            break
+    return category_archive, archive_number
 
 
 find_category = functools.partial(_find_chan, "categories")
@@ -306,14 +310,20 @@ class CtfTeam:
         teams = self.__teams
 
         total_channels = len(self.challenges) + 1
-        if total_channels > CATEGORY_CHANNEL_LIMIT:
-            raise TaskFailed(
-                f'Failed to archive "{self.name}" as it has more than {CATEGORY_CHANNEL_LIMIT} channels in total'
+        category_archives = []
+        previous_picked_archive = -1
+        while total_channels != 0:
+            channels_in_category = min(CATEGORY_CHANNEL_LIMIT, total_channels)
+            category, previous_picked_archive = await _find_available_archive_category(
+                guild, channels_in_category, previous_picked_archive + 1
             )
-
-        category_archive = await _find_available_archive_channel(
-            guild, len(self.challenges)
-        )
+            category_archives.append(
+                {
+                    "channels": channels_in_category,
+                    "category": category,
+                }
+            )
+            total_channels -= channels_in_category
 
         # Update database
         chk_upd(
@@ -323,10 +333,16 @@ class CtfTeam:
 
         # Archive all challenge channels
         main_chan = guild.get_channel(cid)
-        await main_chan.edit(category=category_archive)
         # await main_chan.set_permissions(guild.default_role, overwrite=basic_read_send)
-        for chal in self.challenges:
-            await chal._archive(category_archive)
+        category_archives[-1]["channels"] -= 1
+
+        for i, d in enumerate(category_archives):
+            for ix in range(
+                i * CATEGORY_CHANNEL_LIMIT, i * CATEGORY_CHANNEL_LIMIT + d["channels"]
+            ):
+                await self.challenges[ix]._archive(d["category"])
+
+        await main_chan.edit(category=category_archives[-1]["category"])
 
         return [(None, f"{self.name} CTF has been archived.")]
 
@@ -362,7 +378,7 @@ class CtfTeam:
         guild = self.__guild
         teams = self.__teams
 
-        category_archive = await _find_available_archive_channel(
+        category_archive = await _find_available_archive_category(
             guild, len(self.challenges)
         )
 
