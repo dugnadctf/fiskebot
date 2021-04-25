@@ -53,6 +53,9 @@ Unarchives this CTF and all the respective challenges (this requires the bot has
 
 `!status`
 Lists the status (unsolved, or solved and by whom) of each challenge in the CTF.
+
+`!ctf deletectf ctf_name`
+Deletes the CTF and it's challenge channels, provide the CTF name as an argument to this command
 """.replace(
     "!", config["prefix"]
 )
