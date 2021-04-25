@@ -430,6 +430,21 @@ class CtfTeam:
             raise ValueError(f"{self.__chan_id}: Invalid CTF channel ID")
         self.__teamdata = team
 
+    async def deletectf(self, author, confirmation):
+        if author.id not in config["maintainers"]:
+            raise TaskFailed("Only maintainers can export CTFs.")
+
+        if not self.is_archived:
+            raise TaskFailed("This is not archived!")
+
+        if confirmation != self.name:
+            raise TaskFailed(
+                f"Confirmation does not equal name, write !ctf deletectf {self.name}"
+            )
+
+        for c in [self.__chan_id] + [ch.chan_id for ch in self.challenges]:
+            await self.__guild.get_channel(c).delete(reason="delete chal")
+
 
 class Challenge:
     __chals__ = {}

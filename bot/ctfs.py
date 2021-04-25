@@ -96,6 +96,11 @@ class Ctfs(commands.Cog):
     async def unarchive(self, ctx):
         await respond(ctx, chk_fetch_team(ctx).unarchive)
 
+    @commands.has_permissions(manage_channels=True)
+    @commands.command()
+    async def deletectf(self, ctx, ctf_name):
+        await chk_fetch_team(ctx).deletectf(ctx.author, ctf_name)
+
     @commands.command()
     async def status(self, ctx):
         chals = chk_fetch_team(ctx).challenges
