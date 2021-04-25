@@ -203,6 +203,9 @@ Display the top 10 events this year for a team, sorted by rating points.
         else:
             msg = await ctx.send(f"Looking up scores for {team} with id {team_id}...")
         table = get_scores(team_id, year)
+        if not table:
+            await ctx.send(f"Team `{team}` has not played any events.")
+            return
         table = [
             line[:2] + line[3:4] for line in table
         ]  # remove CTF points column, not interesting
@@ -416,6 +419,8 @@ def get_scores(team_id, year=None):
         now = datetime.now()
         year = now.year
     lines = doc.xpath(f'//div[@id="rating_{str(year)}"]//table//tr')
+    if len(lines) == 0:
+        return None
     column_names = lines[0].xpath(".//th/text()")
     column_names = ["Place", "Event", "CTF Points", "Rating Points"]
     lines = lines[1:]
