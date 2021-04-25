@@ -432,18 +432,18 @@ class CtfTeam:
 
     async def deletectf(self, author, confirmation):
         if author.id not in config["maintainers"]:
-            raise TaskFailed("Only maintainers can export CTFs.")
+            raise TaskFailed("Only maintainers can delete CTFs.")
 
         if not self.is_archived:
-            raise TaskFailed("This is not archived!")
+            raise TaskFailed("The CTF has to be archived before deleting!")
 
         if confirmation != self.name:
             raise TaskFailed(
-                f"Confirmation does not equal name, write !ctf deletectf {self.name}"
+                f"Confirmation does not equal the CTF name. Write !deletectf {self.name}"
             )
 
         for c in [self.__chan_id] + [ch.chan_id for ch in self.challenges]:
-            await self.__guild.get_channel(c).delete(reason="delete chal")
+            await self.__guild.get_channel(c).delete(reason="Delete CTF")
 
 
 class Challenge:
