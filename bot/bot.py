@@ -53,11 +53,7 @@ async def on_error(evt_type, ctx=None):
 
 @bot.event
 async def on_command_error(ctx, err):
-    logger.error(
-        f"Ignoring exception in command {ctx.command}\n"
-        + "".join(traceback.format_exception(type(err), err, err.__traceback__))
-    )
-    logger.info(f"Error occured with: {ctx.command}\n{err}\n")
+    logger.debug(f"Command error occured with command: {ctx.command}\n{err}\n")
     if isinstance(err, commands.MissingPermissions):
         await ctx.send(
             "You do not have permission to do that! ¯\\_(ツ)_/¯"
@@ -78,6 +74,10 @@ async def on_command_error(ctx, err):
     elif isinstance(err, commands.NoPrivateMessage):
         await ctx.send(":bangbang: This command cannot be used in PMs.")
     else:
+        logger.error(
+            f"Exception in command {ctx.command}\n"
+            + "".join(traceback.format_exception(type(err), err, err.__traceback__))
+        )
         msg = await ctx.send(f"An error has occurred... :disappointed: \n`{err}`\n")
         await asyncio.sleep(15)
         await msg.delete()
