@@ -288,4 +288,7 @@ $RECYCLE.BIN/
 
 # iCloud
 *.icloud
-# End of https://www.gitignore.io/api/visualstudiocode,linux,macos,jetbrains+all,python,windows
+#
+# We use docker
+Pipfile
+Pipfile.lock
