@@ -11,6 +11,7 @@ services:
       - "LOGGING_FORMAT=${LOGGING_FORMAT:-%(asctime)s:%(levelname)s:%(name)s: %(message)s}"
       - "LOGGING_FILE=${LOGGING_FILE}"
       - "LOGGING_DISCORD_LEVEL=${LOGGING_DISCORD_LEVEL:-ERROR}"
+      - "ARCHIVE_ACCESS_TO_ALL_USERS=${ARCHIVE_ACCESS_TO_ALL_USERS:-false}"
       - "COMMAND_PREFIX=${COMMAND_PREFIX:-!}"
       - "MAINTAINERS=${MAINTAINERS}"
       - "GUILD_IDS=${GUILD_IDS}"

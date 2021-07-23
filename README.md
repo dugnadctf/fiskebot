@@ -17,6 +17,7 @@ The only required variable is `DISCORD_TOKEN`, the rest will use the default val
 | `LOGGING_FORMAT` | `%(asctime)s:%(levelname)s:%(name)s: %(message)s` | Logging format, see [here](https://docs.python.org/3/library/logging.html#formatter-objects) |
 | `LOGGING_FILE` |  | If enabled, will send logging to this file |
 | `LOGGING_DISCORD_LEVEL` | `ERROR` | The minimum level for logging into the logging channel (`CHANNEL_LOGGING_ID`) |
+| `ARCHIVE_ACCESS_TO_ALL_USERS` | `false` | Should all the users in the Discord Server gain access to the CTF channels when the CTF is archived? Set to `true` if so. |
 | `COMMAND_PREFIX` | `!` | Prefix for all the bot commands (i.e. `!done`) |
 | `MAINTAINERS` |  | Comma-separated list with profile IDs of the bot maintainers, these users have permission to export and delete CTFs |
 | `GUILD_IDS` |  | Comma-separated list with guild IDs of where the bot should run. Used for executing CTF channel cleanup manually |
