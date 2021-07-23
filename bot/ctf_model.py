@@ -59,6 +59,10 @@ def _find_chan(chantype, group, name):
     raise ValueError(f"Cannot find category {name}")
 
 
+def format_role_name(ctf_name):
+    return f"{ctf_name}_team".lower()
+
+
 async def _find_available_archive_category(guild, current_channel_count, start):
     archive_number = 0
     for i in range(start, 15):
@@ -182,7 +186,7 @@ class CtfTeam:
             return [(ValueError, f"`{name}` already exists as a role :grimacing:")]
 
         # Create role
-        role_name = f"{name}_team"
+        role_name = format_role_name(name)
         role = await guild.create_role(name=role_name, mentionable=True)
 
         # Create channel
@@ -217,7 +221,7 @@ class CtfTeam:
         return [
             (
                 None,
-                f"{name} ctf has been created! :tada:! React to this message to join.",
+                f"<#{chan.id}> (`{name}`) has been created! :tada:! React to this message to join.",
             )
         ]
 
@@ -458,11 +462,14 @@ class CtfTeam:
 
         if confirmation != self.name:
             raise TaskFailed(
-                f"Confirmation does not equal the CTF name. Write !deletectf {self.name}"
+                f"Confirmation does not equal the CTF name. Execute `!deletectf {self.name}`"
             )
 
         for c in [self.__chan_id] + [ch.chan_id for ch in self.challenges]:
-            await self.__guild.get_channel(c).delete(reason="Delete CTF")
+            await self.__guild.get_channel(c).delete(reason="Deleting CTF")
+
+        role = chk_get_role(self.__guild, self.__teamdata["role_id"])
+        await role.delete(reason="Deleting CTF")
 
 
 class Challenge:
@@ -822,32 +829,34 @@ async def save(guild, guild_name, ctf_name, CTF):
     with open(bson_file, "wb") as w:
         w.write(bson.BSON.encode(CTF))
 
+    export_channel = config["channels"]["export"]
     for chn in guild.text_channels:
-        if chn.name == config["channels"]["export"]:
+        if chn.name == export_channel:
             await chn.send(files=[discord.File(bson_file), discord.File(json_file)])
             break
     else:
         return [
             (
                 None,
-                f"Saved JSON, but couldn't find a bot channel `{config['channels']['export']}` to upload the writeup to",
+                f"Saved JSON, but couldn't find a bot channel `{export_channel}` to upload the CTF archive to",
             )
         ]
 
     return [
         (
             None,
-            f"{ctf_name} CTF has been exported. Verify and issue the `!ctf deletectf` command",
+            f"`{ctf_name}` CTF has been exported. Verify in <#{export_channel}> and execute `!deletectf {ctf_name}`",
         )
     ]
 
 
 async def delete(guild, channels):
+    # TODO: Dirty method to find the roles, we should rather use the role_id directly
     for role in guild.roles:
-        if f"{channels[0].name}_" in role.name.lower():
+        role_name = format_role_name(channels[0].name)
+        if role_name == role.name.lower():
             await role.delete(reason="exporting CTF")
             break
-
     for chn in channels:
         await chn.delete(reason="exporting CTF")
     return []
