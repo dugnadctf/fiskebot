@@ -139,8 +139,8 @@ async def help(ctx, category=None):
 
 @bot.command()
 async def request(ctx, feature):
-    for cid in config["maintainers"]:
-        creator = bot.get_user(cid)
+    for channel_id in config["maintainers"]:
+        creator = bot.get_user(channel_id)
         authors_name = str(ctx.author)
         await creator.send(f""":pencil: {authors_name}: {feature}""")
     await ctx.send(f""":pencil: Thanks, "{feature}" has been requested!""")
@@ -148,8 +148,8 @@ async def request(ctx, feature):
 
 @bot.command()
 async def report(ctx, error_report):
-    for cid in config["maintainers"]:
-        creator = bot.get_user(cid)
+    for channel_id in config["maintainers"]:
+        creator = bot.get_user(channel_id)
         authors_name = str(ctx.author)
         await creator.send(
             f""":triangular_flag_on_post: {authors_name}: {error_report}"""
