@@ -644,7 +644,7 @@ class Challenge:
         return [
             (
                 self.ctf_id,
-                f'{self.team.mention} :tada: "{self.name}" has been completed by {mentions}!',
+                f"{self.team.mention} :tada: <#{cid}> has been completed by {mentions}!",
             ),
             (None, "Challenge moved to done!"),
         ]
@@ -711,7 +711,7 @@ class Challenge:
             (None, f'Reopened "{self.name}" as not done'),
             (
                 self.ctf_id,
-                f"""{self.team.mention} "{self.name}" is now undone. :weary:""",
+                f"""{self.team.mention} <#{cid}> is now undone. :weary:""",
             ),
         ]
 
