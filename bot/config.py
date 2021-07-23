@@ -5,6 +5,8 @@ def parse_variable(variable, default=None, valid=None):
     value = os.getenv(variable, None)
     if default and valid and variable not in valid:
         return default
+    elif isinstance(default, bool):
+        return True if value.lower() in ["true", "1", "t", "y", "yes"] else False
     elif isinstance(default, int):
         return int(value) if value and value.isdigit() else default
     else:
@@ -48,6 +50,8 @@ config = {
     "logging_file": parse_variable("LOGGING_FILE"),
     # The minimum level for logging into the logging channel (`CHANNEL_LOGGING_ID`)
     "logging_discord_level": parse_variable("LOGGING_DISCORD_LEVEL", "ERROR"),
+    # Should all the users in the Discord Server gain access to the CTF channels when the CTF is archived? Set to `true` if so.
+    "archive_access_to_all_users": parse_variable("ARCHIVE_ACCESS_TO_ALL_USERS", False),
     # Prefix for all the bot commands
     "prefix": parse_variable("COMMAND_PREFIX", "!"),
     # Profile ids of the maintainers of your installation. These will be messaged when running `!report "issue"` or `!request "feature"`

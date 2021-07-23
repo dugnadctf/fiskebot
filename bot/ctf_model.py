@@ -333,7 +333,10 @@ class CtfTeam:
 
         # Archive all challenge channels
         main_chan = guild.get_channel(cid)
-        # await main_chan.set_permissions(guild.default_role, overwrite=basic_read_send)
+        if config["archive_access_to_all_users"]:
+            await main_chan.set_permissions(
+                guild.default_role, overwrite=basic_read_send
+            )
         category_archives[-1]["channels"] -= 1
 
         for i, d in enumerate(category_archives):
@@ -566,7 +569,10 @@ class Challenge:
         channel = guild.get_channel(cid)
         if channel is not None:
             await channel.edit(category=catg_archive)
-            # await channel.set_permissions(guild.default_role, overwrite=basic_read_send)
+            if config["archive_access_to_all_users"]:
+                await channel.set_permissions(
+                    guild.default_role, overwrite=basic_read_send
+                )
             self.refresh()
         else:
             raise ValueError(f"Couldn't find channel {cid}")
