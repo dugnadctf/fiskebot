@@ -93,10 +93,17 @@ async def on_raw_reaction_add(payload):
     if guild and member and chan:
         # logger.debug(f"Added reaction: {payload}")
         # logger.debug(f"Guild: {guild}, Channel: {chan}, Team: {team}, Member: {member}")
-        if team:
-            role = guild.get_role(team["role_id"])
-            await member.add_roles(role, reason="User wanted to join team")
-            logger.debug(f"Added role {role} to user {member}")
+        if not team:
+            # logger.error(f"Not adding role. Could find team")
+            return
+        role = guild.get_role(team["role_id"])
+        if not role:
+            logger.error(f"Not adding role. Could not find role ID {team['role_id']} in Discord")
+            logger.error(team)
+            return
+
+        await member.add_roles(role, reason="User wanted to join team")
+        logger.debug(f"Added role {role} to user {member}")
 
 
 @bot.event
@@ -108,10 +115,16 @@ async def on_raw_reaction_remove(payload):
     if guild and member:
         # logger.debug(f"Removed reaction: {payload}")
         # logger.debug(f"Guild: {guild}, Team: {team}, Member: {member}")
-        if team:
-            role = guild.get_role(team["role_id"])
-            await member.remove_roles(role, reason="User wanted to leave team")
-            logger.debug(f"Removed role {role} from user {member}")
+        if not team:
+            # logger.error(f"Not removing role. Could find team")
+            return
+        role = guild.get_role(team["role_id"])
+        if not role:
+            logger.error(f"Not removing role. Could not find role ID {team['role_id']}")
+            logger.error(team)
+            return
+        await member.remove_roles(role, reason="User wanted to leave team")
+        logger.debug(f"Removed role {role} from user {member}")
 
 
 async def embed_help(chan, help_topic, help_text):
