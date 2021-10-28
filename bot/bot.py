@@ -98,7 +98,9 @@ async def on_raw_reaction_add(payload):
             return
         role = guild.get_role(team["role_id"])
         if not role:
-            logger.error(f"Not adding role. Could not find role ID {team['role_id']} in Discord")
+            logger.error(
+                f"Not adding role. Could not find role ID {team['role_id']} in Discord"
+            )
             logger.error(team)
             return
 
