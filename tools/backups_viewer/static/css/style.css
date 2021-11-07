@@ -1,0 +1,43 @@
+.container {
+  width: 90%;
+}
+
+.collection {
+  border: 0;
+}
+
+code {
+  white-space: pre-wrap;       /* css-3 */
+  white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+  white-space: -pre-wrap;      /* Opera 4-6 */
+  white-space: -o-pre-wrap;    /* Opera 7 */
+  word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+
+.comma:not(:first-child) {
+  margin-left: -.3em;  
+}
+
+.comma:first-child:empty ~ .comma:not(:empty) {
+  margin-left: 0;  
+}
+
+.comma:first-child:empty ~ .comma:not(:empty) ~ .comma:not(:empty) {
+  margin-left: -.3em;  
+}
+
+.comma:empty {
+  display: none;
+}
+
+.comma:not(:first-child):before {
+  content: ", ";
+}
+
+.comma:empty + .comma:not(:empty):before {
+  content : "";
+}
+
+.comma:not(:empty) ~ .comma:empty + .comma:not(:empty):before {
+  content : ", ";
+}

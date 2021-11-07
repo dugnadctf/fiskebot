@@ -1,0 +1,21 @@
+version: "2.1"
+services:
+  webapp:
+    build: .
+    image: ekofiskctf/fiskebot_backups_viewer
+    restart: always
+    environment:
+      - "BACKUPS_DIRECTORY=${BACKUPS_DIRECTORY}"
+      - "STATE_JSON_FILE=${STATE_JSON_FILE:-state.json}"
+      - "IGNORE_NAMES=${IGNORE_NAMES:-fiskebot}"
+      - "PAGE_NAME=${PAGE_NAME:-fiskebot}"
+      - "PAGE_COLOR=${PAGE_COLOR:-#AC0A2B}"
+      - "UPDATE_STATE_SECONDS=${UPDATE_STATE_SECONDS:-300}"
+      - "SEARCH_RESULT_COUNT_LIMIT=${SEARCH_RESULT_COUNT_LIMIT:-500}"
+      - "FUZZY_SEARCH_THRESHOLD=${FUZZY_SEARCH_THRESHOLD:-70}"
+      - "IS_DOCKER=True"
+    volumes:
+      - "${BACKUPS_DIRECTORY}:/code/fiskebot/backups:ro"
+    ports:
+      - "127.0.0.1:5000:5000"
+    stop_signal: SIGKILL

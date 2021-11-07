@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block title %}CTF list{% endblock %}
+{% block body %}
+<table>
+  <thead>
+    <tr>
+        <th>Name</th>
+        <th>Date</th>
+        <th>Channel Count</th>
+        <th>Message Count</th>
+        <th>Channels</th>
+        <th>Participants</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for ctf_id, ctf in ctf_list.items() %}
+  <tr>
+    <td><a href="/ctf/{{ ctf_id }}" target="_blank">{{ ctf["name"] }}</a></td>
+    <td>{{ ctf["formatted_date"] }}</td>
+    <td>{{ ctf["challenges"]|length }}</td>
+    <td>{{ ctf["message_count"] }}</td>
+    <td>
+      {% for challenge in ctf["challenges"] %}
+        <span class="comma"><a href="/ctf/{{ ctf_id }}#{{ challenge["name"] }}" target="_blank">{{ challenge["name"] }}</a></span>
+      {% endfor %}
+    </td>
+    <td>
+      {% for user_id, participant in ctf["participants"].items() if participant["name"] not in ignore_names %}
+        <span class="comma">{{ participant["name"] }}</span>
+      {% endfor %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
