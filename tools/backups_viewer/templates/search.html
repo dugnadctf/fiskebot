@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{% block title %}Search{% endblock %}
+{% block sub_pages %}<a class="breadcrumb">Search</a>{% endblock %}
+{% block body %}
+<h1>Search</h1>
+
+{% for ctf_id, ctf in search_results.items() %}
+  {% for challenge_name, messages in ctf["challenges"].items() %}
+    <h5 id="{{ challenge_name }}"><a href="/ctf/{{ ctf_id }}#{{ challenge_name }}" target="_blank">{{ ctf["name"] }}-{{ challenge_name }}</a></h3>
+
+    <ul class="collection">
+    {% for message in messages %}
+      <li class="collection-item avatar" id="{{ message["id"] }}">
+        <img src="{{ users[message["user_id"]]["avatar_url"] }}" alt="" class="circle">
+        <span class="title"><b>{{ users[message["user_id"]]["name"] }}</b></span>
+        <p>
+        {% if not message["is_safe"] %}
+          {{ message["content"] | safe }}
+        {% else %}
+          {{ message["content"] }}
+        {% endif %}
+        {% for attachment in message["attachments"] %}
+          {% set file_type = attachment["filename"].split('.') %}
+          {% if file_type[-1].lower() in ["jpg", "jpeg", "png", "gif"] %}
+          <div><a href="{{ attachment["url"] }}" alt="{{ attachment["filename"] }} " target="_blank"><img src="{{ attachment["url"] }}" style="max-width: 200px" /></a></div>
+          {% else %}
+          <div><b><i>Attachment:</i></b> <a href="{{ attachment["url"] }}" target="_blank">{{ attachment["filename"] }}</a></div>
+          {% endif %}
+        {% endfor %}
+        </p>
+        <a href="/ctf/{{ ctf_id }}#{{ message["id"] }}" class="secondary-content" target="_blank">{{ message["date"] }}</a>
+      </li>
+    {% endfor %}
+    </ul>
+  {% endfor %}
+{% endfor %}
+{% endblock %}

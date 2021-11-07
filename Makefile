@@ -5,12 +5,12 @@ help:
 
 fixme: build
 	echo "Starting linting"
-	docker run --rm -v "${PWD}:/home/bot" --user="1000:1000" -i bot-tester "bash" "-c" "cd /home/bot && isort bot && black bot"
+	docker run --rm -v "${PWD}:/home/bot" --user="1000:1000" -i bot-tester "bash" "-c" "cd /home/bot && isort bot && isort tools && black bot && black tools"
 	echo "Linting done!"
 
 check: build
 	echo "Checking linting"
-	docker run --rm -v "${PWD}:/home/bot" -i bot-tester "bash" "-c" "cd /home/bot && tox -e isort -e flake8 -e black"
+	docker run --rm -v "${PWD}:/home/bot" -i bot-tester "bash" "-c" "cd /home/bot && tox -e isort_bot && tox -e isort_tools -e flake8 -e black_bot -e black_tools"
 
 build:
 	echo "building bot-tester"

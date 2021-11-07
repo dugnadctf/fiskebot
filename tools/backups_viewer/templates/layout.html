@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="/static/js/materialize.min.js"></script>
+    <link rel="stylesheet" href="/static/css/materialize.min.css">
+    <link rel="stylesheet" href="/static/css/material_icons.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <title>{% block title %}{% endblock %}</title>
+  </head>
+  <body>
+    <nav style="background-color: {{ page_color }}">
+      <div class="nav-wrapper">
+        <div class="col s12" style="padding-left: 20px;">
+          <a href="/" class="breadcrumb">{{ page_name }}</a>
+          {% block sub_pages %}{% endblock %}
+          <div class="right" style="width: 400px;">
+            <form action="/search">
+              <div class="input-field">
+                <input id="search" name="search" type="search" required>
+                <label class="label-icon" for="search"><i class="material-icons">search</i></label>
+                <i class="material-icons">close</i>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div class="container">
+      {% block body %}{% endblock %}
+    </div>
+  </body>
+</html>
