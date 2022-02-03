@@ -169,7 +169,7 @@ class Ctfs(commands.Cog):
                 return
             for time, ctf in archived[self.limit :]:
                 ids = []
-                ids.append(ctf["chan_id"])
+                ids.append(ctf["channel_id"])
                 for chal in ctf["chals"]:
                     ids.append(int(str(chal)))
                 channels = [chn for chn in guild.channels if chn.id in ids]
@@ -194,8 +194,8 @@ async def respond(ctx, callback, *args):
     messages = []
     guild = ctx.channel.guild
     async with ctx.channel.typing():
-        for chan_id, msg in await callback(*args):
-            chan = guild.get_channel(chan_id) if chan_id else ctx.channel
+        for channel_id, msg in await callback(*args):
+            chan = guild.get_channel(channel_id) if channel_id else ctx.channel
             msg = await chan.send(msg)
             messages.append(msg)
     return messages
@@ -205,8 +205,8 @@ async def respond_with_reaction(ctx, emoji, callback, *args):
     messages = []
     guild = ctx.channel.guild
     async with ctx.channel.typing():
-        for chan_id, msg in await callback(*args):
-            chan = guild.get_channel(chan_id) if chan_id else ctx.channel
+        for channel_id, msg in await callback(*args):
+            chan = guild.get_channel(channel_id) if channel_id else ctx.channel
             msg = await chan.send(msg)
             await msg.add_reaction(emoji)
             messages.append(msg)
