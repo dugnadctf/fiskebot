@@ -9,6 +9,7 @@ from discord.ext import commands
 from discord.ext.tasks import loop
 from discord.member import Member
 from discord.utils import get
+from exceptions import ChannelDeleteFailedException, ChannelNotFoundException
 
 from bot import embed_help
 
@@ -88,18 +89,27 @@ class Ctfs(commands.Cog):
     @commands.has_permissions(manage_channels=True)
     @commands.command()
     async def archive(self, ctx):
-        await respond(ctx, chk_fetch_team(ctx).archive)
+        try:
+            await respond(ctx, chk_fetch_team(ctx).archive)
+        except ChannelNotFoundException as e:
+            await ctx.send(str(e))
 
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     @commands.has_permissions(manage_channels=True)
     @commands.command()
     async def unarchive(self, ctx):
-        await respond(ctx, chk_fetch_team(ctx).unarchive)
+        try:
+            await respond(ctx, chk_fetch_team(ctx).unarchive)
+        except ChannelNotFoundException as e:
+            await ctx.send(str(e))
 
     @commands.has_permissions(manage_channels=True)
     @commands.command()
     async def deletectf(self, ctx, ctf_name):
-        await chk_fetch_team(ctx).deletectf(ctx.author, ctf_name)
+        try:
+            await chk_fetch_team(ctx).deletectf(ctx.author, ctf_name)
+        except ChannelDeleteFailedException as e:
+            await ctx.send(str(e))
 
     @commands.command()
     async def status(self, ctx):

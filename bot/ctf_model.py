@@ -8,6 +8,7 @@ import discord
 import discord.member
 from config import config
 from discord.ext import commands
+from exceptions import ChannelDeleteFailedException, ChannelNotFoundException
 
 CATEGORY_CHANNEL_LIMIT = 50
 
@@ -450,7 +451,7 @@ class CtfTeam:
     def refresh(self):
         team = self.__teams.find_one({"chan_id": self.__chan_id})
         if not team:
-            raise ValueError(f"{self.__chan_id}: Invalid CTF channel ID")
+            raise ChannelNotFoundException(f"{self.__chan_id}: Invalid CTF channel ID")
         self.__teamdata = team
 
     async def deletectf(self, author, confirmation):
@@ -466,7 +467,12 @@ class CtfTeam:
             )
 
         for c in [self.__chan_id] + [ch.chan_id for ch in self.challenges]:
-            await self.__guild.get_channel(c).delete(reason="Deleting CTF")
+            try:
+                await self.__guild.get_channel(c).delete(reason="Deleting CTF")
+            except Exception as e:
+                raise ChannelDeleteFailedException(
+                    f"Deletion of channel {str(c)} failed: {str(e)}"
+                )
 
         role = chk_get_role(self.__guild, self.__teamdata["role_id"])
         await role.delete(reason="Deleting CTF")
@@ -582,7 +588,7 @@ class Challenge:
                 )
             self.refresh()
         else:
-            raise ValueError(f"Couldn't find channel {cid}")
+            raise ChannelNotFoundException(f"Couldn't find channel {cid}")
 
     async def _unarchive(self, catg_working, catg_done):
         cid = self.__id
@@ -598,7 +604,7 @@ class Challenge:
             await channel.set_permissions(guild.default_role, overwrite=basic_disallow)
             self.refresh()
         else:
-            raise ValueError(f"Couldn't find channel {cid}")
+            raise ChannelNotFoundException(f"Couldn't find channel {cid}")
 
     def check_done(self, user):
         if not self.is_finished or Challenge._uid(user) == self.owner:
@@ -697,7 +703,7 @@ class Challenge:
         cid = self.__id
         chal = self.__chals.find_one({"chan_id": cid})
         if not chal:
-            raise ValueError(f"{cid}: Invalid challenge channel ID")
+            raise ChannelNotFoundException(f"{cid}: Invalid challenge channel ID")
         self.__chalinfo = chal
 
     @chk_archive
