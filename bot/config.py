@@ -75,7 +75,7 @@ config = {
     },
     # The delimiter for the channel names, must be one of "-" or "_". i.e. "-": "#ctf-challenge-name", "_": "#ctf_challenge_name"
     "challenge_name_delimiter": parse_variable(
-        "CHALLENGE_NAME_DELIMITER", "-", valid=["-", "_"]
+        "CHALLENGE_NAME_DELIMITER", " ", valid=["-", "_", " "]
     ),
     # CTFtime id for the default team to lookup using the `!ctftime team` command
     "team": {

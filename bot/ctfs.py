@@ -56,7 +56,7 @@ class Ctfs(commands.Cog):
     @commands.bot_has_permissions(manage_channels=True)
     @commands.command()
     async def add(self, ctx, *words):
-        name = config["challenge_name_delimiter"].join(words)
+        name = " ".join(words)
         name = check_name(name)
         emoji = "🔨"
         await respond_with_reaction(ctx, emoji, chk_fetch_team(ctx).add_chal, name)
@@ -253,7 +253,7 @@ def check_name(name):
         raise ctf_model.TaskFailed("Challenge contains invalid characters!")
 
     # Replace spaces with a dash with a configured delimiter
-    return re.sub(r" +", config["challenge_name_delimiter"], name).lower()
+    return re.sub(r" +", " ", name).lower()
 
 
 def chk_fetch_team_by_name(ctx, name):
