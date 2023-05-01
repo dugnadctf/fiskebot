@@ -1,7 +1,6 @@
-# fiskebot
-![](images/fiskebot_logo.png)
+# Zookeeper
 
-This bot is still work in process. It is a fork of [eptbot](https://github.com/ept-team/eptbot), which is again a fork of [igCTF](https://gitlab.com/inequationgroup/igCTF), which is again a fork of [NullCTF](https://github.com/NullPxl/NullCTF).
+This bot is still work in process. It is a fork of [fiskebot](https://github.com/dugnadctf/fiskebot/), which is again a fork of [eptbot](https://github.com/ept-team/eptbot), which is again a fork of [igCTF](https://gitlab.com/inequationgroup/igCTF), which is again a fork of [NullCTF](https://github.com/NullPxl/NullCTF).
 
 ## Install
 
@@ -77,10 +76,10 @@ $ cp git-hook .git/hooks/pre-commit
 - `!create "ctf name"` This is the command you'll use when you want to begin a new CTF. This command will make a text channel with your supplied name. The bot will also send a message in chat where members can react to join the CTF.
 ![enter image description here](images/ept-create.PNG)
 
-- `!add <challenge name>` This will create a new channel for a given challenge.
-![enter image description here](images/ept-add.PNG)
-- `!done [@users ...]` Mark a challenge as done. Needs to be done inside the challenge channel. Optionally specify other users who also contributed to solving the challenge, space separated without the @s.
-![enter image description here](images/ept-done.PNG)
+- `!add <challenge name>` This will create a new thread for a given challenge.
+
+- `!done [@users ...]` Mark a challenge as done. Needs to be done inside the challenge thread. Optionally specify other users who also contributed to solving the challenge, space separated without the @s.
+
 - `!ctf archive` Mark the ctf as over and move it to the archive categories (specified in `/bot/config.py`).
 
 ---
