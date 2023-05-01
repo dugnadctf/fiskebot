@@ -101,3 +101,5 @@ $ cp git-hook .git/hooks/pre-commit
 ![enter image description here](images/ctftime-team.png)
 
 > ### Have a feature request? Make a GitHub issue.
+
+> Please upvote this feature request https://github.com/discord/discord-api-docs/discussions/6084
