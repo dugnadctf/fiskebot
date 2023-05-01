@@ -4,3 +4,6 @@ class ChannelNotFoundException(Exception):
 
 class ChannelDeleteFailedException(Exception):
     pass
+
+class ThreadNotFoundException(Exception):
+    pass

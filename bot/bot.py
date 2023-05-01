@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import asyncio
 import logging
 import os.path
@@ -21,8 +22,16 @@ if not config["token"]:
     logger.error("DISCORD_TOKEN has not been set")
     exit(1)
 
-client = discord.Client()
-bot = commands.Bot(command_prefix=config["prefix"])
+#Need to figure out which intents is needed
+intents = discord.Intents.all()
+intents.members = True
+intents.typing = True
+intents.presences = True
+intents.messages = True
+intents.reactions = True
+
+client = discord.Client(intents=intents)
+bot = commands.Bot(command_prefix=config["prefix"],intents=intents)
 
 intents = discord.Intents.default()
 intents.members = True
@@ -89,6 +98,8 @@ async def on_raw_reaction_add(payload):
     guild = bot.get_guild(payload.guild_id)
     chan = bot.get_channel(payload.channel_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
+    channel = guild.get_channel(team['chan_id'])
+
     member = await guild.fetch_member(payload.user_id)
     if guild and member and chan:
         # logger.debug(f"Added reaction: {payload}")
@@ -105,6 +116,12 @@ async def on_raw_reaction_add(payload):
             return
 
         await member.add_roles(role, reason="User wanted to join team")
+
+        logger.debug(f"New user joined. Trying to add user to all threads...")
+        for thread in channel.threads:
+            logger.debug(f"Guild: {guild}, Channel: {chan}, Team: {team}, Member: {member}, added to thread")
+            await thread.add_user(member)
+        
         logger.debug(f"Added role {role} to user {member}")
 
 
@@ -128,7 +145,26 @@ async def on_raw_reaction_remove(payload):
         await member.remove_roles(role, reason="User wanted to leave team")
         logger.debug(f"Removed role {role} from user {member}")
 
-
+# #Tror kanskje ikke denne trengs lengre, da threadene er public
+# @bot.event
+# async def on_thread_create(thread):
+#     channel = thread.parent_id
+#     guild = thread.guild
+#     guild_id = thread.guild.id
+#     name = thread.name
+    
+    
+#     try:
+#         team = db.teamdb[str(guild_id)].find_one({"chan_id": channel})
+#         role = guild.get_role(team["role_id"])
+        
+#         for user in role.members:
+#             if user not in thread.members:
+#                 await thread.add_user(user)
+#     except:
+#         pass
+    
+    
 async def embed_help(chan, help_topic, help_text):
     emb = discord.Embed(description=help_text, colour=4387968)
     emb.set_author(name=help_topic)
@@ -154,26 +190,31 @@ async def help(ctx, category=None):
 
 @bot.command()
 async def request(ctx, feature):
-    for cid in config["maintainers"]:
-        creator = bot.get_user(cid)
-        authors_name = str(ctx.author)
-        await creator.send(f""":pencil: {authors_name}: {feature}""")
-    await ctx.send(f""":pencil: Thanks, "{feature}" has been requested!""")
+    if config["maintainers"]:
+        for cid in config["maintainers"]:
+            creator = bot.get_user(cid)
+            authors_name = str(ctx.author)
+            await creator.send(f""":pencil: {authors_name}: {feature}""")
+        await ctx.send(f""":pencil: Thanks, "{feature}" has been requested!""")
+    else:
+        await ctx.send(f""":pencil: No maintainers listed in config!""")
 
 
 @bot.command()
 async def report(ctx, error_report):
-    for cid in config["maintainers"]:
-        creator = bot.get_user(cid)
-        authors_name = str(ctx.author)
-        await creator.send(
-            f""":triangular_flag_on_post: {authors_name}: {error_report}"""
+    if config["maintainers"]:
+        for cid in config["maintainers"]:
+            creator = bot.get_user(cid)
+            authors_name = str(ctx.author)
+            await creator.send(
+                f""":triangular_flag_on_post: {authors_name}: {error_report}"""
+            )
+        await ctx.send(
+            f""":triangular_flag_on_post: Thanks for the help, "{error_report}" has been reported!"""
         )
-    await ctx.send(
-        f""":triangular_flag_on_post: Thanks for the help, "{error_report}" has been reported!"""
-    )
-
-
+    else:
+        await ctx.send(f""":pencil: No maintainers listed in config!""")
+        
 @bot.command()
 async def setup(ctx):
     if ctx.author.id not in config["maintainers"]:
@@ -224,7 +265,16 @@ async def exit(ctx):
 
 # -------------------
 
+async def loadExtras():
+    await bot.load_extension("ctftime")
+    await bot.load_extension("ctfs")
+
+async def main():
+    await loadExtras()
+    
+    async with bot:
+        await bot.start(config["token"])
+
+    
 if __name__ == "__main__":
-    bot.load_extension("ctftime")
-    bot.load_extension("ctfs")
-    bot.run(config["token"])
+    asyncio.run(main())

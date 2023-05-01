@@ -463,5 +463,5 @@ def format_table(table, seperator="      "):
     )
 
 
-def setup(bot):
-    bot.add_cog(Ctftime(bot))
+async def setup(bot):
+    await bot.add_cog(Ctftime(bot))
