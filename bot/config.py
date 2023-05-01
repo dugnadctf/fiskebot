@@ -1,6 +1,5 @@
 import os
 
-
 def parse_variable(variable, default=None, valid=None):
     value = os.getenv(variable, None)
     if default and valid and variable not in valid:

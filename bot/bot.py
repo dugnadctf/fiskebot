@@ -33,6 +33,8 @@ intents.reactions = True
 client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix=config["prefix"],intents=intents)
 
+
+
 intents = discord.Intents.default()
 intents.members = True
 
@@ -265,12 +267,13 @@ async def exit(ctx):
 
 # -------------------
 
-async def loadExtras():
+async def loadExtras(bot):
     await bot.load_extension("ctftime")
     await bot.load_extension("ctfs")
 
 async def main():
-    await loadExtras()
+
+    await loadExtras(bot)
     
     async with bot:
         await bot.start(config["token"])
