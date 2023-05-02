@@ -28,6 +28,7 @@ The only required variable is `DISCORD_TOKEN`, the rest will use the default val
 | `CHANNEL_NAME_DELIMITER` | `-` | The delimiter for the channel names, must be one of `-` or `_`. Results in `-`: `#ctf-challenge-name`, and `_`: `#ctf_challenge_name` |
 | `CTFTIME_TEAM_ID` |  | CTFtime ID for the `!ctftime team` command |
 | `CTFTIME_TEAM_NAME` |  | CTFtime name for the `!ctftime team` command |
+| `REACT_FOR_CHALLENGE` | `False` | If participants has to react to message to join challenge-threads |
 
 ### start
 

@@ -230,6 +230,7 @@ class CtfTeam:
             chan = await guild.create_text_channel(
                 name=name,
                 overwrites=overwrites,
+                position=0,
                 category=cat,
                 topic=f"Channel for {name} CTF event",
             )
@@ -238,7 +239,7 @@ class CtfTeam:
         db.teamdb[str(guild.id)].insert_one(
             {
                 "archived": False,
-                "name": name,
+                "name": name+"-"+str(chan.id),
                 "chan_id": chan.id,
                 "role_id": role.id,
                 "msg_id": 0,
@@ -249,7 +250,7 @@ class CtfTeam:
 
         return [
             (
-                None,
+                chan.id,
                 f"<#{chan.id}> (`{name}`) has been created! :tada:! React to this message to join.",
             )
         ]
@@ -281,7 +282,7 @@ class CtfTeam:
 
     @property
     def name(self):
-        return self.__teamdata["name"]
+        return "-".join(self.__teamdata["name"].split("-")[:-1])
 
     @property
     def chan_id(self):
@@ -327,26 +328,28 @@ class CtfTeam:
         )
         self.refresh()
 
-        # Makes a lot of noise, but is needed to show challenges in channel-list. 
+        # Makes a lot of noise if react_for_challenge is False, but is needed to show all challenges in channel-list. 
         # Added a feature request to allow the bot to silently add members to thread
         # Other methods is highly wanted
-        try:
-            team = db.teamdb[str(guild.id)].find_one({"chan_id": cid})
-            role = guild.get_role(team["role_id"])
-            
-            threadMembers = [member for member in thread.members]
-            teamMembers = [user for user in role.members]
-            
-            for user in teamMembers:
-                if user not in threadMembers:
-                    await thread.add_user(user)
-        except:
-            pass
+        
+        if not config['react_for_challenge']:
+            try:
+                team = db.teamdb[str(guild.id)].find_one({"chan_id": cid})
+                role = guild.get_role(team["role_id"])
+                
+                threadMembers = [member for member in thread.members]
+                teamMembers = [user for user in role.members]
+                
+                for user in teamMembers:
+                    if user not in threadMembers:
+                        await thread.add_user(user)
+            except:
+                pass
 
         return [
             (
                 None,
-                f"<#{thread.id}> (`{name}`) has been added!",
+                f"<#{thread.id}> (`{name}`) has been added! React to join challenge.",
             )
         ]
 
@@ -453,14 +456,15 @@ class CtfTeam:
         
         # Unarchive all challenge threads
         # Same noise as in add challenge, fix this also if another method is preferred
-        for thread in main_chan.threads:
-            await thread.join()
-            #Add all users with role to thread
-            usersWithRole = [user for user in role.members]
-            for user in usersWithRole:
-                await thread.add_user(user)
-                
-            await thread.edit(archived=False)
+        if not config['react_for_challenge']:
+            for thread in main_chan.threads:
+                await thread.join()
+                #Add all users with role to thread
+                usersWithRole = [user for user in role.members]
+                for user in usersWithRole:
+                    await thread.add_user(user)
+                    
+                await thread.edit(archived=False)
             
         try:
             for thread in self.challenges:
@@ -585,12 +589,14 @@ class Challenge:
         chals = db.challdb[str(guild.id)]
         chals.insert_one(
             {
-                "name": name,
+                "name": name+"-"+str(ctf_id),
                 "ctf_id": ctf_id,
                 "finished": False,
                 "solvers": [],
                 "thread_id": thread_id,
                 "owner": 0,
+                "msg_id": 0,
+                "working": [],
             }
         )
         
@@ -612,7 +618,7 @@ class Challenge:
 
     @staticmethod
     def find(guild, ctfid, name, err_on_fail=True):
-        chal = db.challdb[str(guild.id)].find_one({"name": name, "ctf_id": ctfid})
+        chal = db.challdb[str(guild.id)].find_one({"name": name+"-"+str(ctfid), "ctf_id": ctfid})
         if chal:
             return Challenge.fetch(guild, chal["thread_id"])
         elif err_on_fail:
@@ -644,7 +650,7 @@ class Challenge:
 
     @property
     def name(self):
-        return self.__chalinfo["name"]
+        return "-".join(self.__chalinfo["name"].split("-")[:-1])
 
     @property
     def owner(self):
@@ -655,6 +661,12 @@ class Challenge:
         if not self.is_finished:
             return
         return self.__chalinfo["solvers"]
+    
+    @property
+    def worker_ids(self):
+        if not self.is_finished:
+            return
+        return self.__chalinfo["working"]
 
     async def solver_users(self):
         if not self.is_finished:
@@ -667,6 +679,18 @@ class Challenge:
             return f"Solved by {solvers}"
         else:
             return "Unsolved"
+        
+    async def working_users(self):
+        if self.is_finished and self.__chalinfo['working']:
+            return
+        return [await self.__guild.fetch_member(id) for id in self.__chalinfo['working']]
+        
+    async def working(self):
+        if not self.is_finished and self.__chalinfo['working']:
+            workers = ", ".join(user.name for user in await self.working_users())
+            return f"{workers}"
+        else:
+            return 
 
     @property
     def team(self):
@@ -741,7 +765,7 @@ class Challenge:
         thread = guild.get_channel(self.ctf_id).get_thread(thread_id)
         if thread is not None:
             newName = thread.name.replace("❌","✅")
-            await thread.edit(name=newName)
+            await thread.edit(name=newName, archived=True)
             self.refresh()
         else:
             raise ThreadNotFoundException("The thread cannot be found!")
@@ -834,6 +858,7 @@ class Challenge:
         )
 
         self.refresh()
+        
         return [
             (None, f'Reopened "{self.name}" as not done'),
             (
@@ -875,9 +900,11 @@ async def export(ctx, author):
     main_chan = ctx.channel
 
     channels = [main_chan]
-    for chal in guild.text_channels:
-        if f"{main_chan.name}-" in chal.name:
-            channels.append(chal)
+    
+    # Makes no sense when we only have the mainchan with threads
+    # for chal in guild.text_channels:
+    #     if f"{main_chan.name}-" in chal.name:
+    #         channels.append(chal)
 
     CTF = await exportChannels(channels)
 

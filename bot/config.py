@@ -82,4 +82,7 @@ config = {
         "id": parse_variable("CTFTIME_TEAM_ID", -1),
         "name": parse_variable("CTFTIME_TEAM_NAME"),
     },
+    # If enabled, users must react to message to make bot add them to thread. Should be visible in threads list anyways.
+    # Should be True if numbers of participants is high to reduce resourceuse on bot and spam in threads
+    "react_for_challenge": parse_variable("REACT_FOR_CHALLENGE", False)
 }

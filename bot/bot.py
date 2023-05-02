@@ -16,6 +16,10 @@ from discord.ext import commands
 from helpers import helpers
 from logger import BotLogger
 
+# TODO: Append channel id to naming in db to fix naming conflicts. For both teams and challenges
+# Possible naming convention:
+# f"{name}-{ctx.channel.id}"
+
 logger = BotLogger("bot")
 
 if not config["token"]:
@@ -100,31 +104,32 @@ async def on_raw_reaction_add(payload):
     guild = bot.get_guild(payload.guild_id)
     chan = bot.get_channel(payload.channel_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
-    channel = guild.get_channel(team['chan_id'])
-
+    challenge = db.challdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
     member = await guild.fetch_member(payload.user_id)
-    if guild and member and chan:
-        # logger.debug(f"Added reaction: {payload}")
-        # logger.debug(f"Guild: {guild}, Channel: {chan}, Team: {team}, Member: {member}")
-        if not team:
+
+    if guild and member and chan and not member.bot:
+        if team:
+            role = guild.get_role(team["role_id"])
+            if not role:
+                logger.error(
+                    f"Not adding role. Could not find role ID {team['role_id']} in Discord"
+                )
+                logger.error(team)
+                return
+
+            await member.add_roles(role, reason="User wanted to join team")
+        elif challenge and config['react_for_challenge']:
+            # logger.debug(f"Adding {member.name} to thread")
+            thread = guild.get_thread(challenge['thread_id'])
+            await thread.add_user(member)
+            db.challdb[str(payload.guild_id)].update_one(
+                {"msg_id": payload.message_id}, {"$push": {"working": member.id}}
+            )
+            # logger.debug(f"Added {member.name} to thread")
+        else: 
             # logger.error(f"Not adding role. Could find team")
             return
-        role = guild.get_role(team["role_id"])
-        if not role:
-            logger.error(
-                f"Not adding role. Could not find role ID {team['role_id']} in Discord"
-            )
-            logger.error(team)
-            return
 
-        await member.add_roles(role, reason="User wanted to join team")
-
-        logger.debug(f"New user joined. Trying to add user to all threads...")
-        for thread in channel.threads:
-            logger.debug(f"Guild: {guild}, Channel: {chan}, Team: {team}, Member: {member}, added to thread")
-            await thread.add_user(member)
-        
-        logger.debug(f"Added role {role} to user {member}")
 
 
 @bot.event
@@ -132,39 +137,35 @@ async def on_raw_reaction_remove(payload):
     # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
+    challenge = db.challdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
     member = await guild.fetch_member(payload.user_id)
-    if guild and member:
+    
+    if guild and member and not member.bot:
         # logger.debug(f"Removed reaction: {payload}")
         # logger.debug(f"Guild: {guild}, Team: {team}, Member: {member}")
-        if not team:
+
+        if team:
+            role = guild.get_role(team["role_id"])
+            if not role:
+                logger.error(f"Not removing role. Could not find role ID {team['role_id']}")
+                logger.error(team)
+                return
+            await member.remove_roles(role, reason="User wanted to leave team")
+            # logger.debug(f"Removed role {role} from user {member}")
+            
+        elif challenge and config['react_for_challenge']:
+            # logger.debug(f"Removing {member.name} to thread")
+            thread = guild.get_thread(challenge['thread_id'])
+            print(challenge)
+            await thread.remove_user(member)
+            db.challdb[str(payload.guild_id)].update_one(
+                {"msg_id": payload.message_id}, {"$pull": {"working": member.id}}
+            )
+            # logger.debug(f"Removed {member.name} to thread")
+        else: 
             # logger.error(f"Not removing role. Could find team")
             return
-        role = guild.get_role(team["role_id"])
-        if not role:
-            logger.error(f"Not removing role. Could not find role ID {team['role_id']}")
-            logger.error(team)
-            return
-        await member.remove_roles(role, reason="User wanted to leave team")
-        logger.debug(f"Removed role {role} from user {member}")
-
-# #Tror kanskje ikke denne trengs lengre, da threadene er public
-# @bot.event
-# async def on_thread_create(thread):
-#     channel = thread.parent_id
-#     guild = thread.guild
-#     guild_id = thread.guild.id
-#     name = thread.name
-    
-    
-#     try:
-#         team = db.teamdb[str(guild_id)].find_one({"chan_id": channel})
-#         role = guild.get_role(team["role_id"])
-        
-#         for user in role.members:
-#             if user not in thread.members:
-#                 await thread.add_user(user)
-#     except:
-#         pass
+            
     
     
 async def embed_help(chan, help_topic, help_text):

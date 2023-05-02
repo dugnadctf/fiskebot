@@ -1,18 +1,16 @@
-2023-05-01 13:15:16,571:INFO:bot: <botTesting Online>
-2023-05-01 13:15:16,571:INFO:bot: discord.py 2.1.0
-2023-05-01 13:15:23,282:ERROR:bot: Ignoring exception at on_raw_reaction_add
-2023-05-01 13:15:23,284:ERROR:bot: Traceback (most recent call last):
-  File "/usr/local/lib/python3.9/site-packages/discord/client.py", line 409, in _run_event
-    await coro(*args, **kwargs)
-  File "/home/bot/bot.py", line 103, in on_raw_reaction_add
-    channel = guild.get_channel(team['chan_id'])
-TypeError: 'NoneType' object is not subscriptable
-
-2023-05-01 13:16:08,011:ERROR:bot: Ignoring exception at on_raw_reaction_add
-2023-05-01 13:16:08,012:ERROR:bot: Traceback (most recent call last):
-  File "/usr/local/lib/python3.9/site-packages/discord/client.py", line 409, in _run_event
-    await coro(*args, **kwargs)
-  File "/home/bot/bot.py", line 103, in on_raw_reaction_add
-    channel = guild.get_channel(team['chan_id'])
-TypeError: 'NoneType' object is not subscriptable
+2023-05-02 21:12:04,524:INFO:bot: <botTesting Online>
+2023-05-02 21:12:04,524:INFO:bot: discord.py 2.1.0
+2023-05-02 21:14:19,752:ERROR:bot: Exception in command delete
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/site-packages/discord/ext/commands/bot.py", line 1349, in invoke
+    await ctx.command.invoke(ctx)
+  File "/usr/local/lib/python3.9/site-packages/discord/ext/commands/core.py", line 1015, in invoke
+    await self.prepare(ctx)
+  File "/usr/local/lib/python3.9/site-packages/discord/ext/commands/core.py", line 932, in prepare
+    await self._parse_arguments(ctx)
+  File "/usr/local/lib/python3.9/site-packages/discord/ext/commands/core.py", line 839, in _parse_arguments
+    transformed = await self.transform(ctx, param, attachments)
+  File "/usr/local/lib/python3.9/site-packages/discord/ext/commands/core.py", line 691, in transform
+    raise MissingRequiredArgument(param)
+discord.ext.commands.errors.MissingRequiredArgument: name is a required argument that is missing.
 

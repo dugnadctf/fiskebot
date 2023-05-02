@@ -23,6 +23,7 @@ services:
       - "CHANNEL_NAME_DELIMITER=${CHANNEL_NAME_DELIMITER}"
       - "CTFTIME_TEAM_ID=${CTFTIME_TEAM_ID}"
       - "CTFTIME_TEAM_NAME=${CTFTIME_TEAM_NAME}"
+      - "REACT_FOR_CHALLENGE=${REACT_FOR_CHALLENGE}"
     volumes:
       - ./bot:/home/bot
       - ./backups:/home/bot/backups
