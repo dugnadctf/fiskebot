@@ -25,7 +25,7 @@ The only required variable is `DISCORD_TOKEN`, the rest will use the default val
 | `CATEGORY_ARCHIVE_PREFIX` | `archive` | Category to move channels to when the CTF is over. There is a max limit on 50 channels per category. The bot wil automatically move channels to new categories when needed |
 | `CHANNEL_EXPORT` | `export` | The channel to upload exports to |
 | `CHANNEL_LOGGING_ID` |  | If enabled, will send logging to this channel, based on the `LOGGING_DISCORD_LEVEL` logging level |
-| `CHANNEL_NAME_DELIMITER` | `-` | The delimiter for the channel names, must be one of `-` or `_`. Results in `-`: `#ctf-challenge-name`, and `_`: `#ctf_challenge_name` |
+| `CHANNEL_NAME_DELIMITER` | ` ` | The delimiter for the channel names, must be one of `-`,  or `_`. Results in `-`: `#ctf-challenge-name`, and `_`: `#ctf_challenge_name` |
 | `CTFTIME_TEAM_ID` |  | CTFtime ID for the `!ctftime team` command |
 | `CTFTIME_TEAM_NAME` |  | CTFtime name for the `!ctftime team` command |
 | `REACT_FOR_CHALLENGE` | `False` | If participants has to react to message to join challenge-threads |
@@ -102,3 +102,5 @@ $ cp git-hook .git/hooks/pre-commit
 ![enter image description here](images/ctftime-team.png)
 
 > ### Have a feature request? Make a GitHub issue.
+
+> Please upvote this feature request https://github.com/discord/discord-api-docs/discussions/6084
