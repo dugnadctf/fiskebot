@@ -156,7 +156,6 @@ async def on_raw_reaction_remove(payload):
         elif challenge and config['react_for_challenge']:
             # logger.debug(f"Removing {member.name} to thread")
             thread = guild.get_thread(challenge['thread_id'])
-            print(challenge)
             await thread.remove_user(member)
             db.challdb[str(payload.guild_id)].update_one(
                 {"msg_id": payload.message_id}, {"$pull": {"working": member.id}}
