@@ -92,6 +92,9 @@ Add unsolved as an argument to list only unsolved challenges
 
 `!deletectf <ctf name>`
 Deletes the CTF, provide the CTF name as an argument to this command
+
+`!working`
+Lists which team members are working which challenge. Only applicable if REACT_FOR_CHALLENGE is True.
 """.replace(
     "!", config["prefix"]
 )
