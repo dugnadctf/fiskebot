@@ -2,8 +2,9 @@
 bot-variables.env
 .env
 backups/
+data/
 dump
-
+*.log
 .vscode/
 
 # Created by https://www.gitignore.io/api/visualstudiocode,linux,macos,jetbrains+all,python,windows

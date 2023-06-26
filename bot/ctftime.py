@@ -456,12 +456,12 @@ def get_team_id(team_name):
     return -1
 
 
-def format_table(table, seperator="      "):
+def format_table(table, separator="      "):
     widths = [max(len(line[i]) for line in table) for i in range(len(table[0]))]
     return "\n".join(
-        [seperator.join([c.ljust(w) for w, c in zip(widths, line)]) for line in table]
+        [separator.join([c.ljust(w) for w, c in zip(widths, line)]) for line in table]
     )
 
 
-def setup(bot):
-    bot.add_cog(Ctftime(bot))
+async def setup(bot):
+    await bot.add_cog(Ctftime(bot))

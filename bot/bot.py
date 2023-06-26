@@ -1,9 +1,5 @@
 import asyncio
-import logging
-import os.path
-import sys
 import traceback
-
 import ctf_model
 import db
 import discord
@@ -21,11 +17,11 @@ if not config["token"]:
     logger.error("DISCORD_TOKEN has not been set")
     exit(1)
 
-client = discord.Client()
-bot = commands.Bot(command_prefix=config["prefix"])
-
 intents = discord.Intents.default()
 intents.members = True
+intents.message_content = True
+
+bot = commands.Bot(command_prefix=config["prefix"], intents=intents)
 
 bot.remove_command("help")
 
@@ -53,7 +49,7 @@ async def on_error(evt_type, ctx=None):
 
 @bot.event
 async def on_command_error(ctx, err):
-    logger.debug(f"Command error occured with command: {ctx.command}\n{err}\n")
+    logger.debug(f"Command error occurred with command: {ctx.command}\n{err}\n")
     if isinstance(err, commands.MissingPermissions):
         await ctx.send(
             "You do not have permission to do that! ¯\\_(ツ)_/¯"
@@ -176,8 +172,9 @@ async def report(ctx, error_report):
 
 @bot.command()
 async def setup(ctx):
+    """Setup the server for the bot to work"""
     if ctx.author.id not in config["maintainers"]:
-        return ctx.send("Only maintainers can run the setup process.")
+        return await ctx.send("Only maintainers can run the setup process.")
 
     overwrites = {
         ctx.guild.default_role: ctf_model.basic_disallow,
@@ -201,7 +198,7 @@ async def setup(ctx):
         },
     )
 
-    await ctx.send("Setup successfull! :tada:")
+    await ctx.send("Setup successful! :tada:")
 
 
 @bot.command()
@@ -222,9 +219,14 @@ async def exit(ctx):
             await ctx.author.remove_roles(role)
 
 
+async def main():
+    async with bot:
+        await bot.load_extension("ctftime")
+        await bot.load_extension("ctfs")
+        await bot.start(config["token"])
+
+
 # -------------------
 
 if __name__ == "__main__":
-    bot.load_extension("ctftime")
-    bot.load_extension("ctfs")
-    bot.run(config["token"])
+    asyncio.run(main())
