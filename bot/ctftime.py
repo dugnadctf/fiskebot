@@ -430,7 +430,7 @@ def get_scores(team_id, year=None):
         columns = [c.text_content().replace("\t", " ") for c in columns[1:]]
         table.append(columns)
 
-    table.sort(key=lambda l: float(l[3].replace("*", "")), reverse=True)
+    table.sort(key=lambda cols: float(cols[3].replace("*", "")), reverse=True)
     table = [column_names] + table
     return table
 
