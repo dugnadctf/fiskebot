@@ -26,27 +26,14 @@ jobs:
                 mkdir -p "$RUNNER_HOME/.ssh/"
                 echo "$SSH_KEY" > "$RUNNER_HOME/.ssh/private.pem"
                 chmod 600 "$RUNNER_HOME/.ssh/private.pem"
-                cat > "$RUNNER_HOME/.ssh/config" <<END
-                Host docean
-                  HostName "$HOST"
-                  User "$USER"
-                  IdentityFile "$RUNNER_HOME/.ssh/private.pem"
-                  StrictHostKeyChecking no
-                END
+                printf "Host docean\n  HostName $HOST\n  User $USER\n  IdentityFile $RUNNER_HOME/.ssh/private.pem\n  StrictHostKeyChecking no\n" > "$RUNNER_HOME/.ssh/config"
             - name: Build docker image
               run: |
                 docker build -t fiskebot .
             - name: Deploy docker compose and .env file
               run: |
                 scp "$DOCKER_COMPOSE" "docean:$APP_PATH/$DOCKER_COMPOSE"
-                ssh docean <<END_SSH
-                  cd "$APP_PATH"
-# @todo build to registry and pull from there.
-                  echo "just a test, workflow was here" >> workflow.txt
-
-#                  docker compose up -d
-#                  docker image prune --force --filter dangling=true
-                END_SSH
+                ssh docean "cd $APP_PATH && echo 'just a test, workflow was here' >> workflow.txt"
             - name: Cleanup SSH configs
               if: always()
               run: |
