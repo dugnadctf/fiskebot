@@ -18,7 +18,7 @@ env:
 
 jobs:
     build:
-        runs-on: digitalocean
+        runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v3
             - name: Configure SSH on github runner
@@ -27,9 +27,14 @@ jobs:
                 echo "$SSH_KEY" > "$RUNNER_HOME/.ssh/private.pem"
                 chmod 600 "$RUNNER_HOME/.ssh/private.pem"
                 printf "Host docean\n  HostName $HOST\n  User $USER\n  IdentityFile $RUNNER_HOME/.ssh/private.pem\n  StrictHostKeyChecking no\n" > "$RUNNER_HOME/.ssh/config"
+            - name: Build docker image
+              run: |
+                docker build -t steinsiv/fiskebot:latest .
+                docker save steinsiv/fiskebot:latest | gzip > steinsiv_fiskebot_latest.tar.gz
             - name: Deploy docker compose and .env file
               run: |
                 scp "$DOCKER_COMPOSE" "docean:$APP_PATH/$DOCKER_COMPOSE"
+                scp steinsiv_fiskebot_latest.tar.gz "docean:$APP_PATH/steinsiv_fiskebot_latest.tar.gz"
                 ssh docean "cd $APP_PATH && echo 'just a test, workflow was here' >> workflow.txt"
             - name: Cleanup SSH configs
               if: always()
