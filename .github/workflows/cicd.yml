@@ -27,9 +27,6 @@ jobs:
                 echo "$SSH_KEY" > "$RUNNER_HOME/.ssh/private.pem"
                 chmod 600 "$RUNNER_HOME/.ssh/private.pem"
                 printf "Host docean\n  HostName $HOST\n  User $USER\n  IdentityFile $RUNNER_HOME/.ssh/private.pem\n  StrictHostKeyChecking no\n" > "$RUNNER_HOME/.ssh/config"
-            - name: Build docker image
-              run: |
-                docker build -t fiskebot .
             - name: Deploy docker compose and .env file
               run: |
                 scp "$DOCKER_COMPOSE" "docean:$APP_PATH/$DOCKER_COMPOSE"
