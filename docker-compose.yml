@@ -2,7 +2,7 @@ version: "2.1"
 services:
   bot:
     build: .
-    image: ekofiskctf/fiskebot
+    image: steinsiv/fiskebot
     restart: always
     environment:
       - "DISCORD_TOKEN=${DISCORD_TOKEN}"
@@ -35,8 +35,8 @@ services:
     ports:
       - "127.0.0.1:27017:27017"
     volumes:
-      - mdb:/data/db
-      - mdb_config:/data/configdb
+      - ./data/db:/data/db
+      - ./data/configdb:/data/configdb
 
 volumes:
   mdb:

@@ -1,0 +1,53 @@
+name: DigitalOcean CICD
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+permissions: {}
+
+env:
+    USER: cee
+    APP_PATH: /home/cee/app/fiskebot/
+    RUNNER_HOME: /home/github
+    HOST: ${{ secrets.DEPLOY_IP }}
+    DOCKER_COMPOSE: docker-compose.yml
+    SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+
+jobs:
+    build:
+        runs-on: digitalocean
+        steps:
+            - uses: actions/checkout@v3
+            - name: Configure SSH on github runner
+              run: |
+                mkdir -p "$RUNNER_HOME/.ssh/"
+                echo "$SSH_KEY" > "$RUNNER_HOME/.ssh/private.pem"
+                chmod 600 "$RUNNER_HOME/.ssh/private.pem"
+                cat > "$RUNNER_HOME/.ssh/config" <<END
+                Host docean
+                  HostName "$HOST"
+                  User "$USER"
+                  IdentityFile "$RUNNER_HOME/.ssh/private.pem"
+                  StrictHostKeyChecking no
+                END
+            - name: Build docker image
+              run: |
+                docker build -t fiskebot .
+            - name: Deploy docker compose and .env file
+              run: |
+                scp "$DOCKER_COMPOSE" "docean:$APP_PATH/$DOCKER_COMPOSE"
+                ssh docean <<END_SSH
+                  cd "$APP_PATH"
+# @todo build to registry and pull from there.
+                  echo "just a test, workflow was here" >> workflow.txt
+
+#                  docker compose up -d
+#                  docker image prune --force --filter dangling=true
+                END_SSH
+            - name: Cleanup SSH configs
+              if: always()
+              run: |
+                rm -rf "$RUNNER_HOME/.ssh"
