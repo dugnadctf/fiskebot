@@ -182,7 +182,8 @@ class CtfTeam:
 
     @staticmethod
     async def create(guild, name):
-        names = [role.name for role in guild.roles] + guild.channels
+        channel_names = [channel.name for channel in guild.channels]
+        names = [role.name for role in guild.roles] + channel_names
         if name in names:
             return [(ValueError, f"`{name}` already exists as a role :grimacing:")]
 

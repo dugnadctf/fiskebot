@@ -430,7 +430,7 @@ def get_scores(team_id, year=None):
         columns = [c.text_content().replace("\t", " ") for c in columns[1:]]
         table.append(columns)
 
-    table.sort(key=lambda l: float(l[3].replace("*", "")), reverse=True)
+    table.sort(key=lambda cols: float(cols[3].replace("*", "")), reverse=True)
     table = [column_names] + table
     return table
 
@@ -456,12 +456,12 @@ def get_team_id(team_name):
     return -1
 
 
-def format_table(table, seperator="      "):
+def format_table(table, separator="      "):
     widths = [max(len(line[i]) for line in table) for i in range(len(table[0]))]
     return "\n".join(
-        [seperator.join([c.ljust(w) for w, c in zip(widths, line)]) for line in table]
+        [separator.join([c.ljust(w) for w, c in zip(widths, line)]) for line in table]
     )
 
 
-def setup(bot):
-    bot.add_cog(Ctftime(bot))
+async def setup(bot):
+    await bot.add_cog(Ctftime(bot))

@@ -216,10 +216,10 @@ async def respond_with_reaction(ctx, emoji, callback, *args):
     guild = ctx.channel.guild
     async with ctx.channel.typing():
         for chan_id, msg in await callback(*args):
-            chan = guild.get_channel(chan_id) if chan_id else ctx.channel
-            msg = await chan.send(msg)
-            await msg.add_reaction(emoji)
-            messages.append(msg)
+            chan = guild.get_channel(chan_id) or ctx.channel
+            sent_msg = await chan.send(msg)
+            await sent_msg.add_reaction(emoji)
+            messages.append(sent_msg)
     return messages
 
 
@@ -265,5 +265,5 @@ def chk_fetch_chal(ctx):
     return chal
 
 
-def setup(bot):
-    bot.add_cog(Ctfs(bot))
+async def setup(bot):
+    await bot.add_cog(Ctfs(bot))
