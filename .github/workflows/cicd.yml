@@ -35,17 +35,15 @@ jobs:
                 END
             - name: Build docker image
               run: |
-                docker build -t fiskebot .
+                docker build -t steinsiv/fiskebot .
             - name: Deploy docker compose and .env file
               run: |
                 scp "$DOCKER_COMPOSE" "docean:$APP_PATH/$DOCKER_COMPOSE"
                 ssh docean <<END_SSH
                   cd "$APP_PATH"
-# @todo build to registry and pull from there.
+
                   echo "just a test, workflow was here" >> workflow.txt
 
-#                  docker compose up -d
-#                  docker image prune --force --filter dangling=true
                 END_SSH
             - name: Cleanup SSH configs
               if: always()
