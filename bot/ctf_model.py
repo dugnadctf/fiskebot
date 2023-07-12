@@ -22,14 +22,15 @@ CATEGORY_CHANNEL_LIMIT = 50
 # [gid...]
 #   > challenges [array of thread IDs]
 #   > name
-#   > chan_id
+#   > cmd_chan_id
+#   > forum_chan_id
 #   > role_id
 #
 # Challenge
 # [gid...]
 #   > name
 #   > ctf_id [int, thread ID]
-#   > chan_id
+#   > thread_id
 #   > finished [bool]
 #   > solvers (by id)
 #
@@ -66,29 +67,30 @@ def format_role_name(ctf_name):
     return f"{ctf_name}_team".lower()
 
 
-async def _find_available_archive_category(guild, current_channel_count, start):
+async def _find_available_archive_category(guild):
     archive_number = 0 
     
-    for i in range(start, 15):
+    for i in range(0, 15):
         year = str(datetime.date.today().year)
+        
+        archive_number = "{:02}".format(i)
 
-        category_name = f"{year}-{config['categories']['archive-prefix']}-{i}"
-        archive_number = i
+        category_name = f"{year}-{config['categories']['archive-prefix']}-{archive_number}"
+        
         try:
             category_archive = [
                 category
                 for category in guild.categories
                 if category.name == category_name
             ][0]
-            current_category_channels = len(category_archive.channels)
-            if CATEGORY_CHANNEL_LIMIT - current_category_channels >= (
-                current_channel_count
-            ):
+
+            if len(category_archive.channels) > 49:
                 break
-        except IndexError:
+        # Will go here if no archive categories is created that year
+        except:
             category_archive = await guild.create_category(category_name)
             break
-    return category_archive, archive_number
+    return category_archive
 
 
 find_category = functools.partial(_find_chan, "categories")
@@ -127,6 +129,24 @@ only_read = discord.PermissionOverwrite(
     read_messages=True,
     send_messages=False,
     read_message_history=True,
+)
+
+basic_allow_forum = discord.PermissionOverwrite(
+    add_reactions=True,
+    read_messages=True,
+    send_messages=True,
+    read_message_history=True,
+    create_public_threads=False,
+    create_private_threads=False,
+)
+
+basic_disallow_forum = discord.PermissionOverwrite(
+    add_reactions=False,
+    read_messages=False,
+    send_messages=False,
+    read_message_history=False,
+    create_public_threads=False,
+    create_private_threads=False,
 )
 
 
@@ -202,6 +222,12 @@ class CtfTeam:
             guild.me: basic_allow,
             role: basic_allow,
         }
+        
+        forumOverwrites = {
+            guild.default_role: basic_disallow,
+            guild.me: basic_allow,
+            role: basic_allow_forum,
+        }
 
         if discord.utils.get(guild.text_channels, name=name) is not None:
             return [(ValueError, f"`{name}` already exists as a channel :grimacing:")]
@@ -210,66 +236,97 @@ class CtfTeam:
         workingCategoryName = config["categories"]["working"]
         workingCategoryId = False
         
-        for category in guild.categories:
-            if category.name == workingCategoryName:
-                workingCategoryId = category
+        workingCategoryId = discord.utils.get(guild.categories, name=workingCategoryName)
                 
         if workingCategoryId:
-            chan = await guild.create_text_channel(
-                name=name,
+            cmd_chan = await guild.create_text_channel(
+                name="cmd"+"-"+name,
                 overwrites=overwrites,
                 position=0,
-                topic=f"Channel for {name} CTF event",
+                topic=f"Command and general talk channel for {name} CTF event",
                 category=workingCategoryId
             )
+            
+            forum_chan = await guild.create_forum(
+                name="chals"+"-"+name,
+                overwrites=forumOverwrites,
+                position=0,
+                topic=f"Forum channel for {name} CTF event",
+                category=workingCategoryId
+            )
+            
+            
         else:
             existing_categories = [category.name for category in guild.categories]
             category = config["categories"]["working"]
             if category not in existing_categories:
                 cat = await guild.create_category(category)
-            chan = await guild.create_text_channel(
-                name=name,
+            
+            cmd_chan = await guild.create_text_channel(
+                name="cmd"+"-"+name,
                 overwrites=overwrites,
                 position=0,
                 category=cat,
-                topic=f"Channel for {name} CTF event",
+                topic=f"Command and general talk channel for {name} CTF event",
             )
+            
+            forum_chan = await guild.create_forum(
+                name="chals"+"-"+name,
+                overwrites=forumOverwrites,
+                position=0,
+                topic=f"Forum channel for {name} CTF event",
+                category=workingCategoryId
+            )
+            
+        await forum_chan.create_tag(name="Unsolved")
+        await forum_chan.create_tag(name="Solved")
 
         # Update database
         db.teamdb[str(guild.id)].insert_one(
             {
                 "archived": False,
-                "name": name+"-"+str(chan.id),
-                "chan_id": chan.id,
+                "name": name+"-"+str(cmd_chan.id),
+                "cmd_chan_id": cmd_chan.id,
+                "forum_chan_id":forum_chan.id,
                 "role_id": role.id,
                 "msg_id": 0,
             }
         )
-        CtfTeam.__teams__[chan.id] = CtfTeam(guild, chan.id)
+        CtfTeam.__teams__[cmd_chan.id] = CtfTeam(guild, cmd_chan.id, forum_chan.id)
         
 
         return [
             (
-                chan.id,
-                f"<#{chan.id}> (`{name}`) has been created! :tada:! React to this message to join.",
+                cmd_chan.id,
+                f"<#{cmd_chan.id}> (`{name}`) has been created! :tada:! React to this message to join.",
             )
         ]
 
     @staticmethod
-    def fetch(guild, chan_id):
-        if chan_id not in CtfTeam.__teams__:
-            if not db.teamdb[str(guild.id)].find_one({"chan_id": chan_id}):
-                return None
-            CtfTeam.__teams__[chan_id] = CtfTeam(guild, chan_id)
+    def fetch(guild, cmd_chan_id):
+        """Fetch based on cmd_chan_id"""
+        print("CtfTeam.fetch")
+        if cmd_chan_id not in CtfTeam.__teams__:
+            temp = db.teamdb[str(guild.id)].find_one({"cmd_chan_id": cmd_chan_id})
+            if not temp:
+                temp2 = db.teamdb[str(guild.id)].find_one({"forum_chan_id": cmd_chan_id})
+                if not temp2:
+                    return None
+                CtfTeam.__teams__[cmd_chan_id] = CtfTeam(guild, temp['cmd_chan_id'], cmd_chan_id)
+            else:
+                CtfTeam.__teams__[cmd_chan_id] = CtfTeam(guild, cmd_chan_id, temp['forum_chan_id'])
         else:
-            CtfTeam.__teams__[chan_id].refresh()
+            CtfTeam.__teams__[cmd_chan_id].refresh()
 
         # TODO: check guild is same
-        return CtfTeam.__teams__[chan_id]
+        return CtfTeam.__teams__[cmd_chan_id]
 
-    def __init__(self, guild, chan_id):
+    def __init__(self, guild, cmd_chan_id, forum_chan_id):
+        
+        print("CtfTeam.__init__")
         self.__guild = guild
-        self.__chan_id = chan_id
+        self.__cmd_chan_id = cmd_chan_id
+        self.__forum_chan_id = forum_chan_id
         self.__teams = db.teamdb[str(guild.id)]
         self.refresh()
 
@@ -278,15 +335,19 @@ class CtfTeam:
     def challenges(self):
         # Temporary fix? Had a problem where ctfs with no challenges didn't archive correctly
         self.refresh()
-        return [Challenge.fetch(self.__guild, cid) for cid in self.__teamdata["chals"]]
+        return [Challenge.fetch(self.__guild, tid) for tid in self.__teamdata["chals"]]
 
     @property
     def name(self):
         return "-".join(self.__teamdata["name"].split("-")[:-1])
 
     @property
-    def chan_id(self):
-        return self.__chan_id
+    def cmd_chan_id(self):
+        return self.__cmd_chan_id
+    
+    @property
+    def forum_chan_id(self):
+        return self.__forum_chan_id
 
     @property
     def guild(self):
@@ -306,12 +367,14 @@ class CtfTeam:
 
     @chk_archive
     async def add_chal(self,name):
-        cid = self.__chan_id
+        cmd_cid = self.__cmd_chan_id
+        forum_cid = self.__forum_chan_id
         guild = self.__guild
         teams = self.__teams
         team = self.__teamdata
-        channel = guild.get_channel(cid)
+        forum_channel = guild.get_channel(forum_cid)
 
+        print("add_chal")
 
         # catg_working = load_category(guild, config["categories"]["working"])
         if self.find_chal(name, False):
@@ -319,71 +382,82 @@ class CtfTeam:
 
         # Create a public thread, initially only with us added.
         fullname = f"❌ {name}"
+        
+        print("Fullname: " + fullname)
+        
+        tag = [tag for tag in forum_channel.available_tags if tag.name == "Unsolved"][0]
+        
+        print(forum_channel.available_tags)
 
-        thread = await channel.create_thread(name=fullname,type=discord.ChannelType.public_thread)
+        thread = await forum_channel.create_thread(
+            name=fullname, 
+            content=f"Started challenge thread for challenge {name}",
+            applied_tags=[tag]
+            )
+        
+        
 
-        Challenge.create(guild=guild,ctf_id=cid,thread_id=thread.id,name=name)
+        Challenge.create(guild=guild,ctf_id=cmd_cid,thread_id=thread[0].id,name=name,forum_id=forum_cid)
         chk_upd(
-            fullname, teams.update_one({"chan_id": cid}, {"$push": {"chals": thread.id}})
+            fullname, teams.update_one({"cmd_chan_id": cmd_cid}, {"$push": {"chals": thread[0].id}})
         )
         self.refresh()
+        
+        print("Returning from add_chal")
+        
+        return [
+            (
+                None,
+                f"<#{thread[0].id}> (`{name}`) has been added!",
+            )
+        ]
 
         # Makes a lot of noise if react_for_challenge is False, but is needed to show all challenges in channel-list. 
         # Added a feature request to allow the bot to silently add members to thread
         # Other methods is highly wanted
         
-        if not config['react_for_challenge']:
-            try:
-                team = db.teamdb[str(guild.id)].find_one({"chan_id": cid})
-                role = guild.get_role(team["role_id"])
+        # TODO: Figure this out
+        # Unsure if this is necessary when using forum channels
+        # if not config['react_for_challenge']:
+        #     try:
+        #         team = db.teamdb[str(guild.id)].find_one({"forum_chan_id": cid})
+        #         role = guild.get_role(team["role_id"])
                 
-                threadMembers = [member for member in thread.members]
-                teamMembers = [user for user in role.members]
+        #         threadMembers = [member for member in thread.members]
+        #         teamMembers = [user for user in role.members]
                 
-                for user in teamMembers:
-                    if user not in threadMembers:
-                        await thread.add_user(user)
-            except:
-                pass
+        #         for user in teamMembers:
+        #             if user not in threadMembers:
+        #                 await thread.add_user(user)
+        #     except:
+        #         pass
 
-        return [
-            (
-                None,
-                f"<#{thread.id}> (`{name}`) has been added! React to join challenge.",
-            )
-        ]
+        # print("Returning from add_chal")
+        
+        # return [
+        #     (
+        #         None,
+        #         f"<#{thread.id}> (`{name}`) has been added!",
+        #     )
+        # ]
 
 
     @chk_archive
     async def archive(self):
-        cid = self.__chan_id
+        cmd_cid = self.__cmd_chan_id
+        forum_cid = self.__forum_chan_id
         guild = self.__guild
         teams = self.__teams
         
         self.refresh()
         
-        total_channels = 1
-        category_archives = []
-        previous_picked_archive = -1
-        while total_channels != 0:
-            channels_in_category = min(CATEGORY_CHANNEL_LIMIT, total_channels)
-            category, previous_picked_archive = await _find_available_archive_category(
-                guild, channels_in_category, previous_picked_archive + 1
-            )
-            category_archives.append(
-                {
-                    "channels": channels_in_category,
-                    "category": category,
-                }
-            )
-            total_channels -= channels_in_category
 
-        
+        category = await _find_available_archive_category(guild)
+
         # Archive all challenge threads
 
-        main_chan = guild.get_channel(cid)
-    
-        category_archives[-1]["channels"] -= 1
+        cmd_chan = guild.get_channel(cmd_cid)
+        forum_chan = guild.get_channel(forum_cid)
         
         try:
             for thread in self.challenges:
@@ -393,22 +467,26 @@ class CtfTeam:
             #Failproof if challenge doesn't exist for some reason
             pass
 
-        await main_chan.edit(category=category_archives[-1]["category"], position=0)
+        await cmd_chan.edit(category=category, position=0)
+        await forum_chan.edit(category=category, position=0)
         
         # Update database
         chk_upd(
-            self.name, teams.update_one({"chan_id": cid}, {"$set": {"archived": True}})
+            self.name, teams.update_one({"cmd_chan_id": cmd_cid}, {"$set": {"archived": True}})
         )
         self.refresh()
         
         #Archive all threads
-        channel = guild.get_channel(cid)
+        channel = guild.get_channel(forum_cid)
         for thread in channel.threads:
             await thread.edit(archived=True)
         
         if config["archive_access_to_all_users"]:
             # await asyncio.sleep(1) #Because the sync permissions was unstable
-            test = main_chan.set_permissions(
+            test1 = await cmd_chan.set_permissions(
+                guild.default_role, overwrite=basic_read_send
+            )
+            test2 = await forum_chan.set_permissions(
                 guild.default_role, overwrite=basic_read_send
             )
 
@@ -416,7 +494,8 @@ class CtfTeam:
 
     
     async def unarchive(self):
-        cid = self.__chan_id
+        forum_cid = self.__forum_chan_id
+        cmd_cid = self.__cmd_chan_id
         guild = self.__guild
         teams = self.__teams
 
@@ -427,29 +506,34 @@ class CtfTeam:
 
         
         #chal = db.challdb[str(guild.id)].find_one({"thread_id": thread_id})
-        team = db.teamdb[str(guild.id)].find_one({"chan_id": cid}) # May be able to use teams here
+        team = db.teamdb[str(guild.id)].find_one({"forum_chan_id": forum_cid}) # May be able to use teams here
         role = guild.get_role(team["role_id"])
         
         
         # Update database
         chk_upd(
-            self.name, teams.update_one({"chan_id": cid}, {"$set": {"role_id": role.id}})
+            self.name, teams.update_one({"forum_chan_id": forum_cid}, {"$set": {"role_id": role.id}})
         )
         
         # Unarchive challenge channel
-        main_chan = guild.get_channel(cid)
+        forum_chan = guild.get_channel(forum_cid)
+        cmd_chan = guild.get_channel(forum_cid)
         
-        await main_chan.edit(category=catg_working, position=0)
+        await forum_chan.edit(category=catg_working, position=0)
+        await cmd_chan.edit(category=catg_working, position=0)
 
         if config["archive_access_to_all_users"]:
             # await asyncio.sleep(1) #Because the sync permissions was unstable
-            test = main_chan.set_permissions(
+            test1 = forum_chan.set_permissions(
+                guild.default_role, overwrite=basic_disallow
+            )
+            test2 = cmd_chan.set_permissions(
                 guild.default_role, overwrite=basic_disallow
             )
         
         # Update database
         chk_upd(
-            self.name, teams.update_one({"chan_id": cid}, {"$set": {"archived": False}})
+            self.name, teams.update_one({"cmd_chan_id": cmd_cid}, {"$set": {"archived": False}})
         )
         self.refresh()
         
@@ -457,12 +541,13 @@ class CtfTeam:
         # Unarchive all challenge threads
         # Same noise as in add challenge, fix this also if another method is preferred
         if not config['react_for_challenge']:
-            for thread in main_chan.threads:
+            for thread in forum_chan.threads:
                 await thread.join()
-                #Add all users with role to thread
-                usersWithRole = [user for user in role.members]
-                for user in usersWithRole:
-                    await thread.add_user(user)
+                # TODO: Check if needed
+                # Add all users with role to thread
+                # usersWithRole = [user for user in role.members]
+                # for user in usersWithRole:
+                #     await thread.add_user(user)
                     
                 await thread.edit(archived=False)
             
@@ -474,11 +559,11 @@ class CtfTeam:
             pass
         self.refresh()
 
-        return [(cid, f"{self.name} CTF has been unarchived.")]
+        return [(cmd_cid, f"{self.name} CTF has been unarchived.")]
     
     @chk_archive
     async def del_chal(self, name):
-        cid = self.__chan_id
+        forum_cid = self.__forum_chan_id
         guild = self.__guild
         teams = self.__teams
 
@@ -486,21 +571,21 @@ class CtfTeam:
         chal = self.find_chal(name)
         chk_upd(
             name,
-            teams.update_one({"chan_id": cid}, {"$pull": {"chals": chal.thread_id}}),
+            teams.update_one({"forum_chan_id": forum_cid}, {"$pull": {"chals": chal.thread_id}}),
         )
-        await chal._delete(cid)
+        await chal._delete(forum_cid)
         self.refresh()
 
         return [(None, f'Challenge "{name}" is deleted, challenge thread deleted.')]
 
     def find_chal(self, name, err_on_fail=True):
-        return Challenge.find(self.__guild, self.__chan_id, name, err_on_fail)
+        return Challenge.find(self.__guild, self.__forum_chan_id, name, err_on_fail)
 
     @chk_archive
     async def invite(self, author, user):
         guild = self.__guild
         team = self.__teamdata
-        cid = self.__chan_id
+        cid = self.__forum_chan_id
 
         # Add role for user
         role = chk_get_role(guild, team["role_id"])
@@ -508,9 +593,10 @@ class CtfTeam:
             raise TaskFailed(f"{user.name} has already joined {self.name}")
         await user.add_roles(role)
 
-        channel = guild.get_channel(cid)
-        for thread in channel.threads:
-            await thread.add_user(user)
+        # TODO: Check if needed
+        # channel = guild.get_channel(cid)
+        # for thread in channel.threads:
+        #     await thread.add_user(user)
 
         return [
             (None, f'{author.mention} invited {user.mention} to the "{self.name}" team')
@@ -518,7 +604,7 @@ class CtfTeam:
 
     @chk_archive
     async def join(self, user):
-        cid = self.__chan_id
+        cid = self.__forum_chan_id
         guild = self.__guild
         team = self.__teamdata
 
@@ -528,9 +614,10 @@ class CtfTeam:
             raise TaskFailed(f"{user.mention} has already joined {self.name}")
         await user.add_roles(role)
 
-        channel = guild.get_channel(cid)
-        for thread in channel.threads:
-            await thread.add_user(user)
+        # TODO: Check if needed
+        # channel = guild.get_channel(cid)
+        # for thread in channel.threads:
+        #     await thread.add_user(user)
 
         return [(None, f"{user.mention} has joined the <#{cid}> team! :sparkles:")]
 
@@ -549,7 +636,7 @@ class CtfTeam:
         return [(None, f'{user.mention} has left the {team["name"]} team...')]
 
     def refresh(self):
-        team = self.__teams.find_one({"chan_id": self.__chan_id})
+        team = self.__teams.find_one({"cmd_chan_id": self.__cmd_chan_id})
         if not team:
             raise ChannelNotFoundException(f"{self.__chan_id}: Invalid CTF channel ID")
         self.__teamdata = team
@@ -568,7 +655,16 @@ class CtfTeam:
             )
 
         # There should be just one channel id?
-        for c in [self.__chan_id]:
+        for c in [self.__cmd_chan_id]:
+            try:
+                await self.__guild.get_channel(c).delete(reason="Deleting CTF")
+            except Exception as e:
+                raise ChannelDeleteFailedException(
+                    f"Deletion of channel {str(c)} failed: {str(e)}"
+                )
+                
+        # There should be just one channel id?
+        for c in [self.__forum_chan_id]:
             try:
                 await self.__guild.get_channel(c).delete(reason="Deleting CTF")
             except Exception as e:
@@ -584,13 +680,14 @@ class Challenge:
     __chals__ = {}
 
     @staticmethod
-    def create(guild, ctf_id, thread_id, name):
-                
+    def create(guild, ctf_id, thread_id, name, forum_id):
+        print("Challenge.create")
         chals = db.challdb[str(guild.id)]
         chals.insert_one(
             {
                 "name": name+"-"+str(ctf_id),
                 "ctf_id": ctf_id,
+                "forum_id":forum_id,
                 "finished": False,
                 "solvers": [],
                 "thread_id": thread_id,
@@ -618,7 +715,7 @@ class Challenge:
 
     @staticmethod
     def find(guild, ctfid, name, err_on_fail=True):
-        chal = db.challdb[str(guild.id)].find_one({"name": name+"-"+str(ctfid), "ctf_id": ctfid})
+        chal = db.challdb[str(guild.id)].find_one({"name": name+"-"+str(ctfid), "forum_id": ctfid})
         if chal:
             return Challenge.fetch(guild, chal["thread_id"])
         elif err_on_fail:
@@ -639,6 +736,10 @@ class Challenge:
     @property
     def ctf_id(self):
         return self.__chalinfo["ctf_id"]
+    
+    @property
+    def forum_id(self):
+        return self.__chalinfo["forum_id"]
 
     @property
     def is_archived(self):
@@ -685,6 +786,7 @@ class Challenge:
             return
         return [await self.__guild.fetch_member(id) for id in self.__chalinfo['working']]
         
+    # TODO: Consider removing
     async def working(self):
         if not self.is_finished and self.__chalinfo['working']:
             workers = ", ".join(user.name for user in await self.working_users())
@@ -711,13 +813,13 @@ class Challenge:
 
     # async def _unarchive(self, catg_working, catg_done):
     async def _unarchive(self):
-        cid = self.__id
+        tid = self.__id
         guild = self.__guild
         
         #Update db
         chk_upd(
             self.name,
-            self.__chals.update_one({"thread_id": cid}, {"$set": {"archived": False}}),
+            self.__chals.update_one({"thread_id": tid}, {"$set": {"archived": False}}),
         )
         self.refresh()
         
@@ -739,7 +841,8 @@ class Challenge:
 
         # Delete thread
         channel = self.__guild.get_channel(channelid)
-        await channel.get_thread(cid).edit(archived=True)
+        
+        await channel.get_thread(cid).delete()
 
     @chk_archive
     async def done(self, owner, users):
@@ -761,11 +864,19 @@ class Challenge:
             if old_solvers == users:
                 raise TaskFailed("This task is already solved with same users")
 
+        forum_channel = discord.utils.get(guild.forums,id=self.forum_id)
+        
+        tag = [tag for tag in forum_channel.available_tags if tag.name == "Solved"][0]
+
         # Mark thread as done
-        thread = guild.get_channel(self.ctf_id).get_thread(thread_id)
+        thread = guild.get_thread(thread_id)
         if thread is not None:
             newName = thread.name.replace("❌","✅")
-            await thread.edit(name=newName, archived=True)
+            await thread.edit(
+                name=newName, 
+                archived=True,
+                applied_tags=[tag]
+                )
             self.refresh()
         else:
             raise ThreadNotFoundException("The thread cannot be found!")
@@ -842,10 +953,16 @@ class Challenge:
         if not self.is_finished:
             raise TaskFailed("This ctf challenge has not been completed yet")
 
+        forum_channel = discord.utils.get(guild.forums,id=self.forum_id)
+        
+        tag = [tag for tag in forum_channel.available_tags if tag.name == "Unsolved"][0]
+
         # Mark thread as undone
         thread = guild.get_thread(thread_id)
         if thread is not None:
-            await thread.edit(name=thread.name.replace("✅","❌"))
+            await thread.edit(name=thread.name.replace("✅","❌"),
+                              applied_tags=[tag]
+                              )
 
             self.refresh()
         else:

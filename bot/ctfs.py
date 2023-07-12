@@ -45,7 +45,7 @@ class Ctfs(commands.Cog):
         chan_id, messages = await respond_with_reaction(
             ctx, emoji, ctf_model.CtfTeam.create, ctx.channel.guild, name
         )
-        # TODO: Find a way to get the id of the newly created TextChannel
+        
         db.teamdb[str(ctx.channel.guild.id)].update_one(
             {"name": name+"-"+str(chan_id)}, {"$set": {"msg_id": messages[0].id}}
         )
@@ -60,7 +60,9 @@ class Ctfs(commands.Cog):
         name = " ".join(words)
         name = check_name(name)
         emoji = "🔨"
-        _, messages = await respond_with_reaction(ctx, emoji, chk_fetch_team(ctx).add_chal, name)
+        print("add")
+        # _, messages = await respond_with_reaction(ctx, emoji, chk_fetch_team(ctx).add_chal, name)
+        _, messages = await respond_with_reaction(ctx, "", chk_fetch_team(ctx).add_chal, name)
         db.challdb[str(ctx.channel.guild.id)].update_one(
             {"name": name+"-"+str(messages[0].channel.id)}, {"$set": {"msg_id": messages[0].id}}
         )
@@ -102,41 +104,41 @@ class Ctfs(commands.Cog):
             lines = "\n".join(lines)
             await ctx.send(f"```ini\n{lines}```")  
 
-
-    @commands.command()
-    async def working(self, ctx): 
-        # chk_fetch_team(ctx).refresh
-        chals = chk_fetch_team(ctx).challenges
-        if len(chals) == 0:
-            await ctx.send("No challenges added...")
-            return
-        if not config['react_for_challenge']:
-            await ctx.send("Makes no sense to check who is working when everyone has joined every thread...")
-            return
+    # Not needed in this context
+    # @commands.command()
+    # async def working(self, ctx): 
+    #     # chk_fetch_team(ctx).refresh
+    #     chals = chk_fetch_team(ctx).challenges
+    #     if len(chals) == 0:
+    #         await ctx.send("No challenges added...")
+    #         return
+    #     if not config['react_for_challenge']:
+    #         await ctx.send("Makes no sense to check who is working when everyone has joined every thread...")
+    #         return
         
-        msg_len = 50
-        lines = []
-        for chal in chals:
-            status = await chal.status()
-            if status.lower()[:4] != "unso":
-                continue
-            workers = await chal.working()
-            if not workers:
-                chall_line = f"[{chal.team.name}] [{chal.name}] - No one works this challenge..."
-            else:
-                chall_line = f"[{chal.team.name}] [{chal.name}] - {workers} works on this challenge"
-            msg_len += len(chall_line) + 1
-            if msg_len > 1000:  # Over limit
-                lines = "\n".join(lines)
-                await ctx.send(f"```ini\n{lines}```")
-                lines = []
-                msg_len = len(chall_line) + 51
-            lines.append(chall_line)
-        if len(lines)==0:
-            await ctx.send(f"No one is working on any unsolved challenge...") 
-        else:
-            lines = "\n".join(lines)
-            await ctx.send(f"```ini\n{lines}```")     
+    #     msg_len = 50
+    #     lines = []
+    #     for chal in chals:
+    #         status = await chal.status()
+    #         if status.lower()[:4] != "unso":
+    #             continue
+    #         workers = await chal.working()
+    #         if not workers:
+    #             chall_line = f"[{chal.team.name}] [{chal.name}] - No one works this challenge..."
+    #         else:
+    #             chall_line = f"[{chal.team.name}] [{chal.name}] - {workers} works on this challenge"
+    #         msg_len += len(chall_line) + 1
+    #         if msg_len > 1000:  # Over limit
+    #             lines = "\n".join(lines)
+    #             await ctx.send(f"```ini\n{lines}```")
+    #             lines = []
+    #             msg_len = len(chall_line) + 51
+    #         lines.append(chall_line)
+    #     if len(lines)==0:
+    #         await ctx.send(f"No one is working on any unsolved challenge...") 
+    #     else:
+    #         lines = "\n".join(lines)
+    #         await ctx.send(f"```ini\n{lines}```")     
         
     @commands.bot_has_permissions(manage_roles=True)
     @commands.command()
@@ -273,11 +275,13 @@ async def respond(ctx, callback, *args):
 
 
 async def respond_with_reaction(ctx, emoji, callback, *args):
+    print("Respond with reaction")
     messages = []
     guild = ctx.channel.guild
     async with ctx.channel.typing():
         for chan_id, msg in await callback(*args):
             chan =  ctx.channel
+            print(msg)
             msg = await chan.send(msg)
             #Just in case we don't want to add reaction, which was really not needed for add challenge
             if emoji:
@@ -313,6 +317,7 @@ def chk_fetch_team_by_name(ctx, name):
 
 
 def chk_fetch_team(ctx):
+    print("chk_fetch_team")
     team = ctf_model.CtfTeam.fetch(ctx.channel.guild, ctx.channel.id)
     if not team:
         raise ctf_model.TaskFailed(
