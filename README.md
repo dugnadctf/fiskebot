@@ -1,7 +1,13 @@
-# fiskebot
-![](images/fiskebot_logo.png)
+# Zookeeper
 
-This bot is still work in process. It is a fork of [eptbot](https://github.com/ept-team/eptbot), which is again a fork of [igCTF](https://gitlab.com/inequationgroup/igCTF), which is again a fork of [NullCTF](https://github.com/NullPxl/NullCTF).
+This bot is still work in process. It is a fork of [fiskebot](https://github.com/dugnadctf/fiskebot/), which is again a fork of [eptbot](https://github.com/ept-team/eptbot), which is again a fork of [igCTF](https://gitlab.com/inequationgroup/igCTF), which is again a fork of [NullCTF](https://github.com/NullPxl/NullCTF).
+
+NB! The bot will only work inside communitychannels due to the use of forum-channels.
+
+Zookeeper feels quite organized in the way that it creates challenge-threads, so the discordservers don't flood over with challengechannels.
+
+Exporting functionality is not avaiable at the moment. 
+
 
 ## Install
 
@@ -26,16 +32,8 @@ The only required variable is `DISCORD_TOKEN`, the rest will use the default val
 | `CATEGORY_ARCHIVE_PREFIX` | `archive` | Category to move channels to when the CTF is over. There is a max limit on 50 channels per category. The bot wil automatically move channels to new categories when needed |
 | `CHANNEL_EXPORT` | `export` | The channel to upload exports to |
 | `CHANNEL_LOGGING_ID` |  | If enabled, will send logging to this channel, based on the `LOGGING_DISCORD_LEVEL` logging level |
-| `CHANNEL_NAME_DELIMITER` | `-` | The delimiter for the channel names, must be one of `-` or `_`. Results in `-`: `#ctf-challenge-name`, and `_`: `#ctf_challenge_name` |
-| `CTFTIME_TEAM_ID` |  | CTFtime ID for the `!ctftime team` command |
-| `CTFTIME_TEAM_NAME` |  | CTFtime name for the `!ctftime team` command |
-
-### start
-
-`docker-compose up --build -d`
-
-### develop
-
+| `CHANNEL_NAME_DELIMITER` | ` ` | The delimiter for the channel names, must be one of `-`,  or `_`. Results in `-`: `#ctf-challenge-name`, and `_`: `#ctf_challenge_name` |
+| `CTFTIME_TEAM_ID` |  | CTFtime ID for the `!ctftime team` command |![enter image description here](images/rumble-add1.PNG)
 The `/bot` folder is mounted into the container, so you just need to restart to get your updated changes.
 ```bash
 docker-compose build
@@ -74,14 +72,17 @@ $ cp git-hook .git/hooks/pre-commit
 
 - `!help` Display the main help commands.
 
-- `!create "ctf name"` This is the command you'll use when you want to begin a new CTF. This command will make a text channel with your supplied name. The bot will also send a message in chat where members can react to join the CTF.
-![enter image description here](images/ept-create.PNG)
+- `!create "ctf name"` This is the command you'll use when you want to begin a new CTF. This command will make a text channel and a forum-channel with your supplied name. The bot will also send a message in chat where members can react to join the CTF.
+    ![Create CTF-channels](images/rumble-create.PNG)
 
-- `!add <challenge name>` This will create a new channel for a given challenge.
-![enter image description here](images/ept-add.PNG)
-- `!done [@users ...]` Mark a challenge as done. Needs to be done inside the challenge channel. Optionally specify other users who also contributed to solving the challenge, space separated without the @s.
-![enter image description here](images/ept-done.PNG)
-- `!ctf archive` Mark the ctf as over and move it to the archive categories (specified in `/bot/config.py`).
+- `!add <challenge name>` This will create a new thread in the forum-channel for a given challenge.
+    ![Create challengethreads](images/rumble-add1.PNG)
+    ![Challengethreads in forumchannel](images/rumble-add2.PNG)
+
+- `!done [@users ...]` Mark a challenge as done. Needs to be done inside the challengethread. Optionally specify other users who also contributed to solving the challenge, space separated without the @s.
+    ![Mark challenges as solved](images/rumble-done.PNG)
+
+- `!ctf archive` Mark the ctf as over and move it to the archive categories (specified in `/bot/config.py`). 
 
 ---
 
@@ -102,3 +103,5 @@ $ cp git-hook .git/hooks/pre-commit
 ![enter image description here](images/ctftime-team.png)
 
 > ### Have a feature request? Make a GitHub issue.
+
+> Please upvote this feature request https://github.com/discord/discord-api-docs/discussions/6084

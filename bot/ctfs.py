@@ -1,4 +1,5 @@
 import re
+import asyncio
 
 import ctf_model
 import db
@@ -22,13 +23,13 @@ def verify_owner():
     return commands.check(predicate)
 
 
+
 class Ctfs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.challenges = {}
         self.ctfname = ""
 
-        self.limit = 20
+        self.limit = 400
         self.guilds = {}
         self.cleanup.start()
 
@@ -41,23 +42,30 @@ class Ctfs(commands.Cog):
     async def create(self, ctx, *name):
         name = config["challenge_name_delimiter"].join(name)
         emoji = "🏃"
-        messages = await respond_with_reaction(
+        chan_id, messages = await respond_with_reaction(
             ctx, emoji, ctf_model.CtfTeam.create, ctx.channel.guild, name
         )
+        
         db.teamdb[str(ctx.channel.guild.id)].update_one(
-            {"name": name}, {"$set": {"msg_id": messages[0].id}}
+            {"name": name+"-"+str(chan_id)}, {"$set": {"msg_id": messages[0].id}}
         )
 
     ##################################################################################
     # CTF main channel commands
     ##################################################################################
+
     @commands.bot_has_permissions(manage_channels=True)
     @commands.command()
     async def add(self, ctx, *words):
-        name = config["challenge_name_delimiter"].join(words)
+        name = " ".join(words)
         name = check_name(name)
         emoji = "🔨"
-        await respond_with_reaction(ctx, emoji, chk_fetch_team(ctx).add_chal, name)
+        print("add")
+        # _, messages = await respond_with_reaction(ctx, emoji, chk_fetch_team(ctx).add_chal, name)
+        _, messages = await respond_with_reaction(ctx, "", chk_fetch_team(ctx).add_chal, name)
+        db.challdb[str(ctx.channel.guild.id)].update_one(
+            {"name": name+"-"+str(messages[0].channel.id)}, {"$set": {"msg_id": messages[0].id}}
+        )
 
     @commands.bot_has_permissions(manage_channels=True)
     @commands.has_permissions(manage_channels=True)
@@ -65,7 +73,73 @@ class Ctfs(commands.Cog):
     async def delete(self, ctx, name):
         name = check_name(name)
         await respond(ctx, chk_fetch_team(ctx).del_chal, name)
+        
+    @commands.command()
+    async def status(self, ctx, state="lol"): #Legge til statuscheck
+        chals = chk_fetch_team(ctx).challenges
+        if len(chals) == 0:
+            await ctx.send("No challenges added...")
+            return
+        uns = True
+        if str(state).lower()=="unsolved":
+            uns = False
+        
+        msg_len = 50
+        lines = []
+        for chal in chals:
+            status = await chal.status()
+            if status.lower()[:4] != "unso" and not uns:
+                continue
+            chall_line = f"[{chal.team.name}] [{chal.name}] - {status}"
+            msg_len += len(chall_line) + 1
+            if msg_len > 1000:  # Over limit
+                lines = "\n".join(lines)
+                await ctx.send(f"```ini\n{lines}```")
+                lines = []
+                msg_len = len(chall_line) + 51
+            lines.append(chall_line)
+        if len(lines)==0:
+            await ctx.send(f"Every started challenge is completed! :tada:") 
+        else:
+            lines = "\n".join(lines)
+            await ctx.send(f"```ini\n{lines}```")  
 
+    # Not needed in this context
+    # @commands.command()
+    # async def working(self, ctx): 
+    #     # chk_fetch_team(ctx).refresh
+    #     chals = chk_fetch_team(ctx).challenges
+    #     if len(chals) == 0:
+    #         await ctx.send("No challenges added...")
+    #         return
+    #     if not config['react_for_challenge']:
+    #         await ctx.send("Makes no sense to check who is working when everyone has joined every thread...")
+    #         return
+        
+    #     msg_len = 50
+    #     lines = []
+    #     for chal in chals:
+    #         status = await chal.status()
+    #         if status.lower()[:4] != "unso":
+    #             continue
+    #         workers = await chal.working()
+    #         if not workers:
+    #             chall_line = f"[{chal.team.name}] [{chal.name}] - No one works this challenge..."
+    #         else:
+    #             chall_line = f"[{chal.team.name}] [{chal.name}] - {workers} works on this challenge"
+    #         msg_len += len(chall_line) + 1
+    #         if msg_len > 1000:  # Over limit
+    #             lines = "\n".join(lines)
+    #             await ctx.send(f"```ini\n{lines}```")
+    #             lines = []
+    #             msg_len = len(chall_line) + 51
+    #         lines.append(chall_line)
+    #     if len(lines)==0:
+    #         await ctx.send(f"No one is working on any unsolved challenge...") 
+    #     else:
+    #         lines = "\n".join(lines)
+    #         await ctx.send(f"```ini\n{lines}```")     
+        
     @commands.bot_has_permissions(manage_roles=True)
     @commands.command()
     async def join(self, ctx, name=None):
@@ -111,55 +185,30 @@ class Ctfs(commands.Cog):
         except ChannelDeleteFailedException as e:
             await ctx.send(str(e))
 
-    @commands.command()
-    async def status(self, ctx):
-        chals = chk_fetch_team(ctx).challenges
-        if len(chals) == 0:
-            await ctx.send("No challenges added...")
-            return
-
-        msg_len = 50
-        lines = []
-        for chal in chals:
-            chall_line = f"[{chal.team.name}] [{chal.name}] - {await chal.status()}"
-            msg_len += len(chall_line) + 1
-            if msg_len > 1000:  # Over limit
-                lines = "\n".join(lines)
-                await ctx.send(f"```ini\n{lines}```")
-                lines = []
-                msg_len = len(chall_line) + 51
-            lines.append(chall_line)
-
-        lines = "\n".join(lines)
-        await ctx.send(f"```ini\n{lines}```")
 
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
     # @commands.has_permissions(manage_channels=True)
     @commands.command()
     async def export(self, ctx):
         await respond(ctx, ctf_model.export, ctx, ctx.author)
-
+        
+        
     ##################################################################################
     # CTF challenge specific commands
     ##################################################################################
     @commands.bot_has_permissions(manage_channels=True)
-    @verify_owner()
+    #@verify_owner()
     @commands.command()
     async def done(self, ctx, *withlist: Member):
         users = list(set(withlist))
         await respond(ctx, chk_fetch_chal(ctx).done, ctx.author, users)
 
     @commands.bot_has_permissions(manage_channels=True)
-    @verify_owner()
+    #@verify_owner()
     @commands.command()
     async def undone(self, ctx):
         await respond(ctx, chk_fetch_chal(ctx).undone)
 
-    # TODO: delete? not really used as everyone has the same role
-    @commands.bot_has_permissions(manage_channels=True)
-    @commands.command()
-    async def leave_challenge(self, ctx):
-        await respond(ctx, chk_fetch_chal(ctx).leave, ctx.author)
 
     ##################################################################################
     # Automatic cleanup
@@ -167,6 +216,18 @@ class Ctfs(commands.Cog):
     @loop(minutes=30)
     async def cleanup(self):
         for guild_id, guild in self.guilds.items():
+
+            #Archive threads in archived ctf channels and make sure threads in active CTFs is not archived
+            for channel in guild.channels:
+                if config['categories']["archive-prefix"].lower() in str(channel.category).lower():
+                    for thread in channel.threads:
+                        if not thread.archived:
+                            await thread.edit(archived=True)
+                elif config['categories']["working"].lower() in str(channel.category).lower():
+                    for thread in channel.threads:
+                        if "❌" in thread.name:
+                            await thread.edit(archived=False)
+
             archived = sorted(
                 [
                     (ObjectId(ctf["_id"]).generation_time, ctf)
@@ -190,6 +251,8 @@ class Ctfs(commands.Cog):
                 await delete(guild, channels)
                 break  # safety measure to take only one
 
+            
+
     @cleanup.before_loop
     async def cleanup_before(self):
         await self.bot.wait_until_ready()
@@ -212,17 +275,21 @@ async def respond(ctx, callback, *args):
 
 
 async def respond_with_reaction(ctx, emoji, callback, *args):
+    print("Respond with reaction")
     messages = []
     guild = ctx.channel.guild
     async with ctx.channel.typing():
         for chan_id, msg in await callback(*args):
-            chan = guild.get_channel(chan_id) if chan_id else ctx.channel
+            chan =  ctx.channel
+            print(msg)
             msg = await chan.send(msg)
-            await msg.add_reaction(emoji)
+            #Just in case we don't want to add reaction, which was really not needed for add challenge
+            if emoji:
+                await msg.add_reaction(emoji)
             messages.append(msg)
-    return messages
+    return chan_id, messages
 
-
+#TODO find out which filters is needed for threads
 def check_name(name):
     if len(name) > 32:
         raise ctf_model.TaskFailed("Challenge name is too long!")
@@ -231,7 +298,7 @@ def check_name(name):
         raise ctf_model.TaskFailed("Challenge contains invalid characters!")
 
     # Replace spaces with a dash with a configured delimiter
-    return re.sub(r" +", config["challenge_name_delimiter"], name).lower()
+    return re.sub(r" +", " ", name).lower()
 
 
 def chk_fetch_team_by_name(ctx, name):
@@ -250,13 +317,13 @@ def chk_fetch_team_by_name(ctx, name):
 
 
 def chk_fetch_team(ctx):
+    print("chk_fetch_team")
     team = ctf_model.CtfTeam.fetch(ctx.channel.guild, ctx.channel.id)
     if not team:
         raise ctf_model.TaskFailed(
-            "Please type this command in the main channel of a CTF."
+            "Please type this command in the channel of a CTF."
         )
     return team
-
 
 def chk_fetch_chal(ctx):
     chal = ctf_model.Challenge.fetch(ctx.channel.guild, ctx.channel.id)
@@ -265,5 +332,5 @@ def chk_fetch_chal(ctx):
     return chal
 
 
-def setup(bot):
-    bot.add_cog(Ctfs(bot))
+async def setup(bot):
+    await bot.add_cog(Ctfs(bot))
