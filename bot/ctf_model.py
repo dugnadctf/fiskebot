@@ -555,16 +555,16 @@ class CtfTeam:
         
         # Unarchive all challenge threads
         # Same noise as in add challenge, fix this also if another method is preferred
-        if not config['react_for_challenge']:
-            for thread in forum_chan.threads:
-                await thread.join()
+        # if not config['react_for_challenge']:
+        for thread in forum_chan.threads:
+            await thread.join()
                 # TODO: Check if needed
                 # Add all users with role to thread
                 # usersWithRole = [user for user in role.members]
                 # for user in usersWithRole:
                 #     await thread.add_user(user)
                     
-                await thread.edit(archived=False)
+            await thread.edit(archived=False)
             
         try:
             for thread in self.challenges:

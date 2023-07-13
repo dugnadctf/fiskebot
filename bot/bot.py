@@ -118,13 +118,13 @@ async def on_raw_reaction_add(payload):
                 return
 
             await member.add_roles(role, reason="User wanted to join team")
-        elif challenge and config['react_for_challenge']:
-            # logger.debug(f"Adding {member.name} to thread")
-            thread = guild.get_thread(challenge['thread_id'])
-            await thread.add_user(member)
-            db.challdb[str(payload.guild_id)].update_one(
-                {"msg_id": payload.message_id}, {"$push": {"working": member.id}}
-            )
+        # elif challenge and config['react_for_challenge']:
+        #     # logger.debug(f"Adding {member.name} to thread")
+        #     thread = guild.get_thread(challenge['thread_id'])
+        #     await thread.add_user(member)
+        #     db.challdb[str(payload.guild_id)].update_one(
+        #         {"msg_id": payload.message_id}, {"$push": {"working": member.id}}
+        #     )
             # logger.debug(f"Added {member.name} to thread")
         else: 
             # logger.error(f"Not adding role. Could find team")
@@ -153,13 +153,13 @@ async def on_raw_reaction_remove(payload):
             await member.remove_roles(role, reason="User wanted to leave team")
             # logger.debug(f"Removed role {role} from user {member}")
             
-        elif challenge and config['react_for_challenge']:
-            # logger.debug(f"Removing {member.name} to thread")
-            thread = guild.get_thread(challenge['thread_id'])
-            await thread.remove_user(member)
-            db.challdb[str(payload.guild_id)].update_one(
-                {"msg_id": payload.message_id}, {"$pull": {"working": member.id}}
-            )
+        # elif challenge and config['react_for_challenge']:
+        #     # logger.debug(f"Removing {member.name} to thread")
+        #     thread = guild.get_thread(challenge['thread_id'])
+        #     await thread.remove_user(member)
+        #     db.challdb[str(payload.guild_id)].update_one(
+        #         {"msg_id": payload.message_id}, {"$pull": {"working": member.id}}
+        #     )
             # logger.debug(f"Removed {member.name} to thread")
         else: 
             # logger.error(f"Not removing role. Could find team")
