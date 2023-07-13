@@ -73,14 +73,14 @@ $ cp git-hook .git/hooks/pre-commit
 - `!help` Display the main help commands.
 
 - `!create "ctf name"` This is the command you'll use when you want to begin a new CTF. This command will make a text channel and a forum-channel with your supplied name. The bot will also send a message in chat where members can react to join the CTF.
-![enter image description here](images/rumble-create.PNG)
+    ![Create CTF-channels](images/rumble-create.PNG)
 
 - `!add <challenge name>` This will create a new thread in the forum-channel for a given challenge.
-![enter image description here](images/rumble-add1.PNG)
-![enter image description here](images/rumble-add2.PNG)
+    ![Create challengethreads](images/rumble-add1.PNG)
+    ![Challengethreads in forumchannel](images/rumble-add2.PNG)
 
 - `!done [@users ...]` Mark a challenge as done. Needs to be done inside the challengethread. Optionally specify other users who also contributed to solving the challenge, space separated without the @s.
-![enter image description here](images/rumble-done.PNG)
+    ![Mark challenges as solved](images/rumble-done.PNG)
 
 - `!ctf archive` Mark the ctf as over and move it to the archive categories (specified in `/bot/config.py`). 
 
