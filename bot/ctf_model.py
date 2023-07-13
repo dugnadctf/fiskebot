@@ -84,7 +84,7 @@ async def _find_available_archive_category(guild):
                 if category.name == category_name
             ][0]
 
-            if len(category_archive.channels) > 49:
+            if len(category_archive.channels) < 49:
                 break
         # Will go here if no archive categories is created that year
         except:
@@ -395,6 +395,21 @@ class CtfTeam:
             applied_tags=[tag]
             )
         
+        # try:
+        #     team = db.teamdb[str(guild.id)].find_one({"forum_chan_id": forum_cid})
+        #     role = guild.get_role(team["role_id"])
+            
+        #     threadMembers = [member for member in thread[0].members]
+        #     teamMembers = [user for user in role.members]
+            
+        #     for user in teamMembers:
+        #         print(f"Checking if {user.name} in {thread[0].name}")
+        #         if user not in threadMembers:
+        #             print(f"{user.name} not in {thread[0].name}, adding now")
+        #             await thread[0].add_user(user)
+        # except Exception as e:
+        #     print(e)
+        #     pass
         
 
         Challenge.create(guild=guild,ctf_id=cmd_cid,thread_id=thread[0].id,name=name,forum_id=forum_cid)
@@ -517,7 +532,7 @@ class CtfTeam:
         
         # Unarchive challenge channel
         forum_chan = guild.get_channel(forum_cid)
-        cmd_chan = guild.get_channel(forum_cid)
+        cmd_chan = guild.get_channel(cmd_cid)
         
         await forum_chan.edit(category=catg_working, position=0)
         await cmd_chan.edit(category=catg_working, position=0)
