@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import asyncio
 import logging
 import os.path
@@ -15,14 +16,28 @@ from discord.ext import commands
 from helpers import helpers
 from logger import BotLogger
 
+# TODO: Append channel id to naming in db to fix naming conflicts. For both teams and challenges
+# Possible naming convention:
+# f"{name}-{ctx.channel.id}"
+
 logger = BotLogger("bot")
 
 if not config["token"]:
     logger.error("DISCORD_TOKEN has not been set")
     exit(1)
 
-client = discord.Client()
-bot = commands.Bot(command_prefix=config["prefix"])
+#Need to figure out which intents is needed
+intents = discord.Intents.all()
+intents.members = True
+intents.typing = True
+intents.presences = True
+intents.messages = True
+intents.reactions = True
+
+client = discord.Client(intents=intents)
+bot = commands.Bot(command_prefix=config["prefix"],intents=intents)
+
+
 
 intents = discord.Intents.default()
 intents.members = True
@@ -89,23 +104,32 @@ async def on_raw_reaction_add(payload):
     guild = bot.get_guild(payload.guild_id)
     chan = bot.get_channel(payload.channel_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
+    challenge = db.challdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
     member = await guild.fetch_member(payload.user_id)
-    if guild and member and chan:
-        # logger.debug(f"Added reaction: {payload}")
-        # logger.debug(f"Guild: {guild}, Channel: {chan}, Team: {team}, Member: {member}")
-        if not team:
+
+    if guild and member and chan and not member.bot:
+        if team:
+            role = guild.get_role(team["role_id"])
+            if not role:
+                logger.error(
+                    f"Not adding role. Could not find role ID {team['role_id']} in Discord"
+                )
+                logger.error(team)
+                return
+
+            await member.add_roles(role, reason="User wanted to join team")
+        elif challenge and config['react_for_challenge']:
+            # logger.debug(f"Adding {member.name} to thread")
+            thread = guild.get_thread(challenge['thread_id'])
+            await thread.add_user(member)
+            db.challdb[str(payload.guild_id)].update_one(
+                {"msg_id": payload.message_id}, {"$push": {"working": member.id}}
+            )
+            # logger.debug(f"Added {member.name} to thread")
+        else: 
             # logger.error(f"Not adding role. Could find team")
             return
-        role = guild.get_role(team["role_id"])
-        if not role:
-            logger.error(
-                f"Not adding role. Could not find role ID {team['role_id']} in Discord"
-            )
-            logger.error(team)
-            return
 
-        await member.add_roles(role, reason="User wanted to join team")
-        logger.debug(f"Added role {role} to user {member}")
 
 
 @bot.event
@@ -113,22 +137,36 @@ async def on_raw_reaction_remove(payload):
     # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
+    challenge = db.challdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
     member = await guild.fetch_member(payload.user_id)
-    if guild and member:
+    
+    if guild and member and not member.bot:
         # logger.debug(f"Removed reaction: {payload}")
         # logger.debug(f"Guild: {guild}, Team: {team}, Member: {member}")
-        if not team:
+
+        if team:
+            role = guild.get_role(team["role_id"])
+            if not role:
+                logger.error(f"Not removing role. Could not find role ID {team['role_id']}")
+                logger.error(team)
+                return
+            await member.remove_roles(role, reason="User wanted to leave team")
+            # logger.debug(f"Removed role {role} from user {member}")
+            
+        elif challenge and config['react_for_challenge']:
+            # logger.debug(f"Removing {member.name} to thread")
+            thread = guild.get_thread(challenge['thread_id'])
+            await thread.remove_user(member)
+            db.challdb[str(payload.guild_id)].update_one(
+                {"msg_id": payload.message_id}, {"$pull": {"working": member.id}}
+            )
+            # logger.debug(f"Removed {member.name} to thread")
+        else: 
             # logger.error(f"Not removing role. Could find team")
             return
-        role = guild.get_role(team["role_id"])
-        if not role:
-            logger.error(f"Not removing role. Could not find role ID {team['role_id']}")
-            logger.error(team)
-            return
-        await member.remove_roles(role, reason="User wanted to leave team")
-        logger.debug(f"Removed role {role} from user {member}")
-
-
+            
+    
+    
 async def embed_help(chan, help_topic, help_text):
     emb = discord.Embed(description=help_text, colour=4387968)
     emb.set_author(name=help_topic)
@@ -154,26 +192,31 @@ async def help(ctx, category=None):
 
 @bot.command()
 async def request(ctx, feature):
-    for cid in config["maintainers"]:
-        creator = bot.get_user(cid)
-        authors_name = str(ctx.author)
-        await creator.send(f""":pencil: {authors_name}: {feature}""")
-    await ctx.send(f""":pencil: Thanks, "{feature}" has been requested!""")
+    if config["maintainers"]:
+        for cid in config["maintainers"]:
+            creator = bot.get_user(cid)
+            authors_name = str(ctx.author)
+            await creator.send(f""":pencil: {authors_name}: {feature}""")
+        await ctx.send(f""":pencil: Thanks, "{feature}" has been requested!""")
+    else:
+        await ctx.send(f""":pencil: No maintainers listed in config!""")
 
 
 @bot.command()
 async def report(ctx, error_report):
-    for cid in config["maintainers"]:
-        creator = bot.get_user(cid)
-        authors_name = str(ctx.author)
-        await creator.send(
-            f""":triangular_flag_on_post: {authors_name}: {error_report}"""
+    if config["maintainers"]:
+        for cid in config["maintainers"]:
+            creator = bot.get_user(cid)
+            authors_name = str(ctx.author)
+            await creator.send(
+                f""":triangular_flag_on_post: {authors_name}: {error_report}"""
+            )
+        await ctx.send(
+            f""":triangular_flag_on_post: Thanks for the help, "{error_report}" has been reported!"""
         )
-    await ctx.send(
-        f""":triangular_flag_on_post: Thanks for the help, "{error_report}" has been reported!"""
-    )
-
-
+    else:
+        await ctx.send(f""":pencil: No maintainers listed in config!""")
+        
 @bot.command()
 async def setup(ctx):
     if ctx.author.id not in config["maintainers"]:
@@ -224,7 +267,17 @@ async def exit(ctx):
 
 # -------------------
 
+async def loadExtras(bot):
+    await bot.load_extension("ctftime")
+    await bot.load_extension("ctfs")
+
+async def main():
+
+    await loadExtras(bot)
+    
+    async with bot:
+        await bot.start(config["token"])
+
+    
 if __name__ == "__main__":
-    bot.load_extension("ctftime")
-    bot.load_extension("ctfs")
-    bot.run(config["token"])
+    asyncio.run(main())

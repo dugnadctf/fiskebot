@@ -1,7 +1,6 @@
-# fiskebot
-![](images/fiskebot_logo.png)
+# Zookeeper
 
-This bot is still work in process. It is a fork of [eptbot](https://github.com/ept-team/eptbot), which is again a fork of [igCTF](https://gitlab.com/inequationgroup/igCTF), which is again a fork of [NullCTF](https://github.com/NullPxl/NullCTF).
+This bot is still work in process. It is a fork of [fiskebot](https://github.com/dugnadctf/fiskebot/), which is again a fork of [eptbot](https://github.com/ept-team/eptbot), which is again a fork of [igCTF](https://gitlab.com/inequationgroup/igCTF), which is again a fork of [NullCTF](https://github.com/NullPxl/NullCTF).
 
 ## Install
 
@@ -26,9 +25,10 @@ The only required variable is `DISCORD_TOKEN`, the rest will use the default val
 | `CATEGORY_ARCHIVE_PREFIX` | `archive` | Category to move channels to when the CTF is over. There is a max limit on 50 channels per category. The bot wil automatically move channels to new categories when needed |
 | `CHANNEL_EXPORT` | `export` | The channel to upload exports to |
 | `CHANNEL_LOGGING_ID` |  | If enabled, will send logging to this channel, based on the `LOGGING_DISCORD_LEVEL` logging level |
-| `CHANNEL_NAME_DELIMITER` | `-` | The delimiter for the channel names, must be one of `-` or `_`. Results in `-`: `#ctf-challenge-name`, and `_`: `#ctf_challenge_name` |
+| `CHANNEL_NAME_DELIMITER` | ` ` | The delimiter for the channel names, must be one of `-`,  or `_`. Results in `-`: `#ctf-challenge-name`, and `_`: `#ctf_challenge_name` |
 | `CTFTIME_TEAM_ID` |  | CTFtime ID for the `!ctftime team` command |
 | `CTFTIME_TEAM_NAME` |  | CTFtime name for the `!ctftime team` command |
+| `REACT_FOR_CHALLENGE` | `False` | If participants has to react to message to join challenge-threads |
 
 ### start
 
@@ -77,10 +77,10 @@ $ cp git-hook .git/hooks/pre-commit
 - `!create "ctf name"` This is the command you'll use when you want to begin a new CTF. This command will make a text channel with your supplied name. The bot will also send a message in chat where members can react to join the CTF.
 ![enter image description here](images/ept-create.PNG)
 
-- `!add <challenge name>` This will create a new channel for a given challenge.
-![enter image description here](images/ept-add.PNG)
-- `!done [@users ...]` Mark a challenge as done. Needs to be done inside the challenge channel. Optionally specify other users who also contributed to solving the challenge, space separated without the @s.
-![enter image description here](images/ept-done.PNG)
+- `!add <challenge name>` This will create a new thread for a given challenge.
+
+- `!done [@users ...]` Mark a challenge as done. Needs to be done inside the challenge thread. Optionally specify other users who also contributed to solving the challenge, space separated without the @s.
+
 - `!ctf archive` Mark the ctf as over and move it to the archive categories (specified in `/bot/config.py`).
 
 ---
@@ -102,3 +102,5 @@ $ cp git-hook .git/hooks/pre-commit
 ![enter image description here](images/ctftime-team.png)
 
 > ### Have a feature request? Make a GitHub issue.
+
+> Please upvote this feature request https://github.com/discord/discord-api-docs/discussions/6084
