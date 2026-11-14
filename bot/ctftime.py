@@ -78,11 +78,11 @@ class Ctftime(commands.Cog):
         ) in ctfs:  # If the document doesn't exist: add it, if it does: update it.
             print(f"Got {ctf['name']} from ctftime")
             query = ctf["name"]
-            db.ctfs.update({"name": query}, {"$set": ctf}, upsert=True)
+            db.ctfs.update_one({"name": query}, {"$set": ctf}, upsert=True)
 
         for ctf in db.ctfs.find():  # Delete ctfs that are over from the db
             if ctf["end"] < unix_now:
-                db.ctfs.remove({"name": ctf["name"]})
+                db.ctfs.delete_one({"name": ctf["name"]})
 
     @commands.group()
     async def ctftime(self, ctx):
@@ -430,7 +430,7 @@ def get_scores(team_id, year=None):
         columns = [c.text_content().replace("\t", " ") for c in columns[1:]]
         table.append(columns)
 
-    table.sort(key=lambda l: float(l[3].replace("*", "")), reverse=True)
+    table.sort(key=lambda line: float(line[3].replace("*", "")), reverse=True)
     table = [column_names] + table
     return table
 
@@ -463,5 +463,5 @@ def format_table(table, seperator="      "):
     )
 
 
-def setup(bot):
-    bot.add_cog(Ctftime(bot))
+async def setup(bot):
+    await bot.add_cog(Ctftime(bot))

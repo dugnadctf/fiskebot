@@ -50,6 +50,16 @@ class Guild:
 
 
 class CreateTests(unittest.TestCase):
+    def test_empty_name_does_not_create_role(self):
+        guild = Guild()
+        error = None
+        try:
+            asyncio.run(load_create()(guild, ""))
+        except Exception as exc:
+            error = exc
+        self.assertEqual(guild.created_roles, [])
+        self.assertIsInstance(error, TaskFailed)
+
     def test_existing_channel_does_not_create_role(self):
         guild = Guild(channels=["existing"])
         with self.assertRaises(TaskFailed):

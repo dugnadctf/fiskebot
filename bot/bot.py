@@ -21,11 +21,9 @@ if not config["token"]:
     logger.error("DISCORD_TOKEN has not been set")
     exit(1)
 
-client = discord.Client()
-bot = commands.Bot(command_prefix=config["prefix"])
-
 intents = discord.Intents.default()
-intents.members = True
+intents.message_content = True
+bot = commands.Bot(command_prefix=config["prefix"], intents=intents)
 
 bot.remove_command("help")
 
@@ -59,17 +57,17 @@ async def on_command_error(ctx, err):
             "You do not have permission to do that! ¯\\_(ツ)_/¯"
         )  # pylint: disable=anomalous-backslash-in-string
     elif isinstance(err, commands.BotMissingPermissions):
-        await ctx.send(
-            f""":cry: I can\'t do that. Please ask server ops
+        await ctx.send(f""":cry: I can\'t do that. Please ask server ops
         to add all the permission for me!
 
-        ```{str(err)}```"""
-        )
+        ```{str(err)}```""")
     elif isinstance(err, commands.DisabledCommand):
         await ctx.send(":skull: Command has been disabled!")
     elif isinstance(err, commands.CommandNotFound):
         await ctx.send("Invalid command passed. Use !help.")
     elif isinstance(err, ctf_model.TaskFailed):
+        await ctx.send(f":bangbang: {str(err)}")
+    elif isinstance(err, commands.UserInputError):
         await ctx.send(f":bangbang: {str(err)}")
     elif isinstance(err, commands.NoPrivateMessage):
         await ctx.send(":bangbang: This command cannot be used in PMs.")
@@ -224,7 +222,13 @@ async def exit(ctx):
 
 # -------------------
 
+
+async def main():
+    async with bot:
+        await bot.load_extension("ctftime")
+        await bot.load_extension("ctfs")
+        await bot.start(config["token"])
+
+
 if __name__ == "__main__":
-    bot.load_extension("ctftime")
-    bot.load_extension("ctfs")
-    bot.run(config["token"])
+    asyncio.run(main())
