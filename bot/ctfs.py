@@ -7,9 +7,9 @@ from config import config
 from ctf_model import delete, exportChannels, save
 from discord.ext import commands
 from discord.ext.tasks import loop
-from discord.member import Member
 from discord.utils import get
 from exceptions import ChannelDeleteFailedException, ChannelNotFoundException
+from member_lookup import MemberArgument
 
 from bot import embed_help
 
@@ -73,6 +73,7 @@ class Ctfs(commands.Cog):
             await ctx.send(
                 f'Please specify a CTF to join:\n```{config["prefix"]}join <ctf name>```'
             )
+            return
         await respond(ctx, chk_fetch_team_by_name(ctx, name).join, ctx.author)
 
     @commands.bot_has_permissions(manage_roles=True)
@@ -81,8 +82,9 @@ class Ctfs(commands.Cog):
         await respond(ctx, chk_fetch_team(ctx).leave, ctx.author)
 
     @commands.bot_has_permissions(manage_roles=True)
+    @commands.guild_only()
     @commands.command()
-    async def invite(self, ctx, user: Member):
+    async def invite(self, ctx, user: MemberArgument):
         await respond(ctx, chk_fetch_team(ctx).invite, ctx.author, user)
 
     @commands.bot_has_permissions(manage_roles=True, manage_channels=True)
@@ -144,8 +146,9 @@ class Ctfs(commands.Cog):
     ##################################################################################
     @commands.bot_has_permissions(manage_channels=True)
     @verify_owner()
+    @commands.guild_only()
     @commands.command()
-    async def done(self, ctx, *withlist: Member):
+    async def done(self, ctx, *withlist: MemberArgument):
         users = list(set(withlist))
         await respond(ctx, chk_fetch_chal(ctx).done, ctx.author, users)
 
@@ -167,6 +170,8 @@ class Ctfs(commands.Cog):
     @loop(minutes=30)
     async def cleanup(self):
         for guild_id, guild in self.guilds.items():
+            if guild is None:
+                continue
             archived = sorted(
                 [
                     (ObjectId(ctf["_id"]).generation_time, ctf)
@@ -176,7 +181,7 @@ class Ctfs(commands.Cog):
                 reverse=True,
             )
             if len(archived) <= self.limit:
-                return
+                continue
             for time, ctf in archived[self.limit :]:
                 ids = []
                 ids.append(ctf["chan_id"])
@@ -184,7 +189,7 @@ class Ctfs(commands.Cog):
                     ids.append(int(str(chal)))
                 channels = [chn for chn in guild.channels if chn.id in ids]
                 if len(channels) == 0:
-                    return
+                    continue
                 CTF = await exportChannels(channels)
                 await save(guild, guild.name, ctf["name"], CTF)
                 await delete(guild, channels)

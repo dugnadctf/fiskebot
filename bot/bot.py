@@ -52,6 +52,8 @@ async def on_error(evt_type, ctx=None):
 @bot.event
 async def on_command_error(ctx, err):
     logger.debug(f"Command error occured with command: {ctx.command}\n{err}\n")
+    if isinstance(err, commands.CommandInvokeError):
+        err = err.original
     if isinstance(err, commands.MissingPermissions):
         await ctx.send(
             "You do not have permission to do that! ¯\\_(ツ)_/¯"
@@ -83,48 +85,48 @@ async def on_command_error(ctx, err):
 
 @bot.event
 async def on_raw_reaction_add(payload):
-    # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
+    if guild is None or (bot.user and payload.user_id == bot.user.id):
+        return
     chan = bot.get_channel(payload.channel_id)
+    if chan is None:
+        return
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
-    member = await guild.fetch_member(payload.user_id)
-    if guild and member and chan:
-        # logger.debug(f"Added reaction: {payload}")
-        # logger.debug(f"Guild: {guild}, Channel: {chan}, Team: {team}, Member: {member}")
-        if not team:
-            # logger.error(f"Not adding role. Could find team")
-            return
-        role = guild.get_role(team["role_id"])
-        if not role:
-            logger.error(
-                f"Not adding role. Could not find role ID {team['role_id']} in Discord"
-            )
-            logger.error(team)
-            return
+    if not team:
+        return
+    try:
+        member = await guild.fetch_member(payload.user_id)
+    except discord.NotFound:
+        return
+    role = guild.get_role(team["role_id"])
+    if not role:
+        logger.error(f"Not adding role. Could not find role ID {team['role_id']}")
+        logger.error(team)
+        return
 
-        await member.add_roles(role, reason="User wanted to join team")
-        logger.debug(f"Added role {role} to user {member}")
+    await member.add_roles(role, reason="User wanted to join team")
+    logger.debug(f"Added role {role} to user {member}")
 
 
 @bot.event
 async def on_raw_reaction_remove(payload):
-    # check if the user is not the bot
     guild = bot.get_guild(payload.guild_id)
+    if guild is None or (bot.user and payload.user_id == bot.user.id):
+        return
     team = db.teamdb[str(payload.guild_id)].find_one({"msg_id": payload.message_id})
-    member = await guild.fetch_member(payload.user_id)
-    if guild and member:
-        # logger.debug(f"Removed reaction: {payload}")
-        # logger.debug(f"Guild: {guild}, Team: {team}, Member: {member}")
-        if not team:
-            # logger.error(f"Not removing role. Could find team")
-            return
-        role = guild.get_role(team["role_id"])
-        if not role:
-            logger.error(f"Not removing role. Could not find role ID {team['role_id']}")
-            logger.error(team)
-            return
-        await member.remove_roles(role, reason="User wanted to leave team")
-        logger.debug(f"Removed role {role} from user {member}")
+    if not team:
+        return
+    try:
+        member = await guild.fetch_member(payload.user_id)
+    except discord.NotFound:
+        return
+    role = guild.get_role(team["role_id"])
+    if not role:
+        logger.error(f"Not removing role. Could not find role ID {team['role_id']}")
+        logger.error(team)
+        return
+    await member.remove_roles(role, reason="User wanted to leave team")
+    logger.debug(f"Removed role {role} from user {member}")
 
 
 async def embed_help(chan, help_topic, help_text):
@@ -173,9 +175,11 @@ async def report(ctx, error_report):
 
 
 @bot.command()
+@commands.guild_only()
 async def setup(ctx):
     if ctx.author.id not in config["maintainers"]:
-        return ctx.send("Only maintainers can run the setup process.")
+        await ctx.send("Only maintainers can run the setup process.")
+        return
 
     overwrites = {
         ctx.guild.default_role: ctf_model.basic_disallow,
@@ -203,17 +207,25 @@ async def setup(ctx):
 
 
 @bot.command()
+@commands.guild_only()
 async def su(ctx):
+    if ctx.author.id not in config["maintainers"]:
+        await ctx.send("Only maintainers can use this command.")
+        return
     for role in ctx.guild.roles:
         if str(role) == ADMIN_ROLE_NAME:
             await ctx.author.add_roles(role)
-            await asyncio.sleep(300)
-            await exit(ctx)
+            try:
+                await asyncio.sleep(300)
+            finally:
+                await ctx.author.remove_roles(role)
+            return
     else:
         await ctx.send("Couldn't find temporary admin role, have you run !setup")
 
 
 @bot.command()
+@commands.guild_only()
 async def exit(ctx):
     for role in ctx.guild.roles:
         if str(role) == ADMIN_ROLE_NAME:

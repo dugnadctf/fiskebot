@@ -33,6 +33,10 @@ class BotLogger(logging.getLoggerClass()):
             self.addHandler(file_handler)
 
     def add_discord_log_handler(self, bot):
+        for handler in list(self.handlers):
+            if isinstance(handler, DiscordHandler):
+                self.removeHandler(handler)
+                handler.close()
         channel_name = config["channels"]["logging"]
         if not channel_name:
             self.debug(

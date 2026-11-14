@@ -34,9 +34,17 @@ class ErrorHandlerTests(unittest.TestCase):
             pass
 
         with patch.object(bot.asyncio, "sleep", no_wait):
-            asyncio.run(bot.on_command_error(context, commands.MemberNotFound("mattis")))
+            asyncio.run(
+                bot.on_command_error(context, commands.MemberNotFound("mattis"))
+            )
 
         self.assertEqual(context.messages, [':bangbang: Member "mattis" not found.'])
+
+    def test_wrapped_task_failure_shows_message(self):
+        context = Context()
+        error = commands.CommandInvokeError(bot.ctf_model.TaskFailed("CTF not found"))
+        asyncio.run(bot.on_command_error(context, error))
+        self.assertEqual(context.messages, [":bangbang: CTF not found"])
 
 
 if __name__ == "__main__":

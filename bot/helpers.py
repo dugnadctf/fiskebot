@@ -40,8 +40,8 @@ Join a CTF by its name, can be used instead of reactions.
 `!leave`
 Leave the CTF team and all of the respective challenge channels.
 
-`!invite <user>`
-Invites a user to CTF team - `user` is granted the CTF role.
+`!invite <@user or username>`
+Invites a user to the CTF team. Use an @mention, exact username, or nickname. Put nicknames containing spaces in quotes.
 
 `!archive`
 Archives this CTF and all the respective challenges (this requires the bot has manage channels permissions).
@@ -61,8 +61,8 @@ Deletes the CTF and it's challenge channels, provide the CTF name as an argument
 challenge = """
 These commands are callable from a CTF **challenge** environment.
 
-`!done @user1 @user2 ...`
-Marks this challenge as completed, and moves channel to "done" category. You may optionally include @'s of `users` that worked with you.
+`!done @user1 username2 ...`
+Marks this challenge as completed, and moves channel to "done" category. You may include @mentions, exact usernames, or nicknames of people who worked with you. Put names containing spaces in quotes.
 Once a challenge is completed, **no one** except you (and admins) can alter the done list or change reset the status to "undone".
 
 `!undone`
