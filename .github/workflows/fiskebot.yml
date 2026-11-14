@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        python-version: [3.9]
+        python-version: [3.13]
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v6
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:
@@ -26,3 +26,5 @@ jobs:
       run: tox -e flake8
     - name: black
       run: tox -e black_bot,black_tools
+    - name: Unit tests
+      run: python -m unittest discover -s tests -v

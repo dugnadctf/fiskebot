@@ -265,5 +265,5 @@ def chk_fetch_chal(ctx):
     return chal
 
 
-def setup(bot):
-    bot.add_cog(Ctfs(bot))
+async def setup(bot):
+    await bot.add_cog(Ctfs(bot))

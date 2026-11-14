@@ -21,9 +21,7 @@ List CTFtime commands.
 
 `!source`
 Display source information
-""".replace(
-    "!", config["prefix"]
-)
+""".replace("!", config["prefix"])
 
 ctf = """
 These commands are callable from a main CTF channel.
@@ -56,9 +54,7 @@ Lists the status (unsolved, or solved and by whom) of each challenge in the CTF.
 
 `!deletectf <ctf name>`
 Deletes the CTF and it's challenge channels, provide the CTF name as an argument to this command
-""".replace(
-    "!", config["prefix"]
-)
+""".replace("!", config["prefix"])
 
 # TODO: add export helper
 
@@ -71,9 +67,7 @@ Once a challenge is completed, **no one** except you (and admins) can alter the 
 
 `!undone`
 Marks this challenge as **not** completed. This will move the channel back to the "working" category.
-""".replace(
-    "!", config["prefix"]
-)
+""".replace("!", config["prefix"])
 
 helpers = {
     "core": {

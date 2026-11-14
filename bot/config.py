@@ -6,7 +6,7 @@ def parse_variable(variable, default=None, valid=None):
     if default and valid and variable not in valid:
         return default
     elif isinstance(default, bool):
-        return True if value.lower() in ["true", "1", "t", "y", "yes"] else False
+        return value.lower() in ["true", "1", "t", "y", "yes"] if value else default
     elif isinstance(default, int):
         return int(value) if value and value.isdigit() else default
     else:

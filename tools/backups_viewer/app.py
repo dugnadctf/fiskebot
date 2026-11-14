@@ -151,7 +151,7 @@ def parse_backup_file(backup_file):
                 # Default avatar
                 avatar_url = "/static/img/default_avatar.png"
             else:
-                avatar_url = f"https://cdn.discordapp.com/avatars/{ message['author']['id'] }/{ message['author']['avatar'] }.png?size=40"
+                avatar_url = f"https://cdn.discordapp.com/avatars/{message['author']['id']}/{message['author']['avatar']}.png?size=40"
 
             if user_id not in participants:
                 participants[user_id] = {

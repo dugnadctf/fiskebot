@@ -182,6 +182,9 @@ class CtfTeam:
 
     @staticmethod
     async def create(guild, name):
+        if not name.strip():
+            raise TaskFailed("Please specify a CTF name.")
+
         role_name = format_role_name(name)
         if any(role.name in (name, role_name) for role in guild.roles):
             raise TaskFailed(f"`{name}` already exists as a role :grimacing:")
@@ -385,9 +388,7 @@ class CtfTeam:
         guild = self.__guild
         teams = self.__teams
 
-        category_archive = await _find_available_archive_category(
-            guild, len(self.challenges)
-        )
+        category_archive, _ = await _find_available_archive_category(guild, 1, 0)
 
         # Update database
         fullname = f"{self.name}-{name}"
@@ -810,9 +811,11 @@ async def exportChannels(channels):
             entry["reactions"] = [
                 {
                     "count": r.count,
-                    "emoji": r.emoji
-                    if isinstance(r.emoji, str)
-                    else {"name": r.emoji.name, "url": str(r.emoji.url)},
+                    "emoji": (
+                        r.emoji
+                        if isinstance(r.emoji, str)
+                        else {"name": r.emoji.name, "url": str(r.emoji.url)}
+                    ),
                 }
                 for r in message.reactions
             ]
