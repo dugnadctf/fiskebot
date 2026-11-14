@@ -182,12 +182,14 @@ class CtfTeam:
 
     @staticmethod
     async def create(guild, name):
-        names = [role.name for role in guild.roles] + guild.channels
-        if name in names:
-            return [(ValueError, f"`{name}` already exists as a role :grimacing:")]
+        role_name = format_role_name(name)
+        if any(role.name in (name, role_name) for role in guild.roles):
+            raise TaskFailed(f"`{name}` already exists as a role :grimacing:")
+
+        if discord.utils.get(guild.text_channels, name=name) is not None:
+            raise TaskFailed(f"`{name}` already exists as a channel :grimacing:")
 
         # Create role
-        role_name = format_role_name(name)
         role = await guild.create_role(name=role_name, mentionable=True)
 
         # Create channel
@@ -196,9 +198,6 @@ class CtfTeam:
             guild.me: basic_allow,
             role: basic_allow,
         }
-
-        if discord.utils.get(guild.text_channels, name=name) is not None:
-            return [(ValueError, f"`{name}` already exists as a channel :grimacing:")]
 
         chan = await guild.create_text_channel(
             name=name,
