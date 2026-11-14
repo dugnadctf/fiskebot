@@ -47,7 +47,9 @@ docker compose pull bot
 docker compose up -d
 ```
 
-The two MongoDB volumes are external so an existing installation keeps its data. To deploy a specific build, set `FISKEBOT_IMAGE_TAG=sha-<full commit SHA>` in `.env`, then run `docker compose pull bot && docker compose up -d --no-deps bot`. GitHub initially makes new container packages private; make the package public in GitHub Packages, or log in to `ghcr.io` with a token that has package read access before pulling it.
+The two MongoDB volumes are external so an existing installation keeps its data. Existing installations on MongoDB 4.4 must back up their data and upgrade through 5.0, 6.0, and 7.0, advancing the feature compatibility version at each step, before starting the 8.0 image on that volume. Follow [MongoDB's upgrade paths](https://www.mongodb.com/docs/mongodb-versions/) and the standalone procedure for each release.
+
+To deploy a specific bot build, set `FISKEBOT_IMAGE_TAG=sha-<full commit SHA>` in `.env`, then run `docker compose pull bot && docker compose up -d --no-deps bot`. GitHub initially makes new container packages private; make the package public in GitHub Packages, or log in to `ghcr.io` with a token that has package read access before pulling it.
 
 ### develop
 
