@@ -13,34 +13,51 @@ The only required variable is `DISCORD_TOKEN`, the rest will use the default val
 | ---- | ------- | ------- |
 | `DISCORD_TOKEN` |  | **Required!** Bot token, see [`config.py`](./bot/config.py) for more information |
 | `MONGODB_URI` | `mongodb://mongo:27017` | URI for the MongoDB instance |
+| `MONGO_HOST_PORT` | `27017` | Localhost port for MongoDB; set another port if multiple stacks share a host |
 | `LOGGING_LEVEL` | `INFO` | The level of logging for alerting, etc. Uses the logging levels specified [here](https://docs.python.org/3/library/logging.html) |
 | `LOGGING_FORMAT` | `%(asctime)s:%(levelname)s:%(name)s: %(message)s` | Logging format, see [here](https://docs.python.org/3/library/logging.html#formatter-objects) |
 | `LOGGING_FILE` |  | If enabled, will send logging to this file |
 | `LOGGING_DISCORD_LEVEL` | `ERROR` | The minimum level for logging into the logging channel (`CHANNEL_LOGGING_ID`) |
 | `ARCHIVE_ACCESS_TO_ALL_USERS` | `false` | Should all the users in the Discord Server gain access to the CTF channels when the CTF is archived? Set to `true` if so. |
 | `COMMAND_PREFIX` | `!` | Prefix for all the bot commands (i.e. `!done`) |
-| `MAINTAINERS` |  | Comma-separated list with profile IDs of the bot maintainers, these users have permission to export and delete CTFs |
+| `MAINTAINERS` |  | Comma-separated list of maintainer Discord IDs; these users can export and delete CTFs and use `!su` |
 | `GUILD_IDS` |  | Comma-separated list with guild IDs of where the bot should run. Used for executing CTF channel cleanup manually |
 | `CATEGORY_WORKING` | `working` | Category where channels for challenges that are currently being worked on during a CTF |
 | `CATEGORY_DONE` | `done` | Category where channels for challenges that are marked as done during a CTF |
 | `CATEGORY_ARCHIVE_PREFIX` | `archive` | Category to move channels to when the CTF is over. There is a max limit on 50 channels per category. The bot wil automatically move channels to new categories when needed |
 | `CHANNEL_EXPORT` | `export` | The channel to upload exports to |
 | `CHANNEL_LOGGING_ID` |  | If enabled, will send logging to this channel, based on the `LOGGING_DISCORD_LEVEL` logging level |
-| `CHANNEL_NAME_DELIMITER` | `-` | The delimiter for the channel names, must be one of `-` or `_`. Results in `-`: `#ctf-challenge-name`, and `_`: `#ctf_challenge_name` |
+| `CHALLENGE_NAME_DELIMITER` | `-` | The delimiter for challenge channel names, either `-` or `_` |
 | `CTFTIME_TEAM_ID` |  | CTFtime ID for the `!ctftime team` command |
 | `CTFTIME_TEAM_NAME` |  | CTFtime name for the `!ctftime team` command |
 
-### start
+### start from the published image
 
-`docker-compose up --build -d`
+The [Bot image workflow](.github/workflows/image.yml) builds pull requests and publishes `ghcr.io/dugnadctf/fiskebot:latest` and `:sha-<full commit SHA>` after merges to `master`. Docker Compose pulls this image; a Git checkout is not needed on the server.
+
+Create an empty deployment directory, download the Compose file, and create a `.env` file containing at least `DISCORD_TOKEN`. Set `MAINTAINERS` and `GUILD_IDS` to the appropriate Discord IDs for your server. Then run:
+
+```shell
+curl -fsSLo docker-compose.yml https://raw.githubusercontent.com/dugnadctf/fiskebot/master/docker-compose.yml
+docker volume create mdb
+docker volume create mdb_config
+mkdir -p backups
+sudo chown 1000:1000 backups
+docker compose pull bot
+docker compose up -d
+```
+
+The two MongoDB volumes are external so an existing installation keeps its data. To deploy a specific build, set `FISKEBOT_IMAGE_TAG=sha-<full commit SHA>` in `.env`, then run `docker compose pull bot && docker compose up -d --no-deps bot`. GitHub initially makes new container packages private; make the package public in GitHub Packages, or log in to `ghcr.io` with a token that has package read access before pulling it.
 
 ### develop
 
-The `/bot` folder is mounted into the container, so you just need to restart to get your updated changes.
+To build local changes instead of pulling the published image:
 ```bash
-docker-compose build
-docker-compose up # ctrl-c to stop and run up again to restart
+docker build -t ghcr.io/dugnadctf/fiskebot:dev .
+FISKEBOT_IMAGE_TAG=dev docker compose up -d
 ```
+
+For live editing during development, use a Compose override file with a source bind mount.
 
 ### linting
 
@@ -79,9 +96,9 @@ $ cp git-hook .git/hooks/pre-commit
 
 - `!add <challenge name>` This will create a new channel for a given challenge.
 ![enter image description here](images/ept-add.PNG)
-- `!done [@users ...]` Mark a challenge as done. Needs to be done inside the challenge channel. Optionally specify other users who also contributed to solving the challenge, space separated without the @s.
+- `!done [users ...]` Mark a challenge as done inside its challenge channel. Other solvers can be given as @mentions, exact usernames, or nicknames. Quote nicknames containing spaces.
 ![enter image description here](images/ept-done.PNG)
-- `!ctf archive` Mark the ctf as over and move it to the archive categories (specified in `/bot/config.py`).
+- `!archive` Mark the CTF as over and move it to the archive categories (specified in `/bot/config.py`).
 
 ---
 
