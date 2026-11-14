@@ -28,3 +28,12 @@ jobs:
       run: tox -e black_bot,black_tools
     - name: Unit tests
       run: python -m unittest discover -s tests -v
+
+  protected-branch-gate:
+    name: lint (3.9)
+    runs-on: ubuntu-24.04
+    needs: lint
+    if: always()
+    steps:
+    - name: Require Python 3.13 checks
+      run: test '${{ needs.lint.result }}' = success
