@@ -1,8 +1,6 @@
-version: "2.1"
 services:
   bot:
-    build: .
-    image: ekofiskctf/fiskebot
+    image: ghcr.io/dugnadctf/fiskebot:${FISKEBOT_IMAGE_TAG:-latest}
     restart: always
     environment:
       - "DISCORD_TOKEN=${DISCORD_TOKEN}"
@@ -20,20 +18,18 @@ services:
       - "CATEGORY_ARCHIVE_PREFIX=${CATEGORY_ARCHIVE_PREFIX:-archive}"
       - "CHANNEL_EXPORT=${CHANNEL_EXPORT:-export}"
       - "CHANNEL_LOGGING_ID=${CHANNEL_LOGGING_ID}"
-      - "CHANNEL_NAME_DELIMITER=${CHANNEL_NAME_DELIMITER}"
+      - "CHALLENGE_NAME_DELIMITER=${CHALLENGE_NAME_DELIMITER:--}"
       - "CTFTIME_TEAM_ID=${CTFTIME_TEAM_ID}"
       - "CTFTIME_TEAM_NAME=${CTFTIME_TEAM_NAME}"
     volumes:
-      - ./bot:/home/bot
       - ./backups:/home/bot/backups
     depends_on:
       - mongo
-    stop_signal: SIGKILL
   mongo:
     image: mongo:4.4.5
     restart: always
     ports:
-      - "127.0.0.1:27017:27017"
+      - "127.0.0.1:${MONGO_HOST_PORT:-27017}:27017"
     volumes:
       - mdb:/data/db
       - mdb_config:/data/configdb
