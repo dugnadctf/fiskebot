@@ -1,6 +1,6 @@
 colorthief==0.2.1
 python-dateutil==4.0.0
 discord.py==2.7.1
-pymongo==4.20.0
+pymongo==4.20.1
 requests==2.34.2
 lxml==6.1.3
